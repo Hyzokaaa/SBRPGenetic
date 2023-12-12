@@ -1,40 +1,32 @@
-# This is a sample Python script.
 from src.sbrp import SBRP
-from src.stop import Stop
-from src.student import Student
 from src.utils import Utils
 
 
-# Press Mayús+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
 def main():
-    # Crear algunos estudiantes y paradas para probar
-    students = [Student(id=i, name=f"Student {i}", coord_x=i, coord_y=i) for i in range(10)]
-    stops = [Stop(id=i, name=f"Stop {i}", coord_x=10, coord_y=10) for i in range(5)]
-
-    # Crear una instancia de SBRP
-    sbrp = SBRP(school=None, stops=stops, students=students, routes=[], max_distance=10, bus_capacity=5, stop_cost=None, student_stop_cost=None)
+    # Leer la instancia del archivo
+    sbrp = SBRP.read_instance('2.xpress')
 
     # Calcular la matriz de costos
-    sbrp.student_stop_cost_matrix = Utils.calculate_cost_matrix(students, stops)
+    sbrp.student_stop_cost_matrix = Utils.calculate_cost_matrix(sbrp.students, sbrp.stops)
 
-    # Asignar estudiantes a paradas usando studentToStop()
-    sbrp.studentToStop()
-
-    # Imprimir las paradas asignadas a cada estudiante
-    for student in students:
-        print(f"Student {student.id} assigned to better Stop {student.assigned_stop.id if student.assigned_stop else None}")
-
-    print("")
-
-    # Asignar estudiantes a paradas usando studentToRandomStop()
-    sbrp.studentToRandomStop()
+    # Asignar estudiantes a paradas usando student_to_stop_closest_to_school()
+    sbrp.student_to_stop_closest_to_school()
 
     # Imprimir las paradas asignadas a cada estudiante
-    for student in students:
-        print(f"Student {student.id} assigned to random Stop {student.assigned_stop.id if student.assigned_stop else None}")
+    for student in sbrp.students:
+        print(f"Student {student.id} =" + f"coord: {student.coord_x, student.coord_y} assigned to Stop {student.assigned_stop.id if student.assigned_stop else None}")
+
+    # Calcular el centroide de las paradas
+    centroid_x, centroid_y = sbrp.calculate_centroid()
+    print(f"\nCentroid of Stops: ({centroid_x}, {centroid_y})")
+
+    # Encontrar la parada más cercana al centroide
+    closest_stop_to_centroid = sbrp.student_to_stop_closest_to_centroid()
+    if closest_stop_to_centroid:
+        print(f"Stop closest to Centroid: Stop {closest_stop_to_centroid.id}")
+    else:
+        print("No valid stops found within max distance from centroid.")
+        print("la distancia maxima es: " + f"{sbrp.max_distance}")
 
 
 if __name__ == "__main__":
