@@ -3,8 +3,8 @@ import numpy as np
 
 class Utils:
     @staticmethod
-    def calculate_distance(coord1, coord2):
-        return np.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2)
+    def calculate_distance(coord1_x, coord1_y, coord2_x, coord2_y):
+        return np.sqrt((coord1_x - coord2_x) ** 2 + (coord1_y - coord2_y) ** 2)
 
     @staticmethod
     def calculate_cost_matrix(entities1, entities2):
@@ -16,7 +16,7 @@ class Utils:
             # Para cada entidad en entities2
             for j, entity2 in enumerate(entities2):
                 # Calcula la distancia entre las dos entidades
-                distance = Utils.calculate_distance(entity1.coordinates, entity2.coordinates)
+                distance = Utils.calculate_distance(entity1.coord_x, entity1.coord_y, entity2.coord_x, entity2.coord_y)
 
                 # Asigna esta distancia a la matriz de costos
                 cost_matrix[i][j] = distance
