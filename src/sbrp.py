@@ -101,22 +101,25 @@ class SBRP:
                 random_stop.num_assigned_students += 1
 
     def student_to_stop_closest_to_school(self):
-        # Busca las paradas que están dentro de la distancia máxima desde la escuela y no exceden la capacidad del bus
-        valid_stops = [stop for stop in self.stops if
-                       Utils.calculate_distance(self.school.coord_x, self.school.coord_y, stop.coord_x,
-                                               stop.coord_y) <= self.max_distance and
-                       stop.num_assigned_students < self.bus_capacity]
+        # Para cada estudiante en la lista de estudiantes
+        for student in self.students:
+            # Encuentra las paradas que están dentro de la distancia máxima y que no exceden la capacidad del autobús
+            valid_stops = [stop for stop in self.stops if
+                           self.student_stop_cost_matrix[student.id][stop.id] <= self.max_distance and
+                           stop.num_assigned_students < self.bus_capacity]
 
-        # Si no hay paradas válidas, entonces no asignamos ninguna parada
-        if not valid_stops:
-            return None
-        else:
-            # Encuentra la parada más cercana entre las paradas válidas
-            closest_stop = min(valid_stops,
-                               key=lambda stop: Utils.calculate_distance(self.school.coord_x, self.school.coord_y,
-                                                                        stop.coord_x, stop.coord_y))
+            # Si no hay paradas válidas, entonces no asignamos ninguna parada
+            if not valid_stops:
+                return None
+            else:
+                # Encuentra la parada más cercana entre las paradas válidas
+                closest_stop = min(valid_stops, key=lambda stop: Utils.calculate_distance(self.school.coord_x, self.school.coord_y, stop.coord_x, stop.coord_y))
 
-            return closest_stop
+                # Asigna al estudiante a la parada más cercana
+                student.assigned_stop = closest_stop
+
+                # Añade al estudiante a la lista de estudiantes asignados a esa parada
+                closest_stop.num_assigned_students += 1
 
     def student_to_stop_closest_to_centroid(self):
         centroid_x, centroid_y = self.calculate_centroid()
@@ -124,7 +127,7 @@ class SBRP:
         # Encuentra las paradas que están dentro de la distancia máxima desde el centroide y que no exceden la capacidad del autobús
         valid_stops = [stop for stop in self.stops if
                        Utils.calculate_distance(centroid_x, centroid_y, stop.coord_x,
-                                               stop.coord_y) <= self.max_distance and
+                                                stop.coord_y) <= self.max_distance and
                        stop.num_assigned_students < self.bus_capacity]
 
         # Si no hay paradas válidas, entonces no asignamos ninguna parada
@@ -134,7 +137,7 @@ class SBRP:
             # Encuentra la parada más cercana entre las paradas válidas
             closest_stop = min(valid_stops,
                                key=lambda stop: Utils.calculate_distance(centroid_x, centroid_y, stop.coord_x,
-                                                                        stop.coord_y))
+                                                                         stop.coord_y))
 
             return closest_stop
 
@@ -144,4 +147,3 @@ class SBRP:
         centroid_x = sum_x / len(self.stops)
         centroid_y = sum_y / len(self.stops)
         return centroid_x, centroid_y
-
