@@ -1,4 +1,8 @@
+from typing import List
+
 import numpy as np
+
+from src.stop import Stop
 
 
 class Utils:
@@ -22,4 +26,12 @@ class Utils:
                 cost_matrix[i][j] = distance
 
         return cost_matrix
+
+    @staticmethod
+    def calculate_centroid(stops: List[Stop]):
+        sum_x = sum(stop.coord_x for stop in stops)
+        sum_y = sum(stop.coord_y for stop in stops)
+        centroid_x = sum_x / len(stops)
+        centroid_y = sum_y / len(stops)
+        return centroid_x, centroid_y
 

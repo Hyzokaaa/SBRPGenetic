@@ -12,45 +12,45 @@
 
 ## Definiciones de las clases
 
-```python
-class Student:
-    """
-    Representa un estudiante. Tiene un id, un name y un par de coordenadas (coord_x, coord_y).
-    También tiene una variable assigned_stop que contendrá la parada asignada a cada estudiante.
-    """
+Hemos definido varias clases para representar los diferentes componentes del problema:
 
-class Stop:
-    """
-    Representa una parada de autobús. Tiene un id, un name y un par de coordenadas (coord_x, coord_y).
-    También tiene una variable num_assigned_students que es un contador que mide cuántos estudiantes han sido asignados a cada parada.
-    """
+- `School`: Representa la escuela. Tiene atributos para el id, el nombre y las coordenadas (coord_x, coord_y).
 
-class Bus:
-    """
-    Representa un autobús individual en la flota. Tiene un id.
-    """
+- `Stop`: Representa una parada de autobús. Tiene atributos para el id, el nombre, las coordenadas (coord_x, coord_y) y el número de estudiantes asignados a la parada (num_assigned_students).
 
-class Route:
-    """
-    Representa una ruta de autobús. Contiene un bus y una lista de stops.
-    """
+- `Student`: Representa a un estudiante. Tiene atributos para el id, el nombre, las coordenadas (coord_x, coord_y) y la parada asignada al estudiante (assigned_stop).
 
-class School:
-    """
-    Representa la escuela a la que los estudiantes están yendo. Tiene un id, un name, y un par de coordenadas (coord_x, coord_y).
-    """
+- `Route`: Representa una ruta de autobús. Tiene un atributo para el autobús asignado a la ruta.
 
-class SBRP:
-    """
-    Representa una instancia del Problema de Ruteo de Autobuses Escolares. Tiene una school, una lista de stops, una lista de students,
-    una lista de routes, una max_distance que los estudiantes pueden recorrer, una bus_capacity que es la capacidad de cada autobús,
-    y una student_stop_cost_matrix que es una matriz de costos entre cada estudiante y cada parada.
-    """
-```
+- `Bus`: Representa un autobús. Tiene un atributo para el id.
+
+## Clase SBRP
+
+Hemos definido una clase `SBRP` que representa una instancia del problema. Esta clase tiene los siguientes atributos:
+
+- `school`: Un objeto `School` que representa la escuela.
+- `stops`: Una lista de objetos `Stop` que representan las paradas de autobús.
+- `students`: Una lista de objetos `Student` que representan a los estudiantes.
+- `routes`: Una lista de objetos `Route` que representan las rutas de los autobuses.
+- `max_distance`: La distancia máxima que un estudiante puede estar de una parada.
+- `bus_capacity`: La capacidad de los autobuses.
+- `stop_cost_matrix`: Una matriz de costos entre las paradas.
+- `student_stop_cost_matrix`: Una matriz de costos entre los estudiantes y las paradas.
+
+La clase `SBRP` también tiene varios métodos para leer una instancia del problema desde un archivo, calcular la matriz de costos, y asignar estudiantes a paradas. Los métodos de asignación incluyen:
+
+- `student_to_stop`: Asigna a cada estudiante a la parada más cercana que esté dentro de la distancia máxima y que no exceda la capacidad del autobús.
+- `student_to_random_stop`: Asigna a cada estudiante a una parada aleatoria que esté dentro de la distancia máxima y que no exceda la capacidad del autobús.
+- `student_to_stop_closest_to_school`: Asigna a cada estudiante a la parada más cercana a la escuela que esté dentro de la distancia máxima y que no exceda la capacidad del autobús.
+
+Además, hemos implementado una función `get_valid_stops` para reutilizar el código que obtiene las paradas válidas para un estudiante dado.
+
+
+
 
 ## Métodos para asignar estudiantes a paradas
 
-Se definieron dos métodos para asignar estudiantes a paradas: `studentToStop()` y `studentToRandomStop()`. Estos métodos asignan a cada estudiante a una parada que esté dentro de la distancia máxima que el estudiante puede recorrer, ya sea la parada más cercana o una parada aleatoria.
+Se definieron varios métodos para asignar estudiantes a paradas: `student_to_better_stop()`, `student_to_random_stop()`, `student_to_stop_closest_to_school()` y `student_to_stop_closest_to_centroid()`. Estos métodos asignan a cada estudiante a una parada que esté dentro de la distancia máxima que el estudiante puede recorrer, ya sea la parada más cercana, una parada aleatoria, la parada más cercana a la escuela o la parada más cercana a centride definido por el conjunto de paradas que tienen estudiantes.
 
 ## Método para leer datos de una instancia desde un archivo
 

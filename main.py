@@ -6,9 +6,9 @@ from src.student import Student
 
 def main():
     # Crear una instancia de SBRP
-    sbrp = SBRP.read_instance("inst10-1s5-50-c50-w5.xpress")
+    sbrp = SBRP.read_instance("inst110-6s80-800-c50-w20.xpress")
     # Asignar estudiantes a paradas usando student_to_random_stop()
-    sbrp.student_to_random_stop()
+    sbrp.student_to_stop_closest_to_centroid()
 
     for student in sbrp.students:
         if student.assigned_stop is not None:
@@ -20,6 +20,9 @@ def main():
     print("school coord = " + f"{sbrp.school.coord_x,sbrp.school.coord_y}")
     print("max distance = " + f"{sbrp.max_distance}")
     print("capacity of bus = " f"{sbrp.bus_capacity}")
+
+    sbrp.plot_assignments()
+
 
 if __name__ == "__main__":
     main()
