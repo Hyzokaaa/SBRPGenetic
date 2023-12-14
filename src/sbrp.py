@@ -1,6 +1,7 @@
 import random
+import time
+from typing import List
 
-from src import utils
 from src.bus import Bus
 from src.route import Route
 from src.school import School
@@ -10,14 +11,14 @@ from src.utils import Utils
 
 
 class SBRP:
-    def __init__(self, school, stops, students, routes, max_distance, bus_capacity, stop_cost, student_stop_cost):
+    def __init__(self, school: School, stops: List[Stop] = None, students: List[Student] = None, routes: List[Route] = None, max_distance=0, bus_capacity=0):
         self.school = school
         self.stops = stops
         self.students = students
         self.routes = routes
         self.max_distance = max_distance
         self.bus_capacity = bus_capacity
-        self.stop_cost_matrix = stop_cost
+        self.stop_cost_matrix = 0
         self.student_stop_cost_matrix = Utils.calculate_cost_matrix(self.students, self.stops)
 
     @staticmethod
@@ -54,7 +55,7 @@ class SBRP:
 
             # Crea la instancia de SBRP
             sbrp = SBRP(school=school, stops=stops, students=students, routes=routes, max_distance=w,
-                        bus_capacity=c, stop_cost=None, student_stop_cost=None)
+                        bus_capacity=c)
 
             return sbrp
 
@@ -79,7 +80,9 @@ class SBRP:
                 # Añade al estudiante a la lista de estudiantes asignados a esa parada
                 closest_stop.num_assigned_students += 1
 
+
     def student_to_random_stop(self):
+        random.seed(time.time())
         # Para cada estudiante en la lista de estudiantes
         for student in self.students:
             # Encuentra las paradas que están dentro de la distancia máxima y que no exceden la capacidad del autobús
@@ -92,8 +95,7 @@ class SBRP:
                 student.assigned_stop = None
             else:
                 # Selecciona una parada aleatoria entre las paradas válidas
-                random_stop = random.choice(valid_stops)
-
+                random_stop: Stop = random.choice(valid_stops)
                 # Asigna al estudiante a la parada aleatoria
                 student.assigned_stop = random_stop
 
@@ -110,10 +112,12 @@ class SBRP:
 
             # Si no hay paradas válidas, entonces no asignamos ninguna parada
             if not valid_stops:
-                return None
+                student.assigned_stop = None
             else:
                 # Encuentra la parada más cercana entre las paradas válidas
-                closest_stop = min(valid_stops, key=lambda stop: Utils.calculate_distance(self.school.coord_x, self.school.coord_y, stop.coord_x, stop.coord_y))
+                closest_stop = min(valid_stops,
+                                   key=lambda stop: Utils.calculate_distance(self.school.coord_x, self.school.coord_y,
+                                                                             stop.coord_x, stop.coord_y))
 
                 # Asigna al estudiante a la parada más cercana
                 student.assigned_stop = closest_stop
@@ -133,10 +137,12 @@ class SBRP:
 
             # Si no hay paradas válidas, entonces no asignamos ninguna parada
             if not valid_stops:
-                return None
+                student.assigned_stop = None
             else:
                 # Encuentra la parada más cercana al centroide entre las paradas válidas
-                closest_stop = min(valid_stops,key=lambda stop: Utils.calculate_distance(centroid_x, centroid_y, stop.coord_x, stop.coord_y))
+                closest_stop = min(valid_stops,
+                                   key=lambda stop: Utils.calculate_distance(centroid_x, centroid_y, stop.coord_x,
+                                                                             stop.coord_y))
 
                 # Asigna al estudiante a la parada más cercana al centroide
                 student.assigned_stop = closest_stop
@@ -144,9 +150,3 @@ class SBRP:
                 # Añade al estudiante a la lista de estudiantes asignados a esa parada
                 closest_stop.num_assigned_students += 1
 
-    def calculate_centroid(self):
-        sum_x = sum(stop.coord_x for stop in self.stops)
-        sum_y = sum(stop.coord_y for stop in self.stops)
-        centroid_x = sum_x / len(self.stops)
-        centroid_y = sum_y / len(self.stops)
-        return centroid_x, centroid_y

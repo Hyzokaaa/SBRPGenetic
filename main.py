@@ -1,21 +1,26 @@
 from src.sbrp import SBRP
-from src.utils import Utils
+from src.school import School
+from src.stop import Stop
+from src.student import Student
 
 
 def main():
-    sbrp = SBRP.read_instance('2.xpress')
-
-    # Asignar estudiantes a paradas usando cercanía()
-    sbrp.student_to_stop_closest_to_centroid()
+    # Crear una instancia de SBRP
+    sbrp = SBRP.read_instance("inst10-1s5-50-c50-w5.xpress")
+    # Asignar estudiantes a paradas usando student_to_random_stop()
+    sbrp.student_to_random_stop()
 
     for student in sbrp.students:
-        print(f"Student {student.id} " + f"in {student.coord_x, student.coord_y} assigned to Stop "
-                                         f"{student.assigned_stop.id if student.assigned_stop else None} ")
+        if student.assigned_stop is not None:
+            print(
+                f"Student {student.id} in {student.coord_x, student.coord_y} assigned to Stop {student.assigned_stop.id} in {student.assigned_stop.coord_x, student.assigned_stop.coord_y}")
+        else:
+            print(f"Student {student.id} in {student.coord_x, student.coord_y} was not assigned to a stop.")
 
-    print(f"{sbrp.school.coord_y}" + " " + f"{sbrp.school.coord_y}")
-    print(sbrp.max_distance)
-    print(sbrp.bus_capacity)
-
+    print("school coord = " + f"{sbrp.school.coord_x,sbrp.school.coord_y}")
+    print("max distance = " + f"{sbrp.max_distance}")
+    print("capacity of bus = " f"{sbrp.bus_capacity}")
 
 if __name__ == "__main__":
     main()
+

@@ -22,3 +22,4 @@ class Utils:
                 cost_matrix[i][j] = distance
 
         return cost_matrix
+
