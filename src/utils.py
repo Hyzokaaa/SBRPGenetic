@@ -23,7 +23,7 @@ class Utils:
                 distance = Utils.calculate_distance(entity1.coord_x, entity1.coord_y, entity2.coord_x, entity2.coord_y)
 
                 # Asigna esta distancia a la matriz de costos
-                cost_matrix[i][j] = distance
+                cost_matrix[entity1.id][entity2.id] = distance
 
         return cost_matrix
 

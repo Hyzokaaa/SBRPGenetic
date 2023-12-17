@@ -1,14 +1,18 @@
+from src.routePlanner import RoutePlanner
 from src.sbrp import SBRP
-from src.school import School
-from src.stop import Stop
-from src.student import Student
+from src.stopAssigner import StopAssigner
+from src.vizualizer import Visualizer
 
 
 def main():
     # Crear una instancia de SBRP
-    sbrp = SBRP.read_instance("inst110-6s80-800-c50-w20.xpress")
+    sbrp = SBRP.read_instance("data/instances/test/mi_instancia.xpress")
     # Asignar estudiantes a paradas usando student_to_random_stop()
-    sbrp.student_to_stop_closest_to_centroid()
+    StopAssigner.student_to_stop_closest_to_centroid(sbrp)
+    # Genera las rutas
+    RoutePlanner.generate_routes(sbrp)
+
+    # Imprime las rutas generadas
 
     for student in sbrp.students:
         if student.assigned_stop is not None:
@@ -20,8 +24,12 @@ def main():
     print("school coord = " + f"{sbrp.school.coord_x,sbrp.school.coord_y}")
     print("max distance = " + f"{sbrp.max_distance}")
     print("capacity of bus = " f"{sbrp.bus_capacity}")
+    print("buses: "f"{len(sbrp.buses)}")
 
-    sbrp.plot_assignments()
+    Visualizer.plot_assignments(sbrp)
+
+
+
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+import random
 from typing import List
 
 from src.bus import Bus
@@ -11,15 +11,17 @@ from src.utils import Utils
 
 class SBRP:
     def __init__(self, school: School, stops: List[Stop] = None, students: List[Student] = None,
-                 routes: List[Route] = None, max_distance=0, bus_capacity=0):
+                 routes: List[Route] = None, max_distance=0, bus_capacity=0, buses: List[Bus] = None):
         self.school = school
         self.stops = stops
         self.students = students
+        random.shuffle(self.students)
         self.routes = routes
         self.max_distance = max_distance
         self.bus_capacity = bus_capacity
         self.stop_cost_matrix = 0
         self.student_stop_cost_matrix = Utils.calculate_cost_matrix(self.students, self.stops)
+        self.buses = buses
 
     @staticmethod
     def read_instance(filename):
@@ -55,6 +57,6 @@ class SBRP:
 
             # Crea la instancia de SBRP
             sbrp = SBRP(school=school, stops=stops, students=students, routes=routes, max_distance=w,
-                        bus_capacity=c)
+                        bus_capacity=c, buses=buses)
 
             return sbrp
