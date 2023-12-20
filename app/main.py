@@ -5,14 +5,11 @@ from src.vizualizer import Visualizer
 
 
 def main():
+    print("iniciando ejecucion")
     # Crear una instancia de SBRP
-    sbrp = SBRP.read_instance("data/instances/test/mi_instancia.xpress")
+    sbrp = SBRP.read_instance("../data/instances/test/inst60-5s20-200-c50-w10.xpress")
     # Asignar estudiantes a paradas usando student_to_random_stop()
-    StopAssigner.student_to_stop_closest_to_centroid(sbrp)
-    # Genera las rutas
-    RoutePlanner.generate_routes(sbrp)
-
-    # Imprime las rutas generadas
+    StopAssigner.student_to_better_stop(sbrp)
 
     for student in sbrp.students:
         if student.assigned_stop is not None:
@@ -26,10 +23,16 @@ def main():
     print("capacity of bus = " f"{sbrp.bus_capacity}")
     print("buses: "f"{len(sbrp.buses)}")
 
+    # Generar rutas
+    routes = RoutePlanner.generate_routes(sbrp)
+
+    # Imprimir las rutas generadas
+    for i, route in enumerate(routes):
+        print(f"Ruta {i+1}:")
+        for stop in route:
+            print(f"Parada ID: {stop.id}, Coordenadas: ({stop.coord_x}, {stop.coord_y})")
+
     Visualizer.plot_assignments(sbrp)
-
-
-
 
 
 if __name__ == "__main__":

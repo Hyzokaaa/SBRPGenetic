@@ -19,22 +19,27 @@ class RoutePlanner:
 
         # Mientras haya paradas disponibles y capacidad en el autobús
         while available_stops and bus_capacity > 0:
-            # Selecciona una parada aleatoria
-            stop = random.choice(available_stops)
+            # Filtra las paradas disponibles para incluir solo aquellas que tienen un número de estudiantes que no excede la capacidad del autobús
+            feasible_stops = [stop for stop in available_stops if stop.num_assigned_students <= bus_capacity]
 
-            # Si el número de estudiantes en la parada es menor o igual a la capacidad del autobús
-            if stop.num_assigned_students <= bus_capacity:
-                # Agrega la parada a la ruta
-                route.append(stop)
+            # Si no hay paradas factibles, rompe el bucle
+            if not feasible_stops:
+                break
 
-                # Actualiza la capacidad del autobús
-                bus_capacity -= stop.num_assigned_students
+            # Selecciona una parada aleatoria de las paradas factibles
+            stop = random.choice(feasible_stops)
 
-                # Actualiza el número de estudiantes asignados a la parada
-                stop.num_assigned_students = 0
+            # Agrega la parada a la ruta
+            route.append(stop)
 
-                # Elimina la parada de la lista de paradas disponibles
-                available_stops.remove(stop)
+            # Actualiza la capacidad del autobús
+            bus_capacity -= stop.num_assigned_students
+
+            # Actualiza el número de estudiantes asignados a la parada
+            stop.num_assigned_students = 0
+
+            # Elimina la parada de la lista de paradas disponibles
+            available_stops.remove(stop)
 
         # Asegúrate de que la ruta comienza y termina en la escuela
         route.insert(0, sbrp.school)
@@ -47,6 +52,11 @@ class RoutePlanner:
         routes = []
 
         # Para cada autobús en el SBRP
-        for route in sbrp.routes:
+        for _ in sbrp.routes:
             # Genera una ruta
             route = RoutePlanner.generate_route(sbrp)
+
+            # Agrega la ruta generada a la lista de rutas
+            routes.append(route)
+
+        return routes
