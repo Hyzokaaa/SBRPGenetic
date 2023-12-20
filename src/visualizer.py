@@ -1,8 +1,7 @@
+from matplotlib import pyplot as plt
+from src.sbrp import SBRP
 import matplotlib
 matplotlib.use('TkAgg')  # o 'tkagg' dependiendo del sistema operativo
-from matplotlib import pyplot as plt
-
-from src.sbrp import SBRP
 
 
 class Visualizer:
@@ -19,7 +18,8 @@ class Visualizer:
         for student in sbrp.students:
             plt.plot(student.coord_x, student.coord_y, 'bo')
             if student.assigned_stop is not None:
-                plt.plot([student.coord_x, student.assigned_stop.coord_x], [student.coord_y, student.assigned_stop.coord_y],'k-')
+                plt.plot([student.coord_x, student.assigned_stop.coord_x],
+                         [student.coord_y, student.assigned_stop.coord_y], 'k-')
 
         # Muestra el gráfico
         plt.show()

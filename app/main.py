@@ -1,13 +1,13 @@
 from src.routePlanner import RoutePlanner
 from src.sbrp import SBRP
 from src.stopAssigner import StopAssigner
-from src.vizualizer import Visualizer
+from src.visualizer import Visualizer
 
 
 def main():
     print("iniciando ejecucion")
     # Crear una instancia de SBRP
-    sbrp = SBRP.read_instance("../data/instances/test/inst60-5s20-200-c50-w10.xpress")
+    sbrp = SBRP.read_instance("../data/instances/test/mi_instancia.xpress")
     # Asignar estudiantes a paradas usando student_to_random_stop()
     StopAssigner.student_to_better_stop(sbrp)
 
@@ -28,7 +28,7 @@ def main():
 
     # Imprimir las rutas generadas
     for i, route in enumerate(routes):
-        print(f"Ruta {i+1}:")
+        print(f"Ruta {i}:")
         for stop in route:
             print(f"Parada ID: {stop.id}, Coordenadas: ({stop.coord_x}, {stop.coord_y})")
 

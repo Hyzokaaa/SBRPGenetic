@@ -15,17 +15,22 @@ class Utils:
         # Inicializa una matriz de ceros con dimensiones (número de entidades1, número de entidades2)
         cost_matrix = np.zeros((len(entities1), len(entities2)))
 
+        # Crea un mapeo de ID a índice para entities1 y entities2
+        id_to_index1 = {entity.id: i for i, entity in enumerate(entities1)}
+        id_to_index2 = {entity.id: i for i, entity in enumerate(entities2)}
+
         # Para cada entidad en entities1
-        for i, entity1 in enumerate(entities1):
+        for entity1 in entities1:
             # Para cada entidad en entities2
-            for j, entity2 in enumerate(entities2):
+            for entity2 in entities2:
                 # Calcula la distancia entre las dos entidades
                 distance = Utils.calculate_distance(entity1.coord_x, entity1.coord_y, entity2.coord_x, entity2.coord_y)
 
-                # Asigna esta distancia a la matriz de costos
-                cost_matrix[entity1.id][entity2.id] = distance
+                # Asigna esta distancia a la matriz de costos utilizando el mapeo de ID a índice
+                cost_matrix[id_to_index1[entity1.id]][id_to_index2[entity2.id]] = distance
 
         return cost_matrix
+
 
     @staticmethod
     def calculate_centroid(stops: List[Stop]):

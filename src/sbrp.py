@@ -44,7 +44,7 @@ class SBRP:
             school = School(id=0, name="School", coord_x=depot_coord_x, coord_y=depot_coord_y)
 
             # Crea las paradas
-            stops = [Stop(id=i, name=f"Stop {i}", coord_x=coord_x, coord_y=coord_y) for i, (coord_x, coord_y) in
+            stops = [Stop(id=i+1, name=f"Stop {i+1}", coord_x=coord_x, coord_y=coord_y) for i, (coord_x, coord_y) in
                      enumerate(stop_coordinates)]
 
             # Crea los estudiantes

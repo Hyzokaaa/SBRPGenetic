@@ -10,14 +10,21 @@ from src.utils import Utils
 class StopAssigner:
     @staticmethod
     def get_valid_stops(sbrp: SBRP, student: Student):
+        # Crea un mapeo de ID a índice para students y stops
+        id_to_index_students = {student.id: i for i, student in enumerate(sbrp.students)}
+        id_to_index_stops = {stop.id: i for i, stop in enumerate(sbrp.stops)}
+
         # Encuentra las paradas que están dentro de la distancia máxima y que no exceden la capacidad del autobús
         valid_stops = [stop for stop in sbrp.stops if
-                       sbrp.student_stop_cost_matrix[student.id][stop.id] <= sbrp.max_distance and
+                       sbrp.student_stop_cost_matrix[id_to_index_students[student.id]][id_to_index_stops[stop.id]] <= sbrp.max_distance and
                        stop.num_assigned_students < sbrp.bus_capacity]
         return valid_stops
 
-    @staticmethod
     def student_to_better_stop(sbrp: SBRP):
+        # Crea un mapeo de ID a índice para students y stops
+        id_to_index_students = {student.id: i for i, student in enumerate(sbrp.students)}
+        id_to_index_stops = {stop.id: i for i, stop in enumerate(sbrp.stops)}
+
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:
             # Obtiene las paradas válidas
@@ -28,7 +35,9 @@ class StopAssigner:
                 student.assigned_stop = None
             else:
                 # Encuentra la parada más cercana entre las paradas válidas
-                closest_stop = min(valid_stops, key=lambda stop: sbrp.student_stop_cost_matrix[student.id][stop.id])
+                closest_stop = min(valid_stops,
+                                   key=lambda stop: sbrp.student_stop_cost_matrix[id_to_index_students[student.id]][
+                                       id_to_index_stops[stop.id]])
 
                 # Asigna al estudiante a la parada más cercana
                 student.assigned_stop = closest_stop
