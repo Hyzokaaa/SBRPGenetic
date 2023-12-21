@@ -1,6 +1,7 @@
 import random
 from typing import List
 
+from src.route import Route
 from src.stop import Stop
 
 
@@ -9,7 +10,7 @@ class RoutePlanner:
     @staticmethod
     def generate_route(sbrp):
         # Inicializa una lista vacía para la ruta
-        route = []
+        route = Route(bus=None)
 
         # Obtiene una copia de las paradas que tienen al menos un estudiante
         available_stops = [stop for stop in sbrp.stops if stop.num_assigned_students > 0]
@@ -30,7 +31,7 @@ class RoutePlanner:
             stop = random.choice(feasible_stops)
 
             # Agrega la parada a la ruta
-            route.append(stop)
+            route.stops.append(stop)
 
             # Actualiza la capacidad del autobús
             bus_capacity -= stop.num_assigned_students
@@ -42,8 +43,8 @@ class RoutePlanner:
             available_stops.remove(stop)
 
         # Asegúrate de que la ruta comienza y termina en la escuela
-        route.insert(0, sbrp.school)
-        route.append(sbrp.school)
+        route.stops.insert(0, sbrp.school)
+        route.stops.append(sbrp.school)
         return route
 
     @staticmethod

@@ -12,6 +12,8 @@ from src.utils import Utils
 class SBRP:
     def __init__(self, school: School, stops: List[Stop] = None, students: List[Student] = None,
                  routes: List[Route] = None, max_distance=0, bus_capacity=0, buses: List[Bus] = None):
+        self.id_to_index_students = {student.id: i for i, student in enumerate(students)}
+        self.id_to_index_stops = {stop.id: i for i, stop in enumerate(stops)}
         self.school = school
         self.stops = stops
         self.students = students
@@ -19,9 +21,12 @@ class SBRP:
         self.routes = routes
         self.max_distance = max_distance
         self.bus_capacity = bus_capacity
-        self.stop_cost_matrix = 0
-        self.student_stop_cost_matrix = Utils.calculate_cost_matrix(self.students, self.stops)
-        self.buses = buses
+        self.stop_cost_matrix = Utils.calculate_cost_matrix(self, self.stops, self.stops)
+        self.student_stop_cost_matrix = Utils.calculate_cost_matrix(self, self.students, self.stops)
+
+    def update_indices(self):
+        self.id_to_index_students = {student.id: i for i, student in enumerate(self.students)}
+        self.id_to_index_stops = {stop.id: i for i, stop in enumerate(self.stops)}
 
     @staticmethod
     def read_instance(filename):

@@ -1,3 +1,4 @@
+from src.geneticAlgorithm import GeneticAlgorithm
 from src.routePlanner import RoutePlanner
 from src.sbrp import SBRP
 from src.stopAssigner import StopAssigner
@@ -21,7 +22,6 @@ def main():
     print("school coord = " + f"{sbrp.school.coord_x,sbrp.school.coord_y}")
     print("max distance = " + f"{sbrp.max_distance}")
     print("capacity of bus = " f"{sbrp.bus_capacity}")
-    print("buses: "f"{len(sbrp.buses)}")
 
     # Generar rutas
     routes = RoutePlanner.generate_routes(sbrp)
@@ -29,11 +29,14 @@ def main():
     # Imprimir las rutas generadas
     for i, route in enumerate(routes):
         print(f"Ruta {i}:")
-        for stop in route:
+        for stop in route.stops:
             print(f"Parada ID: {stop.id}, Coordenadas: ({stop.coord_x}, {stop.coord_y})")
 
     Visualizer.plot_assignments(sbrp)
-
+    genetic = GeneticAlgorithm(population_size=5, sbrp=sbrp, mutation_rate=0, crossover_rate=0)
+    genetic.initialize_population()
+    print("sssss")
+    print(genetic.calculate_fitness())
 
 if __name__ == "__main__":
     main()
