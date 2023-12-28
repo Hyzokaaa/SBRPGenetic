@@ -83,3 +83,18 @@
 ### 10. Visualizer
 - **Métodos**:
     - `plot_assignments(sbrp)`: Dibuja el escenario del SBRP con el objetivo de tener una representación gráfica del mismo.
+
+### 11. GeneticAlgorithm
+- **Atributos**:
+    - `population_size`:
+    - `mutation_rate`:
+    - `crossover_rate`:
+    - `sbrp`:
+    - `population[]`:
+- **Métodos**:
+    - `initialize_population()`:
+    - `calculate_fitness()`
+    - `selectio()`
+    - `crossover`
+    - `mutation()`
+    - `run()`

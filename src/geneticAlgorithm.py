@@ -1,4 +1,5 @@
 from src.routePlanner import RoutePlanner
+import copy
 
 
 class GeneticAlgorithm:
@@ -11,21 +12,21 @@ class GeneticAlgorithm:
 
     def initialize_population(self):
         for _ in range(self.population_size):
-            solution = RoutePlanner.generate_routes(self.sbrp)
+            sbrp_copy = copy.deepcopy(self.sbrp)
+            solution = RoutePlanner.generate_routes(sbrp_copy)
             self.population.append(solution)
 
     def calculate_fitness(self):
-        # Calcula la aptitud de cada solución en la población
         fitness_values = []
         for solution in self.population:
-            # Calcula el costo total de las rutas en la solución
             total_cost = 0
             for route in solution:
                 for i in range(len(route.stops) - 1):
                     stop1 = route.stops[i]
                     stop2 = route.stops[i + 1]
-                    total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][self.sbrp.id_to_index_stops[stop2.id]]
-            # La aptitud es el inverso del costo total (asumiendo que queremos minimizar el costo)
+                    total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][
+                        self.sbrp.id_to_index_stops[stop2.id]]
+            print(f"Total cost: {total_cost}")  # Agrega esta línea
             fitness = 1.0 / total_cost
             fitness_values.append(fitness)
         return fitness_values

@@ -12,21 +12,25 @@ from src.utils import Utils
 class SBRP:
     def __init__(self, school: School, stops: List[Stop] = None, students: List[Student] = None,
                  routes: List[Route] = None, max_distance=0, bus_capacity=0, buses: List[Bus] = None):
-        self.id_to_index_students = {student.id: i for i, student in enumerate(students)}
-        self.id_to_index_stops = {stop.id: i for i, stop in enumerate(stops)}
         self.school = school
         self.stops = stops
+        self.stops.insert(0,school)
         self.students = students
         random.shuffle(self.students)
+        self.id_to_index_students = {student.id: i for i, student in enumerate(students)}
+        self.id_to_index_stops = {stop.id: i for i, stop in enumerate(stops)}
         self.routes = routes
         self.max_distance = max_distance
         self.bus_capacity = bus_capacity
         self.stop_cost_matrix = Utils.calculate_cost_matrix(self, self.stops, self.stops)
         self.student_stop_cost_matrix = Utils.calculate_cost_matrix(self, self.students, self.stops)
+        self.stops.remove(school)
+        self.buses = buses
 
     def update_indices(self):
         self.id_to_index_students = {student.id: i for i, student in enumerate(self.students)}
-        self.id_to_index_stops = {stop.id: i for i, stop in enumerate(self.stops)}
+        self.id_to_index_stops = {self.school.id: 0}
+        self.id_to_index_stops.update({stop.id: i + 1 for i, stop in enumerate(self.stops)})
 
     @staticmethod
     def read_instance(filename):

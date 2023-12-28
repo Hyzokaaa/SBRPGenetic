@@ -49,15 +49,12 @@ class RoutePlanner:
 
     @staticmethod
     def generate_routes(sbrp):
-        # Inicializa una lista vacía para las rutas
         routes = []
-
-        # Para cada autobús en el SBRP
-        for _ in sbrp.routes:
-            # Genera una ruta
+        for _ in sbrp.buses:
             route = RoutePlanner.generate_route(sbrp)
-
-            # Agrega la ruta generada a la lista de rutas
             routes.append(route)
-
+            # Imprime cada parada en la ruta generada
+            print("Generated route:")
+            for stop in route.stops:
+                print(f"Stop ID: {stop.id}, Stop Coords: {stop.coord_x, stop.coord_y}")
         return routes
