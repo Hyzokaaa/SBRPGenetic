@@ -1,8 +1,6 @@
 import random
-from typing import List
 
-from src.route import Route
-from src.stop import Stop
+from src.model.route import Route
 
 
 class RoutePlanner:

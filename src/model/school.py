@@ -1,6 +1,6 @@
 from typing import List
-from src.bus import Bus
-from src.stop import Stop
+from src.model.bus import Bus
+from src.model.stop import Stop
 
 
 class School(Stop):

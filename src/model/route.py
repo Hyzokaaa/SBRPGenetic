@@ -1,5 +1,5 @@
 from typing import List
-from src.stop import Stop
+from src.model.stop import Stop
 
 
 class Route:
@@ -10,3 +10,8 @@ class Route:
         else:
             self.stops = stops
 
+    def __str__(self):
+        return f"Route(bus={self.bus}, stops={', '.join(str(stop) for stop in self.stops)})"
+
+    def __repr__(self):
+        return self.__str__()

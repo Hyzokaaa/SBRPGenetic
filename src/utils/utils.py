@@ -2,8 +2,8 @@ from typing import List
 
 import numpy as np
 
-from src.stop import Stop
-from src.student import Student
+from src.model.stop import Stop
+from src.model.student import Student
 
 
 class Utils:

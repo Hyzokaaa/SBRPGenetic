@@ -1,4 +1,4 @@
-from src.stop import Stop
+from src.model.stop import Stop
 
 
 class Student:

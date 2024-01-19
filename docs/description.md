@@ -86,15 +86,16 @@
 
 ### 11. GeneticAlgorithm
 - **Atributos**:
-    - `population_size`:
-    - `mutation_rate`:
-    - `crossover_rate`:
-    - `sbrp`:
-    - `population[]`:
+    - `population_size`: Tamaño de la población.
+    - `mutation_rate`: Índice de mutation.
+    - `crossover_rate`: Índice de cruzamiento.
+    - `sbrp`: Instancia del problema particular.
+    - `population[]`: Población inicial.
 - **Métodos**:
-    - `initialize_population()`:
-    - `calculate_fitness()`
-    - `selectio()`
-    - `crossover`
-    - `mutation()`
-    - `run()`
+    - `initialize_population()`: Genera la población inicial de soluciones.
+    - `calculate_fitness()`: Calcula la calidad de la población de soluciones. Devuelve una lista con la calidad de cada
+  solución particular dentro de la población de soluciones.
+    - `selection()`: Selecciona a los individuos para la próxima generación.
+    - `crossover`: Realiza el cruce entre dos individuos seleccionados.
+    - `mutation()`: Aplica una mutación a un individuo seleccionado.
+    - `run()`: Ejecuta el algoritmo genético.

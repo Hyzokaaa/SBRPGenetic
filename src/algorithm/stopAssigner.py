@@ -1,10 +1,10 @@
 import random
 import time
 
-from src.sbrp import SBRP
-from src.stop import Stop
-from src.student import Student
-from src.utils import Utils
+from src.model.sbrp import SBRP
+from src.model.stop import Stop
+from src.model.student import Student
+from src.utils.utils import Utils
 
 
 class StopAssigner:
@@ -17,6 +17,7 @@ class StopAssigner:
                        stop.num_assigned_students < sbrp.bus_capacity]
         return valid_stops
 
+    @staticmethod
     def student_to_better_stop(sbrp: SBRP):
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:

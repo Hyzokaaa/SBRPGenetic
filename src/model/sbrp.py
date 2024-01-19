@@ -1,22 +1,24 @@
 import random
 from typing import List
 
-from src.bus import Bus
-from src.route import Route
-from src.school import School
-from src.stop import Stop
-from src.student import Student
-from src.utils import Utils
+from src.model.bus import Bus
+from src.model.route import Route
+from src.model.school import School
+from src.model.stop import Stop
+from src.model.student import Student
+from src.utils.utils import Utils
 
 
 class SBRP:
     def __init__(self, school: School, stops: List[Stop] = None, students: List[Student] = None,
-                 routes: List[Route] = None, max_distance=0, bus_capacity=0, buses: List[Bus] = None):
+                 routes: List[Route] = None, max_distance=0, bus_capacity=0, buses: List[Bus] = None,
+                 random_shuffle=True):
         self.school = school
         self.stops = stops
-        self.stops.insert(0,school)
+        self.stops.insert(0, school)
         self.students = students
-        random.shuffle(self.students)
+        if random_shuffle:
+            random.shuffle(self.students)
         self.id_to_index_students = {student.id: i for i, student in enumerate(students)}
         self.id_to_index_stops = {stop.id: i for i, stop in enumerate(stops)}
         self.routes = routes
@@ -53,7 +55,7 @@ class SBRP:
             school = School(id=0, name="School", coord_x=depot_coord_x, coord_y=depot_coord_y)
 
             # Crea las paradas
-            stops = [Stop(id=i+1, name=f"Stop {i+1}", coord_x=coord_x, coord_y=coord_y) for i, (coord_x, coord_y) in
+            stops = [Stop(id=i + 1, name=f"Stop {i + 1}", coord_x=coord_x, coord_y=coord_y) for i, (coord_x, coord_y) in
                      enumerate(stop_coordinates)]
 
             # Crea los estudiantes

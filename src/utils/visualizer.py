@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from src.sbrp import SBRP
+from src.model.sbrp import SBRP
 import matplotlib
 matplotlib.use('TkAgg')  # o 'tkagg' dependiendo del sistema operativo
 
