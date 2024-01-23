@@ -24,7 +24,7 @@ class StopAssigner:
             # Obtiene las paradas válidas
             valid_stops = StopAssigner.get_valid_stops(sbrp, student)
 
-            # Si no hay paradas válidas, entonces no asignamos ninguna parada a este estudiante
+            # Si no hay paradas válidas, entonces no se asigna parada a este estudiante
             if not valid_stops:
                 student.assigned_stop = None
             else:
@@ -48,7 +48,7 @@ class StopAssigner:
             # Obtiene las paradas válidas
             valid_stops = StopAssigner.get_valid_stops(sbrp, student)
 
-            # Si no hay paradas válidas, entonces no asignamos ninguna parada a este estudiante
+            # Si no hay paradas válidas, entonces no se asigna parada a este estudiante
             if not valid_stops:
                 student.assigned_stop = None
             else:
@@ -67,7 +67,7 @@ class StopAssigner:
             # Obtiene las paradas válidas
             valid_stops = StopAssigner.get_valid_stops(sbrp, student)
 
-            # Si no hay paradas válidas, entonces no asignamos ninguna parada
+            # Si no hay paradas válidas, entonces no se asigna ninguna parada
             if not valid_stops:
                 student.assigned_stop = None
             else:
@@ -90,7 +90,7 @@ class StopAssigner:
         for student in sbrp.students:
             # Obtiene las paradas válidas
             valid_stops = StopAssigner.get_valid_stops(sbrp, student)
-            # Si no hay paradas válidas, entonces no asignamos ninguna parada
+            # Si no hay paradas válidas, entonces no se asigna ninguna parada
             if not valid_stops:
                 student.assigned_stop = None
             else:

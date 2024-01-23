@@ -7,7 +7,7 @@ class RoutePlanner:
 
     @staticmethod
     def generate_route(sbrp):
-        # Inicializa una lista vacía para la ruta
+        # Inicializa una ruta compuesta por una lista vacía de stops
         route = Route(bus=None)
 
         # Obtiene una copia de las paradas que tienen al menos un estudiante
@@ -25,7 +25,7 @@ class RoutePlanner:
             if not feasible_stops:
                 break
 
-            # Selecciona una parada aleatoria de las paradas factibles
+            # Selecciona una parada aleatoria de las paradas disponibles
             stop = random.choice(feasible_stops)
 
             # Agrega la parada a la ruta
@@ -40,7 +40,7 @@ class RoutePlanner:
             # Elimina la parada de la lista de paradas disponibles
             available_stops.remove(stop)
 
-        # Asegúrate de que la ruta comienza y termina en la escuela
+        # Asegura de que la ruta comienza y termina en la escuela
         route.stops.insert(0, sbrp.school)
         route.stops.append(sbrp.school)
         return route
@@ -51,8 +51,5 @@ class RoutePlanner:
         for _ in sbrp.buses:
             route = RoutePlanner.generate_route(sbrp)
             routes.append(route)
-            # Imprime cada parada en la ruta generada
-            print("Generated route:")
-            for stop in route.stops:
-                print(f"Stop ID: {stop.id}, Stop Coords: {stop.coord_x, stop.coord_y}")
+
         return routes

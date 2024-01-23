@@ -83,6 +83,8 @@
 ### 10. Visualizer
 - **Métodos**:
     - `plot_assignments(sbrp)`: Dibuja el escenario del SBRP con el objetivo de tener una representación gráfica del mismo.
+    - `plot_routes(sbrp: SBRP, routes)`: Dibuja las rutas seleccionadas en el gráfico. Para cada ruta, dibuja las paradas en el orden en que aparecen en la lista de 
+       paradas de la ruta. Cada ruta se dibuja con un color aleatorio distinto de blanco o negro.
 
 ### 11. GeneticAlgorithm
 - **Atributos**:
@@ -93,8 +95,8 @@
     - `population[]`: Población inicial.
 - **Métodos**:
     - `initialize_population()`: Genera la población inicial de soluciones.
-    - `calculate_fitness()`: Calcula la calidad de la población de soluciones. Devuelve una lista con la calidad de cada
-  solución particular dentro de la población de soluciones.
+    - `calculate_fitness()`: Calcula la calidad de la población de soluciones. Devuelve una lista con la calidad de cada solución particular dentro de la población de soluciones.
+    - `calculate_individual_fitness(individual)`: Calcula la aptitud de un solo individuo. Devuelve la aptitud del individuo.
     - `selection()`: Selecciona a los individuos para la próxima generación.
     - `crossover`: Realiza el cruce entre dos individuos seleccionados.
     - `mutation()`: Aplica una mutación a un individuo seleccionado.

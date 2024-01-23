@@ -29,7 +29,7 @@ class SBRP:
         self.stops.remove(school)
         self.buses = buses
 
-    def update_indices(self):
+    def update_index(self):
         self.id_to_index_students = {student.id: i for i, student in enumerate(self.students)}
         self.id_to_index_stops = {self.school.id: 0}
         self.id_to_index_stops.update({stop.id: i + 1 for i, stop in enumerate(self.stops)})
@@ -40,7 +40,7 @@ class SBRP:
             # Lee los parámetros del problema
             m, n, v, c, w = map(int, file.readline().split())
 
-            # Lee las coordenadas del depósito
+            # Lee las coordenadas de la escuela
             depot_coord_x, depot_coord_y = map(float, file.readline().split())
 
             # Lee las coordenadas de las paradas

@@ -1,29 +1,35 @@
 from src.algorithm.geneticAlgorithm import GeneticAlgorithm
 from src.model.sbrp import SBRP
 from src.algorithm.stopAssigner import StopAssigner
+from src.utils.visualizer import Visualizer
+
 
 def main():
-    # Lee la instancia de SBRP desde un archivo
-    sbrp = SBRP.read_instance("../data/instances/test/mi_instancia.xpress")
+    # Lee la instancia
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst1-1s5-25-c25-w5.xpress")
     StopAssigner.student_to_better_stop(sbrp)
 
-    # Crea una instancia de GeneticAlgorithm con la instancia de SBRP
-    genetic = GeneticAlgorithm(population_size=100, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2)
+    genetic = GeneticAlgorithm(population_size=500, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2)
 
-    # Inicializa la población
+    print("Inicializando la población...")
+
     genetic.initialize_population()
+    print("Calculando la aptitud de la población inicial...")
 
-    # Calcula la aptitud de la población
+    initial_fitness_values = genetic.calculate_fitness()
+    print("Valores de aptitud inicial:", initial_fitness_values)
+
+    genetic.run()
+
+    print("Calculando la aptitud de la población final...")
     fitness_values = genetic.calculate_fitness()
 
-    # Imprime los valores de aptitud
-    print("Fitness values:", fitness_values)
+    print("La mejor solucion obtiene un resultado de: ")
+    print(min(fitness_values))
 
-    # Realiza la selección por torneo
-    winner = genetic.selection()
+    print("Valores de aptitud final:", fitness_values)
 
-    # Imprime el ganador del torneo
-    print("Winner of the tournament:", winner)
+    genetic.calculate_average(fitness_values=fitness_values, initial_fitness_values= initial_fitness_values)
 
 
 if __name__ == "__main__":

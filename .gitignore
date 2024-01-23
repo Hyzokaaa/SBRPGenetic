@@ -1,2 +1,5 @@
 .xpress
+.pyc*
 /.pyc
+/results
+/venv
