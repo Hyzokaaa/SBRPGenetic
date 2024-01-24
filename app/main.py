@@ -6,7 +6,7 @@ from src.utils.visualizer import Visualizer
 
 def main():
     # Lee la instancia
-    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst1-1s5-25-c25-w5.xpress")
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst110-6s80-800-c50-w20.xpress")
     StopAssigner.student_to_better_stop(sbrp)
 
     genetic = GeneticAlgorithm(population_size=500, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2)
