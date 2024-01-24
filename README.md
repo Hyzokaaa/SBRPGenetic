@@ -1,4 +1,4 @@
-# ![SBRPGenetic](docs/logo5.svg)
+# ![SBRPGenetic](docs/logoWatercolor.svg)
 
 ## Descripción del Proyecto
 SBRPGenetic es una solución al problema de rutas de autobuses escolares (SBRP) utilizando algoritmos genéticos. Este proyecto es parte de una tesis para la Universidad Tecnológica de La Habana CUJAE.
