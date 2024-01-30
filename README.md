@@ -13,7 +13,6 @@ SBRPGenetic es una solución al problema de rutas de autobuses escolares (SBRP) 
 2. Instalación
 3. Uso
 4. Contribución
-
 ## Funcionalidades
 (TODO)
 

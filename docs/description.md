@@ -97,7 +97,7 @@
     - `initialize_population()`: Genera la población inicial de soluciones.
     - `calculate_fitness()`: Calcula la calidad de la población de soluciones. Devuelve una lista con la calidad de cada solución particular dentro de la población de soluciones.
     - `calculate_individual_fitness(individual)`: Calcula la aptitud de un solo individuo. Devuelve la aptitud del individuo.
-    - `selection()`: Selecciona a los individuos para la próxima generación.
-    - `crossover`: Realiza el cruce entre dos individuos seleccionados.
-    - `mutation()`: Aplica una mutación a un individuo seleccionado.
+    - `selection()`: Selecciona por torneo a los individuos para la próxima generación.
+    - `crossover`: Realiza el cruce en un punto entre dos individuos seleccionados.
+    - `mutation()`:mutation(): Aplica una mutación a un individuo seleccionado(Pendiente). 
     - `run()`: Ejecuta el algoritmo genético.
