@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 from src.model.stop import Stop
 
@@ -5,6 +6,7 @@ from src.model.stop import Stop
 class Route:
     def __init__(self, bus, stops: List[Stop] = None):
         self.bus = bus
+        self.students = 0
         if stops is None:
             self.stops = []
         else:
@@ -15,3 +17,6 @@ class Route:
 
     def __repr__(self):
         return self.__str__()
+
+    def copy(self):
+        return deepcopy(self)

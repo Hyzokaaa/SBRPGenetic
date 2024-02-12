@@ -7,6 +7,7 @@
 * Cada estudiante debe poder alcanzar la parada a la que fue asignado.
 * En cada ruta, no se debe exceder la capacidad del autobús.
 * Cada parada a la que se asigna algún estudiante, debe ser visitada por las rutas de autobuses una y solo una vez.
+* A cada parada debe asignarse a lo sumo tantos estudiantes como capacidad de los autobuses.
 ## Definiciones de las clases
 ### 1. Bus
 - **Atributos**:

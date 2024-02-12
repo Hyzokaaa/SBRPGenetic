@@ -1,18 +1,18 @@
 import random
 
 from src.model.route import Route
+from src.model.sbrp import SBRP
 
 
 class RoutePlanner:
 
     @staticmethod
-    def generate_route(sbrp):
+    def generate_route(sbrp: SBRP):
         # Inicializa una ruta compuesta por una lista vacía de stops
         route = Route(bus=None)
 
         # Obtiene una copia de las paradas que tienen al menos un estudiante
         available_stops = [stop for stop in sbrp.stops if stop.num_assigned_students > 0]
-
         # Inicializa un contador para la capacidad del autobús
         bus_capacity = sbrp.bus_capacity
 
@@ -30,6 +30,7 @@ class RoutePlanner:
 
             # Agrega la parada a la ruta
             route.stops.append(stop)
+            route.students += stop.num_assigned_students
 
             # Actualiza la capacidad del autobús
             bus_capacity -= stop.num_assigned_students

@@ -9,6 +9,7 @@ class School(Stop):
         self.name = name
         self.coord_x = coord_x
         self.coord_y = coord_y
+        self.num_assigned_students = 0
         if buses is None:
             self.buses = []
         else:

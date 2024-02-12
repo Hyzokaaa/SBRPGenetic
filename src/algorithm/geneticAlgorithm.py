@@ -1,10 +1,13 @@
+from src.algorithm.crossover import Crossover
 from src.algorithm.routePlanner import RoutePlanner
 import copy
 import random
 
+from src.model.school import School
+
 
 class GeneticAlgorithm:
-    def __init__(self, population_size, mutation_rate, crossover_rate, sbrp, tournament_size, num_generations = 500):
+    def __init__(self, population_size, mutation_rate, crossover_rate, sbrp, tournament_size, num_generations=500):
         self.tournament_size = tournament_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -12,6 +15,7 @@ class GeneticAlgorithm:
         self.sbrp = sbrp
         self.population = []
         self.num_generations = num_generations
+        self.crossover_operator = Crossover(sbrp, crossover_rate)
 
     def initialize_population(self):
         for _ in range(self.population_size):
@@ -57,20 +61,6 @@ class GeneticAlgorithm:
 
         return winner
 
-    def crossover(self, parent1, parent2):
-        # Se realiza un cruce
-        if random.random() < self.crossover_rate:
-            # Selecciona un punto de cruce al azar
-            crossover_point = random.randint(1, len(parent1) - 1)
-
-            # Crea dos hijos intercambiando las rutas de los padres en el punto de cruce
-            child1 = parent1[:crossover_point] + parent2[crossover_point:]
-            child2 = parent2[:crossover_point] + parent1[crossover_point:]
-        else:
-            # Si no se realiza un cruce los hijos = padres
-            child1, child2 = parent1, parent2
-        return child1, child2
-
     def mutation(self):
         # Implementación de la mutación
         pass
@@ -86,12 +76,14 @@ class GeneticAlgorithm:
 
             # Realiza el cruce y la mutación(Pendiente la mutación)
             while len(new_population) < self.population_size:
-                # Realiza la selección para obetener los padres
+                # Realiza la selección para obtener los padres
                 parent1 = self.selection()
                 parent2 = self.selection()
 
                 # Realiza el cruce para generar dos hijos
-                child1, child2 = self.crossover(parent1, parent2)
+                child1, child2 = self.crossover_operator.crossover(parent1, parent2)
+
+
 
                 # Añade los hijos a la nueva población
                 new_population.append(child1)
@@ -109,3 +101,30 @@ class GeneticAlgorithm:
 
         print("El porcentaje de mejora promedio en la aptitud de la población es del {}%.".format(
             average_improvement_percentage))
+
+    def get_best_solution(self):
+        best_solution = min(self.population, key=self.calculate_individual_fitness)
+        return best_solution
+
+    def validate_solution(self, solution):
+        """
+        Verifica que una solución satisfaga todas las condiciones del problema.
+        """
+        for route in solution:
+            # Verifica que la capacidad del autobús no se exceda en ninguna ruta
+            if sum([stop.num_assigned_students for stop in route.stops]) > self.sbrp.bus_capacity:
+                print("tengo mas estudiantes que la capacidad del bus")
+                return False
+
+            # Verifica que no se repita ninguna parada en una ruta
+            seen_stops = set()
+            for stop in route.stops:
+                key = (stop.coord_x, stop.coord_y)
+                if key in seen_stops and not isinstance(stop, School):
+                    print("se me repite alguna parada")
+                    return False
+                seen_stops.add(key)
+
+        # Si la solución pasa todas las verificaciones, es válida
+        return True
+
