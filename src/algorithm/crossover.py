@@ -1,9 +1,7 @@
 import random
-from typing import List
+import copy
 
-from src.model.route import Route
 from src.model.school import School
-from src.model.stop import Stop
 
 
 class Crossover:
@@ -12,70 +10,63 @@ class Crossover:
         self.crossover_rate = crossover_rate
 
     def crossover(self, parent1, parent2):
-        # Se realiza un cruce
-        if random.random() < self.crossover_rate:
-            # Selecciona un punto de cruce al azar
-            crossover_point = random.randint(1, len(parent1) - 1)
+        # Genera un punto de cruce aleatorio
+        size = min(len(parent1), len(parent2))
+        cxpoint = random.randint(1, size)
 
-            # Crea dos hijos intercambiando las rutas de los padres en el punto de cruce
-            child1 = parent1[:crossover_point] + parent2[crossover_point:]
-            child2 = parent2[:crossover_point] + parent1[crossover_point:]
-        else:
-            # Si no se realiza un cruce los hijos = padres
-            child1, child2 = parent1, parent2
+        # Crea los hijos con las partes de los padres
+        child1 = parent1[:cxpoint] + parent2[cxpoint:]
+        child2 = parent2[:cxpoint] + parent1[cxpoint:]
+
+        # Asegura que los hijos cumplan con las restricciones del problema
+        child1, child2 = self.process_solutions(child1, child2)
         return child1, child2
 
-    def repair_children(self, child1, child2):
-        # Asegúrate de que las paradas de 'sbrp' no se eliminen
-        for stop in self.sbrp.stops:
-            if stop not in child1 and not isinstance(stop, School):
-                # Añade la parada a child1 si no está presente
-                child1.append(stop)
-            if stop not in child2 and not isinstance(stop, School):
-                # Añade la parada a child2 si no está presente
-                child2.append(stop)
+    def process_solutions(self, solution1, solution2):
+        # Paso 1: Crear una lista única de paradas que contienen ambos padres.
+        unique_stops = self.unique_stops([solution1, solution2])
 
-        # Realiza cualquier otra reparación necesaria aquí
+        solution1_child = copy.deepcopy(solution1)
+        feasible_stops = self.get_feasible_stops(solution1, solution2, solution1_child)
+        new_solution1 = self.replace_repeated_stops(solution1_child, unique_stops, feasible_stops)
 
-        return child1, child2
+        solution2_child = copy.deepcopy(solution2)
+        feasible_stops = self.get_feasible_stops(solution1, solution2, solution2_child)
+        new_solution2 = self.replace_repeated_stops(solution2_child, unique_stops, feasible_stops)
 
-    def repair(self, child, second_child):
-        # Crear copias de las soluciones para no modificar las originales
-        child = [route.copy() for route in child]
-        second_child = [route.copy() for route in second_child]
+        return new_solution1, new_solution2
 
-        # Crear un conjunto para almacenar las paradas ya visitadas
-        seen_stops = set()
+    def unique_stops(self, solutions):
+        unique_stops = []
+        for solution in solutions:
+            for route in solution:
+                for stop in route.stops:
+                    if not isinstance(stop, School) and stop not in unique_stops:
+                        unique_stops.append(stop)
+        return unique_stops
 
-        for one_route in child:
-            stops_to_remove = []  # Añade esta línea para almacenar las paradas que se van a eliminar
-            for i in range(len(one_route.stops[:])):  # Añade [:] para crear una copia de la lista
-                # Si la parada ya ha sido visitada, buscar una parada alternativa
-                if one_route.stops[i] in seen_stops:
-                    for two_route in second_child:
-                        for j in range(len(two_route.stops)):
-                            # Si la parada alternativa no excede la capacidad máxima y no ha sido visitada, usarla
-                            if (two_route.stops[j] not in seen_stops and self.sbrp.bus_capacity >= two_route.stops[j].
-                                    num_assigned_students):
-                                one_route.stops[i] = two_route.stops[j]
-                                break
-                        else:
-                            continue
-                        break
-                    else:
-                        # Si no se encuentra una parada alternativa, marcar la parada para su eliminación
-                        stops_to_remove.append(one_route.stops[i])  # Añade esta línea
+    def replace_repeated_stops(self, solution, unique_stops, feasible_stops):
+        for route in solution:
+            for i, stop in enumerate(route.stops):
+                # Crear una lista de las paradas actuales
+                current_stops = [s for r in solution for s in r.stops]
+                # Si la parada está repetida y no es de tipo School
+                if current_stops.count(stop) > 1 and not isinstance(stop, School):
+                    for feasible_stop in feasible_stops:
+                        if feasible_stop not in current_stops:
+                            # Sustituir la parada repetida por la parada factible
+                            route.stops[i] = feasible_stop
+                            # Remover la parada factible de la lista de paradas factibles
+                            feasible_stops.remove(feasible_stop)
+                            break
+        return solution
 
-                # Añadir la parada a las paradas visitadas
-                seen_stops.add(one_route.stops[i])
-
-            # Eliminar las paradas marcadas para su eliminación
-            for stop in stops_to_remove:  # Añade este bucle
-                one_route.stops.remove(stop)
-
-        # Eliminar las rutas vacías
-        child = [route for route in child if route.stops]
-
-        # Devolver las soluciones reparadas
-        return child
+    def get_feasible_stops(self, parent1, parent2, child):
+        feasible_stops = []
+        parent_stops = [stop for route in parent1 + parent2 for stop in route.stops if not isinstance(stop, School)]
+        child_stops = [stop for route in child for stop in route.stops if not isinstance(stop, School)]
+        for stop in parent_stops:
+            if stop not in child_stops and stop not in feasible_stops:
+                feasible_stops.append(stop)
+        return feasible_stops
 

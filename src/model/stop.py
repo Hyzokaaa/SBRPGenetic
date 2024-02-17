@@ -8,11 +8,11 @@ class Stop:
 
     def __eq__(self, other):
         if isinstance(other, Stop):
-            return self.coord_x == other.coord_x and self.coord_y == other.coord_y
+            return self.id == other.id
         return False
 
     def __hash__(self):
-        return hash((self.coord_x, self.coord_y))
+        return hash(self.id)
 
     def __str__(self):
-        return f"Stop(Coord.x={self.coord_x}, Coord.y={self.coord_y})"
+        return f"Stop(ID: {self.id})"

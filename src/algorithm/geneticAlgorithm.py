@@ -7,7 +7,7 @@ from src.model.school import School
 
 
 class GeneticAlgorithm:
-    def __init__(self, population_size, mutation_rate, crossover_rate, sbrp, tournament_size, num_generations=500):
+    def __init__(self, population_size, mutation_rate, crossover_rate, sbrp, tournament_size, num_generations):
         self.tournament_size = tournament_size
         self.population_size = population_size
         self.mutation_rate = mutation_rate
@@ -82,8 +82,8 @@ class GeneticAlgorithm:
 
                 # Realiza el cruce para generar dos hijos
                 child1, child2 = self.crossover_operator.crossover(parent1, parent2)
-
-
+                self.validate_solution(child1)
+                self.validate_solution(child2)
 
                 # Añade los hijos a la nueva población
                 new_population.append(child1)
@@ -128,3 +128,10 @@ class GeneticAlgorithm:
         # Si la solución pasa todas las verificaciones, es válida
         return True
 
+    def count_stop(self, solution):
+        count = 0
+        for route in solution:
+            for stop in route.stops:
+                if not isinstance(stop, School):
+                    count += 1
+        return count
