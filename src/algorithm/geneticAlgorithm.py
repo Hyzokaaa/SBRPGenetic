@@ -23,17 +23,6 @@ class GeneticAlgorithm:
             solution = RoutePlanner.generate_routes(sbrp_copy)
             self.population.append(solution)
 
-    def calculate_individual_fitness_simple(self, individual):
-        total_cost = 0
-        for route in individual:
-            for i in range(len(route.stops) - 1):
-                stop1 = route.stops[i]
-                stop2 = route.stops[i + 1]
-                total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][
-                    self.sbrp.id_to_index_stops[stop2. id]]
-        fitness = 1.0 / total_cost
-        return fitness
-
     def calculate_individual_fitness(self, individual):
         total_cost = 0
         for route in individual:
@@ -111,11 +100,6 @@ class GeneticAlgorithm:
         Verifica que una solución satisfaga todas las condiciones del problema.
         """
         for route in solution:
-            # Verifica que la capacidad del autobús no se exceda en ninguna ruta
-            if sum([stop.num_assigned_students for stop in route.stops]) > self.sbrp.bus_capacity:
-                print("tengo mas estudiantes que la capacidad del bus")
-                return False
-
             # Verifica que no se repita ninguna parada en una ruta
             seen_stops = set()
             for stop in route.stops:
@@ -128,7 +112,7 @@ class GeneticAlgorithm:
         # Si la solución pasa todas las verificaciones, es válida
         return True
 
-    def count_stop(self, solution):
+    def count_stops(self, solution):
         count = 0
         for route in solution:
             for stop in route.stops:

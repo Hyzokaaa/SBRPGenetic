@@ -6,10 +6,11 @@ from src.utils.visualizer import Visualizer
 
 def main():
     # Lee la instancia
-    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst60-5s20-200-c50-w10.xpress")
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst42-1s10-200-c50-w5.xpress")
     StopAssigner.student_to_stop_closest_to_school(sbrp)
 
-    genetic = GeneticAlgorithm(population_size=100, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2, num_generations=100)
+    genetic = GeneticAlgorithm(population_size=3, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
+                               num_generations=5)
     print("Inicializando la población...")
 
     genetic.initialize_population()
@@ -21,7 +22,7 @@ def main():
     print("Valores de aptitud inicial:", initial_fitness_values)
     print("La mejor solucion obtiene un resultado de: ")
     print(min(initial_fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stop(genetic.get_best_solution())} paradas")
+    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
 
     genetic.run()
 
@@ -30,7 +31,7 @@ def main():
 
     print("La mejor solucion obtiene un resultado de: ")
     print(min(fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stop(genetic.get_best_solution())} paradas")
+    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
 
     print("Valores de aptitud final:", fitness_values)
 
@@ -42,6 +43,7 @@ def main():
 
     for route in genetic.get_best_solution():
         print(route)
+
 
 if __name__ == "__main__":
     main()
