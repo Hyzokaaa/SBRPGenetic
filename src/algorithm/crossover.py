@@ -1,5 +1,4 @@
 import random
-import copy
 
 from src.model.school import School
 
@@ -13,7 +12,6 @@ class Crossover:
         # Genera un punto de cruce aleatorio
         size = min(len(parent1), len(parent2))
         cxpoint = random.randint(1, size)
-        cxpoint = 1
 
         # Crea los hijos con las partes de los padres
         child1 = parent1[:cxpoint] + parent2[cxpoint:]
