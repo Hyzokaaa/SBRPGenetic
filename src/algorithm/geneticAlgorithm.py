@@ -105,10 +105,8 @@ class GeneticAlgorithm:
             for stop in route.stops:
                 key = (stop.coord_x, stop.coord_y)
                 if key in seen_stops and not isinstance(stop, School):
-                    print("se me repite alguna parada")
                     return False
                 seen_stops.add(key)
-
         # Si la solución pasa todas las verificaciones, es válida
         return True
 

@@ -6,11 +6,12 @@ from src.utils.visualizer import Visualizer
 
 def main():
     # Lee la instancia
-    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst42-1s10-200-c50-w5.xpress")
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst60-5s20-200-c50-w10.xpress")
     StopAssigner.student_to_stop_closest_to_school(sbrp)
 
-    genetic = GeneticAlgorithm(population_size=3, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
-                               num_generations=5)
+    genetic = GeneticAlgorithm(population_size=2, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
+                               num_generations=1)
+
     print("Inicializando la población...")
 
     genetic.initialize_population()
@@ -40,10 +41,6 @@ def main():
     genetic.validate_solution(genetic.get_best_solution())
 
     Visualizer.plot_routes(sbrp, genetic.get_best_solution())
-
-    for route in genetic.get_best_solution():
-        print(route)
-
 
 if __name__ == "__main__":
     main()
