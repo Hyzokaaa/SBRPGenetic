@@ -35,8 +35,8 @@ class SBRP:
         self.id_to_index_stops.update({stop.id: i + 1 for i, stop in enumerate(self.stops)})
 
     @staticmethod
-    def read_instance(filename):
-        with open(filename, 'r') as file:
+    def read_instance(file_path):
+        with open(file_path, 'r') as file:
             # Lee los parámetros del problema
             m, n, v, c, w = map(int, file.readline().split())
 

@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+import pickle
 
 from src.model.stop import Stop
 from src.model.student import Student
@@ -39,4 +40,30 @@ class Utils:
         centroid_x = sum_x / len(stops)
         centroid_y = sum_y / len(stops)
         return centroid_x, centroid_y
+    @staticmethod
+    def save_state(obj, file_path):
+        """
+        Guarda el estado de un objeto en un archivo.
+
+        Args:
+            obj: El objeto cuyo estado quieres guardar.
+            file_path: La ruta del archivo donde quieres guardar el estado.
+        """
+        with open(file_path, 'wb') as f:
+            pickle.dump(obj, f)
+
+    @staticmethod
+    def load_state(file_path):
+        """
+        Carga el estado de un objeto desde un archivo.
+
+        Args:
+            file_path: La ruta del archivo desde donde quieres cargar el estado.
+
+        Returns:
+            El objeto cuyo estado has cargado.
+        """
+        with open(file_path, 'rb') as f:
+            return pickle.load(f)
+
 
