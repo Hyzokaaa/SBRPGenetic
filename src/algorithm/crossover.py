@@ -1,5 +1,8 @@
 import random
+import copy
+from typing import List
 
+from src.model.route import Route
 from src.model.school import School
 from src.model.stop import Stop
 
@@ -13,7 +16,6 @@ class Crossover:
         # Genera un punto de cruce aleatorio
         size = min(len(parent1), len(parent2))
         cxpoint = random.randint(1, size)
-        cxpoint = 1
 
         # Crea los hijos con las partes de los padres
         child1 = parent1[:cxpoint] + parent2[cxpoint:]
@@ -28,8 +30,8 @@ class Crossover:
         # Obtiene la lista de las paradas que contienen ambos hijos
         unique_stops = self.unique_stops([child1, child2])
 
-        self.initial_repair_solution(child1, unique_stops)
-        self.initial_repair_solution(child2, unique_stops)
+        child1 = self.repair(child1, unique_stops)
+        child2 = self.repair(child2, unique_stops)
 
         return child1, child2
 
@@ -78,8 +80,7 @@ class Crossover:
                     if stop not in seen_stops:
                         seen_stops.append(stop)
                         i += 1
-                    # si se encuentra de las paradas visitadas, sustituye la parada por una aleatoria dentro
-                    # de la lista de paradas factibles
+                    # si se encuentra de las paradas visitadas, elimina la parada
                     else:
                         if feasible_stops:
                             random_stop: Stop = random.choice(feasible_stops)
@@ -89,20 +90,32 @@ class Crossover:
                                 i += 1
                             else:
                                 route.stops.pop(i)
-                        # elimina la parada analizada en caso de que no haya paradas factibles para agregar
+                                i += 1
                         else:
-                            route.stops.pop(i)
+                            i += 1
                 else:
                     i += 1
+        return child
 
-    def final_repair_solution(self, child, unique_stops):
+    def final_repair_solution(self, child: List[Route], unique_stops):
         # Obtiene la lista de posibles paradas que puedan ser utilizadas en la reparación
         feasible_stops = self.get_feasible_stops(child, unique_stops)
 
         if len(feasible_stops) > 0:
             for stop in feasible_stops:
                 for route in child:
-                    print("ass")
+                    if route.students + stop.num_assigned_students <= self.sbrp.bus_capacity:
+                        route.stops.insert(len(route.stops)-1, stop)
+                        break
+        return child
+
+    def repair(self, child, unique_stops):
+        child_copy = copy.deepcopy(child)
+
+        child_return = self.initial_repair_solution(child_copy, unique_stops)
+        child_return = self.final_repair_solution(child_copy, unique_stops)
+
+        return child_return
 
     def update_route_students_in_solution(self, solution):
         for route in solution:

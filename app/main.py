@@ -11,38 +11,40 @@ def main():
     sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst60-5s20-200-c50-w10.xpress")
     StopAssigner.student_to_stop_closest_to_school(sbrp)
 
-    genetic = GeneticAlgorithm(population_size=2, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
-                               num_generations=1)
+    genetic = GeneticAlgorithm(population_size=50, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
+                               num_generations=2000)
 
     print("Inicializando la población...")
 
     genetic.initialize_population()
 
     print("Calculando la aptitud de la población inicial...")
-    Visualizer.plot_routes(sbrp, genetic.get_best_solution())
+    #Visualizer.plot_routes(sbrp, genetic.get_best_solution())
 
     initial_fitness_values = genetic.calculate_fitness()
     print("Valores de aptitud inicial:", initial_fitness_values)
     print("La mejor solucion obtiene un resultado de: ")
     print(min(initial_fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
+    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
 
-    genetic.run()
+    genetic.execute()
 
     print("Calculando la aptitud de la población final...")
     fitness_values = genetic.calculate_fitness()
 
     print("La mejor solucion obtiene un resultado de: ")
     print(min(fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
+    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
 
     print("Valores de aptitud final:", fitness_values)
 
     genetic.calculate_average(fitness_values=fitness_values, initial_fitness_values=initial_fitness_values)
 
-    genetic.validate_solution(genetic.get_best_solution())
+    genetic.validate_solution(genetic.get_best_solution(genetic.population))
 
-    Visualizer.plot_routes(sbrp, genetic.get_best_solution())
+    Visualizer.plot_routes(sbrp, genetic.get_best_solution(genetic.population))
+
+    print(f"La mejor solucion es {genetic.calculate_individual_fitness(genetic.best_solution)}")
 
 
 def save_status():
@@ -58,33 +60,29 @@ def save_status():
 
 def testing_scenario():
     # Lee la instancia
-    sbrp = Utils.load_state(file_path="save_sbrp.pkl")
-    genetic = Utils.load_state(file_path="save_genetic.pkl")
-    print("Calculando la aptitud de la población inicial...")
-    Visualizer.plot_routes(sbrp, genetic.get_best_solution())
+    sbrp: SBRP = Utils.load_state(file_path="save_sbrp.pkl")
+    genetic: GeneticAlgorithm = Utils.load_state(file_path="save_genetic.pkl")
+
+    #Visualizer.plot_routes(sbrp, genetic.get_best_solution())
 
     initial_fitness_values = genetic.calculate_fitness()
-    print("Valores de aptitud inicial:", initial_fitness_values)
     print("La mejor solucion obtiene un resultado de: ")
     print(min(initial_fitness_values))
     print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
 
-    genetic.run()
+    solution1 = genetic.population[0]
+    solution2 = genetic.population[1]
+    child1, child2 = genetic.crossover_operator.crossover(solution1, solution2)
 
-    print("Calculando la aptitud de la población final...")
-    fitness_values = genetic.calculate_fitness()
+    genetic.population.append(child1)
+    genetic.population.append(child2)
 
-    print("La mejor solucion obtiene un resultado de: ")
-    print(min(fitness_values))
+
     print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
 
-    print("Valores de aptitud final:", fitness_values)
 
-    genetic.calculate_average(fitness_values=fitness_values, initial_fitness_values=initial_fitness_values)
+    print("")
 
-    genetic.validate_solution(genetic.get_best_solution())
-
-    Visualizer.plot_routes(sbrp, genetic.get_best_solution())
 
 if __name__ == "__main__":
-    testing_scenario()
+    main()

@@ -16,6 +16,8 @@ class GeneticAlgorithm:
         self.population = []
         self.num_generations = num_generations
         self.crossover_operator = Crossover(sbrp, crossover_rate)
+        self.best_solution = None
+        self.generation = 0
 
     def initialize_population(self):
         for _ in range(self.population_size):
@@ -25,14 +27,17 @@ class GeneticAlgorithm:
 
     def calculate_individual_fitness(self, individual):
         total_cost = 0
-        for route in individual:
-            for i in range(len(route.stops) - 1):
-                stop1 = route.stops[i]
-                stop2 = route.stops[i + 1]
-                total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][
-                    self.sbrp.id_to_index_stops[stop2. id]]
-        fitness = total_cost
-        return fitness
+        if individual:
+            for route in individual:
+                for i in range(len(route.stops) - 1):
+                    stop1 = route.stops[i]
+                    stop2 = route.stops[i + 1]
+                    total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][
+                        self.sbrp.id_to_index_stops[stop2. id]]
+            fitness = total_cost
+            return fitness
+        else:
+            return 0
 
     def calculate_fitness(self):
         fitness_values = []
@@ -54,12 +59,15 @@ class GeneticAlgorithm:
         # Implementación de la mutación
         pass
 
-    def run(self):
+    def execute(self):
         # Inicializa la población
         self.initialize_population()
+        self.run()
 
+    def run(self):
         # Ejecuta el algoritmo genético durante num_generaciones
-        for _ in range(self.num_generations):
+        for i in range(self.num_generations):
+            print(i)
             # Crea una nueva población vacía
             new_population = []
 
@@ -78,8 +86,19 @@ class GeneticAlgorithm:
                 new_population.append(child1)
                 new_population.append(child2)
 
+            self.update_best_solution(new_population, i)
+
             # Reemplaza la población antigua con la nueva
             self.population = new_population[:self.population_size]
+
+    def update_best_solution(self, population, generation):
+        # Busca la mejor solución de esta generación
+        new_best_solution = self.get_best_solution(population)
+
+        if self.calculate_individual_fitness(self.best_solution) > self.calculate_individual_fitness(
+                    new_best_solution):
+            self.best_solution = new_best_solution
+            self.generation = generation
 
     def calculate_average(self, fitness_values, initial_fitness_values):
         # Calcula el porcentaje de mejora para cada individuo
@@ -91,8 +110,8 @@ class GeneticAlgorithm:
         print("El porcentaje de mejora promedio en la aptitud de la población es del {}%.".format(
             average_improvement_percentage))
 
-    def get_best_solution(self):
-        best_solution = min(self.population, key=self.calculate_individual_fitness)
+    def get_best_solution(self, population):
+        best_solution = min(population, key=self.calculate_individual_fitness)
         return best_solution
 
     def validate_solution(self, solution):
@@ -103,17 +122,25 @@ class GeneticAlgorithm:
             # Verifica que no se repita ninguna parada en una ruta
             seen_stops = set()
             for stop in route.stops:
-                key = (stop.coord_x, stop.coord_y)
+                key = stop.id
                 if key in seen_stops and not isinstance(stop, School):
                     return False
                 seen_stops.add(key)
-        # Si la solución pasa todas las verificaciones, es válida
+
+            # Verifica que no se exceda la capacidad del autobus
+            total = 0
+            for stop in route.stops:
+                total += stop.num_assigned_students
+            if total > self.sbrp.bus_capacity:
+                return False
         return True
 
     def count_stops(self, solution):
-        count = 0
+        count: int = 0
         for route in solution:
+
             for stop in route.stops:
                 if not isinstance(stop, School):
                     count += 1
         return count
+
