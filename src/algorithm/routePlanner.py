@@ -11,8 +11,8 @@ class RoutePlanner:
         # Inicializa una ruta compuesta por una lista vacía de stops
         route = Route(bus=None)
 
-        # Obtiene una copia de las paradas que tienen al menos un estudiante
-        available_stops = [stop for stop in sbrp.stops if stop.num_assigned_students > 0]
+        # Obtiene una copia de las paradas que tienen al menos un estudiante y no han sido asignadas
+        available_stops = [stop for stop in sbrp.stops if stop.num_assigned_students > 0 and stop.is_assigned is False]
         # Inicializa un contador para la capacidad del autobús
         bus_capacity = sbrp.bus_capacity
 
@@ -35,8 +35,8 @@ class RoutePlanner:
             # Actualiza la capacidad del autobús
             bus_capacity -= stop.num_assigned_students
 
-            # Actualiza el número de estudiantes asignados a la parada
-            stop.num_assigned_students = 0
+            # Actualiza el estado de la parada
+            stop.is_assigned = True
 
             # Elimina la parada de la lista de paradas disponibles
             available_stops.remove(stop)

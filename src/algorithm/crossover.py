@@ -16,6 +16,7 @@ class Crossover:
         # Genera un punto de cruce aleatorio
         size = min(len(parent1), len(parent2))
         cxpoint = random.randint(1, size)
+        cxpoint = 3
 
         # Crea los hijos con las partes de los padres
         child1 = parent1[:cxpoint] + parent2[cxpoint:]
@@ -27,9 +28,10 @@ class Crossover:
 
         # Realiza la reparación de las soluciones
 
-        # Obtiene la lista de las paradas que contienen ambos hijos
+        # 1. Obtiene la lista de las paradas que contienen ambos hijos
         unique_stops = self.unique_stops([child1, child2])
 
+        # 2. Repara los hijos
         child1 = self.repair(child1, unique_stops)
         child2 = self.repair(child2, unique_stops)
 
@@ -105,7 +107,7 @@ class Crossover:
             for stop in feasible_stops:
                 for route in child:
                     if route.students + stop.num_assigned_students <= self.sbrp.bus_capacity:
-                        route.stops.insert(len(route.stops)-1, stop)
+                        route.stops.insert(len(route.stops) - 1, stop)
                         break
         return child
 
@@ -119,20 +121,8 @@ class Crossover:
 
     def update_route_students_in_solution(self, solution):
         for route in solution:
-            i = 0
             students_sum = 0
-            while i < len(route.stops):
-                if not isinstance(route.stops[i], School):
-                    route.stops[i].num_assigned_students = self.get_stop_students_sbrp(route.stops[i])
-                    students_sum = students_sum + route.stops[i].num_assigned_students
-                i = i + 1
+            for stop in route.stops:
+                students_sum += stop.num_assigned_students
             route.students = students_sum
 
-    def get_stop_students_sbrp(self, stop: Stop):
-        id = stop.id
-        returned_stop: Stop
-        for s in self.sbrp.stops:
-            if s.id == id:
-                returned_stop = s
-                return returned_stop.num_assigned_students
-        return None

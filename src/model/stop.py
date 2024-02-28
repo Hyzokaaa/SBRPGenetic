@@ -5,6 +5,7 @@ class Stop:
         self.coord_x = coord_x
         self.coord_y = coord_y
         self.num_assigned_students = num_assigned_students
+        self.is_assigned = False
 
     def __eq__(self, other):
         if isinstance(other, Stop):

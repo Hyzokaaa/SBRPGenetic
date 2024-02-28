@@ -3,7 +3,6 @@ from src.algorithm.geneticAlgorithm import GeneticAlgorithm
 from src.model.sbrp import SBRP
 from src.algorithm.stopAssigner import StopAssigner
 from src.utils.visualizer import Visualizer
-import os;
 
 
 def main():
@@ -11,40 +10,35 @@ def main():
     sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst60-5s20-200-c50-w10.xpress")
     StopAssigner.student_to_stop_closest_to_school(sbrp)
 
-    genetic = GeneticAlgorithm(population_size=50, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
-                               num_generations=2000)
+    # Inicializa el algoritmo con sus parámetros
+    genetic = GeneticAlgorithm(population_size=30, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
+                               num_generations=50)
 
-    print("Inicializando la población...")
-
+    # Inicializa la población
     genetic.initialize_population()
 
-    print("Calculando la aptitud de la población inicial...")
-    #Visualizer.plot_routes(sbrp, genetic.get_best_solution())
+    # Conserva la mejor solución de la población inicial para posterior análisis estadístico
+    initial_best_solution = genetic.get_best_solution(genetic.population)
+    print("La mejor solucón obtiene un resultado de: ")
+    print(genetic.calculate_individual_fitness(initial_best_solution))
 
-    initial_fitness_values = genetic.calculate_fitness()
-    print("Valores de aptitud inicial:", initial_fitness_values)
-    print("La mejor solucion obtiene un resultado de: ")
-    print(min(initial_fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
-
+    # Ejecuta el algoritmo
     genetic.execute()
 
-    print("Calculando la aptitud de la población final...")
-    fitness_values = genetic.calculate_fitness()
+    # Guarda en una variable la mejor solución al terminar de ejecutar el algoritmo para análisis posterior
+    final_best_solution = genetic.best_solution
 
-    print("La mejor solucion obtiene un resultado de: ")
-    print(min(fitness_values))
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
+    print("La mejor solucón obtiene un resultado de: ")
+    print(genetic.calculate_individual_fitness(final_best_solution))
+    print(
+        f"La mejor mejor solución tiene un total de {genetic.count_stops(final_best_solution)} paradas")
 
-    print("Valores de aptitud final:", fitness_values)
+    print(
+        genetic.calculate_average(initial_best_solution=initial_best_solution, final_best_solution=final_best_solution))
 
-    genetic.calculate_average(fitness_values=fitness_values, initial_fitness_values=initial_fitness_values)
+    genetic.validate_solution(final_best_solution)
 
-    genetic.validate_solution(genetic.get_best_solution(genetic.population))
-
-    Visualizer.plot_routes(sbrp, genetic.get_best_solution(genetic.population))
-
-    print(f"La mejor solucion es {genetic.calculate_individual_fitness(genetic.best_solution)}")
+    #Visualizer.plot_routes(sbrp, final_best_solution)
 
 
 def save_status():
@@ -63,7 +57,7 @@ def testing_scenario():
     sbrp: SBRP = Utils.load_state(file_path="save_sbrp.pkl")
     genetic: GeneticAlgorithm = Utils.load_state(file_path="save_genetic.pkl")
 
-    #Visualizer.plot_routes(sbrp, genetic.get_best_solution())
+    # Visualizer.plot_routes(sbrp, genetic.get_best_solution())
 
     initial_fitness_values = genetic.calculate_fitness()
     print("La mejor solucion obtiene un resultado de: ")
@@ -77,11 +71,10 @@ def testing_scenario():
     genetic.population.append(child1)
     genetic.population.append(child2)
 
+    print(
+        f"La mejor mejor solución tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
 
-    print(f"La mejor mejor solucion tiene un total de {genetic.count_stops(genetic.get_best_solution())} paradas")
-
-
-    print("")
+    print("asd")
 
 
 if __name__ == "__main__":

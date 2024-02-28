@@ -25,6 +25,8 @@ class GeneticAlgorithm:
             solution = RoutePlanner.generate_routes(sbrp_copy)
             self.population.append(solution)
 
+        self.best_solution = self.get_best_solution(population=self.population)
+
     def calculate_individual_fitness(self, individual):
         total_cost = 0
         if individual:
@@ -33,7 +35,7 @@ class GeneticAlgorithm:
                     stop1 = route.stops[i]
                     stop2 = route.stops[i + 1]
                     total_cost += self.sbrp.stop_cost_matrix[self.sbrp.id_to_index_stops[stop1.id]][
-                        self.sbrp.id_to_index_stops[stop2. id]]
+                        self.sbrp.id_to_index_stops[stop2.id]]
             fitness = total_cost
             return fitness
         else:
@@ -67,7 +69,6 @@ class GeneticAlgorithm:
     def run(self):
         # Ejecuta el algoritmo genético durante num_generaciones
         for i in range(self.num_generations):
-            print(i)
             # Crea una nueva población vacía
             new_population = []
 
@@ -94,30 +95,24 @@ class GeneticAlgorithm:
     def update_best_solution(self, population, generation):
         # Busca la mejor solución de esta generación
         new_best_solution = self.get_best_solution(population)
-
-        if self.calculate_individual_fitness(self.best_solution) > self.calculate_individual_fitness(
+        if self.best_solution is not None:
+            if self.calculate_individual_fitness(self.best_solution) > self.calculate_individual_fitness(
                     new_best_solution):
+                self.best_solution = new_best_solution
+                self.generation = generation
+        else:
             self.best_solution = new_best_solution
-            self.generation = generation
 
-    def calculate_average(self, fitness_values, initial_fitness_values):
-        # Calcula el porcentaje de mejora para cada individuo
-        improvement_percentage = [100 * (f - i) / i for f, i in zip(fitness_values, initial_fitness_values)]
-
-        # Calcula el porcentaje de mejora promedio
-        average_improvement_percentage = sum(improvement_percentage) / len(improvement_percentage)
-
-        print("El porcentaje de mejora promedio en la aptitud de la población es del {}%.".format(
-            average_improvement_percentage))
+    def calculate_average(self, initial_best_solution, final_best_solution):
+        # Calcula el porcentaje de mejora del algoritmo
+        return ((self.calculate_individual_fitness(initial_best_solution) - self.calculate_individual_fitness(
+            final_best_solution)) / self.calculate_individual_fitness(initial_best_solution)) * 100
 
     def get_best_solution(self, population):
         best_solution = min(population, key=self.calculate_individual_fitness)
         return best_solution
 
     def validate_solution(self, solution):
-        """
-        Verifica que una solución satisfaga todas las condiciones del problema.
-        """
         for route in solution:
             # Verifica que no se repita ninguna parada en una ruta
             seen_stops = set()
@@ -143,4 +138,3 @@ class GeneticAlgorithm:
                 if not isinstance(stop, School):
                     count += 1
         return count
-
