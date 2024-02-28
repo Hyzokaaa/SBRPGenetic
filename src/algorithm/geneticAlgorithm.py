@@ -17,7 +17,7 @@ class GeneticAlgorithm:
         self.num_generations = num_generations
         self.crossover_operator = Crossover(sbrp, crossover_rate)
         self.best_solution = None
-        self.generation = 0
+        self.generation_best_solution = 0
 
     def initialize_population(self):
         for _ in range(self.population_size):
@@ -51,7 +51,6 @@ class GeneticAlgorithm:
     def selection(self):
         # Selecciona al azar un subconjunto de la población
         tournament = random.sample(self.population, self.tournament_size)
-
         # Elige al individuo con la mayor aptitud del torneo
         winner = min(tournament, key=self.calculate_individual_fitness)
 
@@ -69,6 +68,7 @@ class GeneticAlgorithm:
     def run(self):
         # Ejecuta el algoritmo genético durante num_generaciones
         for i in range(self.num_generations):
+            print(i)
             # Crea una nueva población vacía
             new_population = []
 
@@ -89,19 +89,22 @@ class GeneticAlgorithm:
 
             self.update_best_solution(new_population, i)
 
+
             # Reemplaza la población antigua con la nueva
             self.population = new_population[:self.population_size]
 
     def update_best_solution(self, population, generation):
         # Busca la mejor solución de esta generación
         new_best_solution = self.get_best_solution(population)
+        print(self.calculate_individual_fitness(new_best_solution))
         if self.best_solution is not None:
             if self.calculate_individual_fitness(self.best_solution) > self.calculate_individual_fitness(
                     new_best_solution):
                 self.best_solution = new_best_solution
-                self.generation = generation
+                self.generation_best_solution = generation
         else:
             self.best_solution = new_best_solution
+            self.generation_best_solution = generation
 
     def calculate_average(self, initial_best_solution, final_best_solution):
         # Calcula el porcentaje de mejora del algoritmo

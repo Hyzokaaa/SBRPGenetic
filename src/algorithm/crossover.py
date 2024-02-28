@@ -14,9 +14,10 @@ class Crossover:
 
     def crossover(self, parent1, parent2):
         # Genera un punto de cruce aleatorio
-        size = min(len(parent1), len(parent2))
+        m1 = self.count_routes_valids(parent1)
+        m2 = self.count_routes_valids(parent2)
+        size = min(m1, m2)
         cxpoint = random.randint(1, size)
-        cxpoint = 3
 
         # Crea los hijos con las partes de los padres
         child1 = parent1[:cxpoint] + parent2[cxpoint:]
@@ -126,3 +127,9 @@ class Crossover:
                 students_sum += stop.num_assigned_students
             route.students = students_sum
 
+    def count_routes_valids(self, solution):
+        count = 0
+        for route in solution:
+            if len(route.stops) > 2:
+                count += 1
+        return count
