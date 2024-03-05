@@ -7,7 +7,7 @@ from src.model.school import School
 from src.model.stop import Stop
 
 
-class Crossover:
+class CrossoverOperator:
     def __init__(self, sbrp, crossover_rate):
         self.sbrp = sbrp
         self.crossover_rate = crossover_rate
@@ -22,10 +22,6 @@ class Crossover:
         # Crea los hijos con las partes de los padres
         child1 = parent1[:cxpoint] + parent2[cxpoint:]
         child2 = parent2[:cxpoint] + parent1[cxpoint:]
-
-        # Recalcula la cantidad de estudiantes por ruta en cada solución
-        self.update_route_students_in_solution(child1)
-        self.update_route_students_in_solution(child2)
 
         # Realiza la reparación de las soluciones
 
@@ -83,18 +79,22 @@ class Crossover:
                     if stop not in seen_stops:
                         seen_stops.append(stop)
                         i += 1
-                    # si se encuentra de las paradas visitadas, elimina la parada
+                    # si se encuentra en las paradas visitadas, sustituye la parada por una factible
                     else:
                         if feasible_stops:
                             random_stop: Stop = random.choice(feasible_stops)
-                            if route.students + random_stop.num_assigned_students < self.sbrp.bus_capacity:
+                            if route.students - stop.num_assigned_students + random_stop.num_assigned_students < self.sbrp.bus_capacity:
                                 feasible_stops.remove(random_stop)
                                 route.stops[i] = random_stop
+                                route.students = route.students - stop.num_assigned_students + random_stop.num_assigned_students
                                 i += 1
                             else:
+                                route.students -= route.stops[i].num_assigned_students
                                 route.stops.pop(i)
                                 i += 1
                         else:
+                            route.students -= route.stops[i].num_assigned_students
+                            route.stops.pop(i)
                             i += 1
                 else:
                     i += 1
@@ -107,8 +107,9 @@ class Crossover:
         if len(feasible_stops) > 0:
             for stop in feasible_stops:
                 for route in child:
-                    if route.students + stop.num_assigned_students <= self.sbrp.bus_capacity:
+                    if route.students + stop.num_assigned_students <= self.sbrp.bus_capacity and stop not in route.stops:
                         route.stops.insert(len(route.stops) - 1, stop)
+                        route.students += stop.num_assigned_students
                         break
         return child
 

@@ -7,7 +7,7 @@ from src.model.student import Student
 from src.utils.utils import Utils
 
 
-class StopAssigner:
+class StudentStopAssigner:
     @staticmethod
     def get_valid_stops(sbrp: SBRP, student: Student):
         # Encuentra las paradas que están dentro de la distancia máxima y que no exceden la capacidad del autobús
@@ -22,7 +22,7 @@ class StopAssigner:
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:
             # Obtiene las paradas válidas
-            valid_stops = StopAssigner.get_valid_stops(sbrp, student)
+            valid_stops = StudentStopAssigner.get_valid_stops(sbrp, student)
 
             # Si no hay paradas válidas, entonces no se asigna parada a este estudiante
             if not valid_stops:
@@ -46,7 +46,7 @@ class StopAssigner:
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:
             # Obtiene las paradas válidas
-            valid_stops = StopAssigner.get_valid_stops(sbrp, student)
+            valid_stops = StudentStopAssigner.get_valid_stops(sbrp, student)
 
             # Si no hay paradas válidas, entonces no se asigna parada a este estudiante
             if not valid_stops:
@@ -65,7 +65,7 @@ class StopAssigner:
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:
             # Obtiene las paradas válidas
-            valid_stops = StopAssigner.get_valid_stops(sbrp, student)
+            valid_stops = StudentStopAssigner.get_valid_stops(sbrp, student)
 
             # Si no hay paradas válidas, entonces no se asigna ninguna parada
             if not valid_stops:
@@ -89,7 +89,7 @@ class StopAssigner:
         # Para cada estudiante en la lista de estudiantes
         for student in sbrp.students:
             # Obtiene las paradas válidas
-            valid_stops = StopAssigner.get_valid_stops(sbrp, student)
+            valid_stops = StudentStopAssigner.get_valid_stops(sbrp, student)
             # Si no hay paradas válidas, entonces no se asigna ninguna parada
             if not valid_stops:
                 student.assigned_stop = None

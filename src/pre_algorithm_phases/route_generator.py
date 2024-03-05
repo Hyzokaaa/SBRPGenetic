@@ -4,7 +4,7 @@ from src.model.route import Route
 from src.model.sbrp import SBRP
 
 
-class RoutePlanner:
+class RouteGenerator:
 
     @staticmethod
     def generate_route(sbrp: SBRP):
@@ -50,7 +50,7 @@ class RoutePlanner:
     def generate_routes(sbrp):
         routes = []
         for _ in sbrp.buses:
-            route = RoutePlanner.generate_route(sbrp)
+            route = RouteGenerator.generate_route(sbrp)
             routes.append(route)
 
         return routes

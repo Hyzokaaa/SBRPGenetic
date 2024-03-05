@@ -1,5 +1,5 @@
-from src.algorithm.crossover import Crossover
-from src.algorithm.routePlanner import RoutePlanner
+from src.algorithm.crossover_operator import CrossoverOperator
+from src.pre_algorithm_phases.route_generator import RouteGenerator
 import copy
 import random
 
@@ -15,14 +15,14 @@ class GeneticAlgorithm:
         self.sbrp = sbrp
         self.population = []
         self.num_generations = num_generations
-        self.crossover_operator = Crossover(sbrp, crossover_rate)
+        self.crossover_operator = CrossoverOperator(sbrp, crossover_rate)
         self.best_solution = None
         self.generation_best_solution = 0
 
     def initialize_population(self):
         for _ in range(self.population_size):
             sbrp_copy = copy.deepcopy(self.sbrp)
-            solution = RoutePlanner.generate_routes(sbrp_copy)
+            solution = RouteGenerator.generate_routes(sbrp_copy)
             self.population.append(solution)
 
         self.best_solution = self.get_best_solution(population=self.population)

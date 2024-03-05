@@ -1,17 +1,17 @@
 from src.utils.utils import Utils
-from src.algorithm.geneticAlgorithm import GeneticAlgorithm
+from src.algorithm.genetic_algorithm import GeneticAlgorithm
 from src.model.sbrp import SBRP
-from src.algorithm.stopAssigner import StopAssigner
+from src.pre_algorithm_phases.student_stop_assigner import StudentStopAssigner
 from src.utils.visualizer import Visualizer
 
 
 def main():
     # Lee la instancia
-    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/test/inst60-5s20-200-c50-w10.xpress")
-    StopAssigner.student_to_stop_closest_to_school(sbrp)
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/real/inst55-7s20-100-c25-w40.xpress")
+    StudentStopAssigner.student_to_stop_closest_to_school(sbrp)
 
     # Inicializa el algoritmo con sus parámetros
-    genetic = GeneticAlgorithm(population_size=1000, mutation_rate=0.1, crossover_rate=0.95, sbrp=sbrp, tournament_size=2,
+    genetic = GeneticAlgorithm(population_size=100, mutation_rate=0.1, crossover_rate=0.90, sbrp=sbrp, tournament_size=2,
                                num_generations=100)
 
     # Inicializa la población
@@ -19,6 +19,7 @@ def main():
 
     # Conserva la mejor solución de la población inicial para posterior análisis estadístico
     initial_best_solution = genetic.get_best_solution(genetic.population)
+    # Visualizer.plot_routes(sbrp, initial_best_solution)
     print("La mejor solución obtiene un resultado de: ")
     print(genetic.calculate_individual_fitness(initial_best_solution))
 
@@ -28,13 +29,15 @@ def main():
     # Guarda en una variable la mejor solución al terminar de ejecutar el algoritmo para análisis posterior
     final_best_solution = genetic.best_solution
 
-    print("La mejor solucón obtiene un resultado de: ")
+    print("La mejor solución obtiene un resultado de: ")
     print(genetic.calculate_individual_fitness(final_best_solution))
-    print(f"En la iteracion {genetic.generation_best_solution}")
+    print(f"En la iteración {genetic.generation_best_solution}")
     print(
         f"La mejor mejor solución tiene un total de {genetic.count_stops(final_best_solution)} paradas")
+    '''
     if genetic.count_stops(final_best_solution) > 20:
         raise Exception(f'La variable tiene un valor de {genetic.count_stops(final_best_solution)}')
+        '''
     print(
         genetic.calculate_average(initial_best_solution=initial_best_solution, final_best_solution=final_best_solution))
 
@@ -45,7 +48,7 @@ def main():
 
 def save_status():
     sbrp = SBRP.read_instance(file_path="data/instances/real/inst60-5s20-200-c50-w10.xpress")
-    StopAssigner.student_to_stop_closest_to_school(sbrp)
+    StudentStopAssigner.student_to_stop_closest_to_school(sbrp)
     genetic = GeneticAlgorithm(population_size=2, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
                                num_generations=1)
     genetic.initialize_population()
