@@ -1,18 +1,25 @@
-from src.utils.utils import Utils
-from src.algorithm.genetic_algorithm import GeneticAlgorithm
-from src.model.sbrp import SBRP
-from src.pre_algorithm_phases.student_stop_assigner import StudentStopAssigner
-from src.utils.visualizer import Visualizer
+from typing import List
+
+from src.problems.problem_sbrp.aplication.algorithm.crossover_operator import CrossoverOperator
+from src.problems.problem_sbrp.aplication.algorithm.hill_climbing import HillClimbing
+from src.problems.problem_sbrp.aplication.algorithm.mutation_operator import MutationOperator
+from src.problems.problem_sbrp.aplication.pre_algorithm_phases.route_generator import RouteGenerator
+from src.problems.problem_sbrp.domain.model.route import Route
+from src.problems.problem_sbrp.presentation.visualizer import Visualizer
+from src.shared.utils.utils import Utils
+from src.problems.problem_sbrp.aplication.algorithm.genetic_algorithm import GeneticAlgorithm
+from src.problems.problem_sbrp.domain.model.sbrp import SBRP
+from src.problems.problem_sbrp.aplication.pre_algorithm_phases.student_stop_assigner import StudentStopAssigner
 
 
 def main():
     # Lee la instancia
-    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/real/inst55-7s20-100-c25-w40.xpress")
+    sbrp = SBRP.read_instance("D:/Git/SBRPGenetic/data/instances/real/inst35-10s10-100-c25-w10.xpress")
     StudentStopAssigner.student_to_stop_closest_to_school(sbrp)
 
     # Inicializa el algoritmo con sus parámetros
-    genetic = GeneticAlgorithm(population_size=100, mutation_rate=0.1, crossover_rate=0.90, sbrp=sbrp, tournament_size=2,
-                               num_generations=100)
+    genetic = GeneticAlgorithm(population_size=100, mutation_rate=1, crossover_rate=1, sbrp=sbrp, tournament_size=2,
+                               num_generations=1000)
 
     # Inicializa la población
     genetic.initialize_population()
@@ -46,34 +53,122 @@ def main():
     # Visualizer.plot_routes(sbrp, final_best_solution)
 
 
-def save_status():
-    sbrp = SBRP.read_instance(file_path="data/instances/real/inst60-5s20-200-c50-w10.xpress")
+def create_context():
+    # Genera un contexto de SBRP con asignación de paradas y lo guarda en un fichero
+    sbrp = SBRP.read_instance(file_path="data/instances/real/inst35-10s10-100-c25-w10.xpress")
     StudentStopAssigner.student_to_stop_closest_to_school(sbrp)
-    genetic = GeneticAlgorithm(population_size=2, mutation_rate=0.1, crossover_rate=0.9, sbrp=sbrp, tournament_size=2,
-                               num_generations=1)
-    genetic.initialize_population()
 
-    Utils.save_state(sbrp, "save_sbrp.pkl")
-    Utils.save_state(genetic, "save_genetic.pkl")
+    Utils.save_state(sbrp, "T-MH/save_sbrp.pkl")
 
 
-def testing_scenario():
+def generate_solution():
+    # Genera una solución luego de cargar un contexto SBRP guardado anteriormente
+    sbrp: SBRP = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+
+    solution = RouteGenerator.generate_routes(sbrp)
+    Utils.save_state(solution, "T-MH/save_solution.pkl")
+    Visualizer.plot_routes(sbrp, solution, "save_solution")
+
+
+def crossover():
     # Lee la instancia
-    sbrp: SBRP = Utils.load_state(file_path="save_sbrp.pkl")
-    genetic: GeneticAlgorithm = Utils.load_state(file_path="save_genetic.pkl")
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    solution1: List[Route] = Utils.load_state(file_path="T-MH/save_solution.pkl")
+    solution2: List[Route] = Utils.load_state(file_path="T-MH/save_solution1.pkl")
 
-    solution1 = genetic.population[0]
-    solution2 = genetic.population[1]
-    child1, child2 = genetic.crossover_operator.crossover(solution1, solution2)
+    print(calculate_individual_fitness(sbrp, solution1))
+    print(calculate_individual_fitness(sbrp, solution2))
 
-    genetic.population.append(child1)
-    genetic.population.append(child2)
+    # Instancia el operador de cruzamiento
+    crossover_operator = CrossoverOperator(sbrp, crossover_rate=1)
+    child1, child2 = crossover_operator.crossover_uniform(solution1, solution2)
+    Visualizer.plot_routes(sbrp, child1, "save_crossover_child")
+    Visualizer.plot_routes(sbrp, child2, "save_crossover_child")
+    print(calculate_individual_fitness(sbrp, child1))
+    print(calculate_individual_fitness(sbrp, child2))
 
-    print(
-        f"La mejor mejor solución tiene un total de {genetic.count_stops(genetic.get_best_solution(genetic.population))} paradas")
+def crossover2():
+    # Lee la instancia
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    solution1: List[Route] = Utils.load_state(file_path="T-MH/save_solution14.pkl")
+    solution2: List[Route] = Utils.load_state(file_path="T-MH/save_solution15.pkl")
 
-    print("asd")
+    print(calculate_individual_fitness(sbrp, solution1))
+    print(calculate_individual_fitness(sbrp, solution2))
+
+    # Instancia el operador de cruzamiento
+    crossover_operator = CrossoverOperator(sbrp, crossover_rate=1)
+    child1, child2 = crossover_operator.crossover_uniform(solution1, solution2)
+    Utils.save_state(child1, "T-MH/save_crossover_child.pkl")
+    Utils.save_state(child2, "T-MH/save_crossover_child.pkl")
+    Visualizer.plot_routes(sbrp, child1, "save_crossover_child")
+    Visualizer.plot_routes(sbrp, child2, "save_crossover_child")
+    print(calculate_individual_fitness(sbrp, child1))
+    print(calculate_individual_fitness(sbrp, child2))
+
+def calculate_individual_fitness(sbrp, individual):
+    total_cost = 0
+    if individual:
+        for route in individual:
+            for i in range(len(route.stops) - 1):
+                stop1 = route.stops[i]
+                stop2 = route.stops[i + 1]
+                total_cost += sbrp.stop_cost_matrix[sbrp.id_to_index_stops[stop1.id]][
+                    sbrp.id_to_index_stops[stop2.id]]
+        fitness = total_cost
+        return fitness
+    else:
+        return 0
+
+def print_solution():
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    c1 = Utils.load_state(file_path="T-MH/save_crossover_child.pkl")
+    c2 = Utils.load_state(file_path="T-MH/save_crossover_child1.pkl")
+    c3 = Utils.load_state(file_path="T-MH/save_crossover_child2.pkl")
+    c4 = Utils.load_state(file_path="T-MH/save_crossover_child3.pkl")
+    c5 = Utils.load_state(file_path="T-MH/save_crossover_child4.pkl")
+    c6 = Utils.load_state(file_path="T-MH/save_crossover_child5.pkl")
+
+    a = [c1,c2,c3,c4,c5,c6]
+
+    for i in a:
+        print(calculate_individual_fitness(sbrp=sbrp, individual=i))
+
+
+def mutation():
+    # Lee la instancia
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    solution1: List[Route] = Utils.load_state(file_path="T-MH/save_solution14.pkl")
+    copy: List[Route] = Utils.load_state(file_path="T-MH/save_solution14.pkl")
+
+    print(calculate_individual_fitness(sbrp, solution1))
+
+    # Instancia el operador de cruzamiento
+    mutation_operator = MutationOperator(sbrp, mutation_rate=1)
+    result = mutation_operator.swap_mutation(solution1)
+    print(calculate_individual_fitness(sbrp,copy))
+    print(calculate_individual_fitness(sbrp, result))
+    print("")
+    Visualizer.plot_routes(sbrp, copy, "save_mutation_father")
+    Visualizer.plot_routes(sbrp, result, "save_mutation_child")
+
+def hill_climbing():
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    hill_climbing_alg = HillClimbing(sbrp=sbrp, max_iter=1000)
+    solution1: List[Route] = Utils.load_state(file_path="T-MH/save_solution14.pkl")
+    results = hill_climbing_alg.execute_and_store(5, solution1)
+    print(results)
+
+def genetic_algortihm():
+    sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
+    genetic = GeneticAlgorithm(population_size=100, mutation_rate=1, crossover_rate=1, sbrp=sbrp, tournament_size=2,
+                               num_generations=1000)
+    genetic.initialize_population()
+    print(genetic.execute_and_store(num_trial=5))
 
 
 if __name__ == "__main__":
-    main()
+    hill_climbing()
+    #genetic_algortihm()
+
+
