@@ -1,15 +1,17 @@
 from typing import List
 
-from src.problems.problem_sbrp.aplication.algorithm.crossover_operator import CrossoverOperator
-from src.problems.problem_sbrp.aplication.algorithm.hill_climbing import HillClimbing
-from src.problems.problem_sbrp.aplication.algorithm.mutation_operator import MutationOperator
-from src.problems.problem_sbrp.aplication.pre_algorithm_phases.route_generator import RouteGenerator
-from src.problems.problem_sbrp.domain.model.route import Route
-from src.problems.problem_sbrp.presentation.visualizer import Visualizer
-from src.shared.utils.utils import Utils
-from src.problems.problem_sbrp.aplication.algorithm.genetic_algorithm import GeneticAlgorithm
-from src.problems.problem_sbrp.domain.model.sbrp import SBRP
-from src.problems.problem_sbrp.aplication.pre_algorithm_phases.student_stop_assigner import StudentStopAssigner
+from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
+from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from shared.aplication.algorithm.crossover_operator import CrossoverOperator
+from shared.aplication.algorithm.hill_climbing import HillClimbing
+from shared.aplication.algorithm.mutation_operator import MutationOperator
+from shared.aplication.pre_algorithm_phases.route_generator import RouteGenerator
+from src.problems.problem_sbrp.model.route import Route
+from shared.presentation.visualizer import Visualizer
+from shared.utils.utils import Utils
+from shared.aplication.algorithm.genetic_algorithm import GeneticAlgorithm
+from shared.domain.sbrp import SBRP
+from shared.aplication.pre_algorithm_phases.student_stop_assigner import StudentStopAssigner
 
 
 def main():
@@ -87,6 +89,7 @@ def crossover():
     print(calculate_individual_fitness(sbrp, child1))
     print(calculate_individual_fitness(sbrp, child2))
 
+
 def crossover2():
     # Lee la instancia
     sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
@@ -106,6 +109,7 @@ def crossover2():
     print(calculate_individual_fitness(sbrp, child1))
     print(calculate_individual_fitness(sbrp, child2))
 
+
 def calculate_individual_fitness(sbrp, individual):
     total_cost = 0
     if individual:
@@ -119,6 +123,7 @@ def calculate_individual_fitness(sbrp, individual):
         return fitness
     else:
         return 0
+
 
 def print_solution():
     sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
@@ -152,6 +157,7 @@ def mutation():
     Visualizer.plot_routes(sbrp, copy, "save_mutation_father")
     Visualizer.plot_routes(sbrp, result, "save_mutation_child")
 
+
 def hill_climbing():
     sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
     hill_climbing_alg = HillClimbing(sbrp=sbrp, max_iter=1000)
@@ -159,16 +165,29 @@ def hill_climbing():
     results = hill_climbing_alg.execute_and_store(5, solution1)
     print(results)
 
-def genetic_algortihm():
+
+def genetic_algorithm():
     sbrp = Utils.load_state(file_path="T-MH/save_sbrp.pkl")
     genetic = GeneticAlgorithm(population_size=100, mutation_rate=1, crossover_rate=1, sbrp=sbrp, tournament_size=2,
                                num_generations=1000)
     genetic.initialize_population()
-    print(genetic.execute_and_store(num_trial=5))
+    best = (genetic.execute_and_store(num_trial=5))
+
+
+def test_input():
+    # Crea una instancia de FileDataInput con la ruta al archivo
+    data_input = FileDataInputSBRP("D:/Git/SBRPGenetic/data/instances/real/inst35-10s10-100-c25-w10.xpress")
+    parameters = data_input.conform()
+
+    # Ahora tienes los datos del problema y puedes usarlos para crear una instancia de ProblemSBRP
+    problem = ProblemSBRP()
+    problem.construct(problem_parameters=parameters)
+    print(problem)
 
 
 if __name__ == "__main__":
-    hill_climbing()
-    #genetic_algortihm()
+    #hill_climbing()
+    #genetic_algorithm()
+    test_input()
 
 
