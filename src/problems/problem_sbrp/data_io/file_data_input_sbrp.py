@@ -1,8 +1,9 @@
-from src.operators.distance.distance_operator import EuclideanDistance
+from src.data_io.data_input import DataInput
+from src.operators.distance.distance_euclidean import EuclideanDistance
 from src.problems.problem_parameters import ProblemParameters
 
 
-class FileDataInputSBRP:
+class FileDataInputSBRP(DataInput):
     def __init__(self, file_path):
         self.file = open(file_path, 'r')
 
@@ -13,11 +14,11 @@ class FileDataInputSBRP:
         return tuple(map(float, self.file.readline().split()))
 
     def read_stop_coordinates(self, m):
-        return [coordinates for coordinates in
+        return [[float(coordinate) for coordinate in coordinates] for coordinates in
                 (self.file.readline().split() for _ in range(m))]
 
     def read_student_coordinates(self, n):
-        return [coordinates for coordinates in
+        return [[float(coordinate) for coordinate in coordinates] for coordinates in
                 (self.file.readline().split() for _ in range(n))]
 
     def conform(self):

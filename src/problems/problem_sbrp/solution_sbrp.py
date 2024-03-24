@@ -1,4 +1,4 @@
-from src.solution import Solution
+from src.solution.solution import Solution
 
 
 class SolutionSBRP(Solution):

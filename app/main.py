@@ -1,6 +1,11 @@
 from typing import List
 
+from src.operators.distance.distance_manhattan import ManhattanDistance
+from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
+from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_school_stop_assign import \
+    HStudentToStopClosestToSchoolStopAssign
+from src.problems.problem_sbrp.initial_solution.stop_assignment.random_stop_assign import RandomStopAssign
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from shared.aplication.algorithm.crossover_operator import CrossoverOperator
 from shared.aplication.algorithm.hill_climbing import HillClimbing
@@ -179,11 +184,17 @@ def test_input():
     data_input = FileDataInputSBRP("D:/Git/SBRPGenetic/data/instances/real/inst35-10s10-100-c25-w10.xpress")
     parameters = data_input.conform()
 
+
     # Ahora tienes los datos del problema y puedes usarlos para crear una instancia de ProblemSBRP
     problem = ProblemSBRP()
     problem.construct(problem_parameters=parameters)
-    print(problem)
+    #print(problem)
 
+    distance_operator = ManhattanDistance()
+    stop_assign_parameters = OperatorParameters(problem=problem, distance_operator=distance_operator)
+    initial_stop_assign_operator = HStudentToStopClosestToSchoolStopAssign()
+    initial_stop_assign_operator.generate(stop_assign_parameters)
+    print(problem)
 
 if __name__ == "__main__":
     #hill_climbing()
