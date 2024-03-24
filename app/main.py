@@ -3,6 +3,10 @@ from typing import List
 from src.operators.distance.distance_manhattan import ManhattanDistance
 from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
+from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_better_stop_stop_assign import \
+    HStudentToBetterStopStopAssign
+from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_centroid_stop_assign import \
+    HStudentToStopClosestToCentroidStopAssign
 from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_school_stop_assign import \
     HStudentToStopClosestToSchoolStopAssign
 from src.problems.problem_sbrp.initial_solution.stop_assignment.random_stop_assign import RandomStopAssign
@@ -192,7 +196,7 @@ def test_input():
 
     distance_operator = ManhattanDistance()
     stop_assign_parameters = OperatorParameters(problem=problem, distance_operator=distance_operator)
-    initial_stop_assign_operator = HStudentToStopClosestToSchoolStopAssign()
+    initial_stop_assign_operator = HStudentToBetterStopStopAssign()
     initial_stop_assign_operator.generate(stop_assign_parameters)
     print(problem)
 
