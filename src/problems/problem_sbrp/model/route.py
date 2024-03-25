@@ -4,8 +4,7 @@ from src.problems.problem_sbrp.model.stop import Stop
 
 
 class Route:
-    def __init__(self, bus, stops: List[Stop] = None):
-        self.bus = bus
+    def __init__(self, stops: List[Stop] = None):
         self.students = 0
         if stops is None:
             self.stops = []

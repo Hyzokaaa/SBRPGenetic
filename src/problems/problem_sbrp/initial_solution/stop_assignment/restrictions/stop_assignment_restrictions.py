@@ -1,4 +1,3 @@
-from src.operators.distance.distance_operator import Distance
 from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.model.student import Student
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP

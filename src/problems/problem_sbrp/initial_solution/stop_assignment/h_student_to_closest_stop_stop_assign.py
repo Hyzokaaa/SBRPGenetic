@@ -5,7 +5,7 @@ from src.problems.problem_sbrp.initial_solution.stop_assignment.restrictions.sto
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
-class HStudentToBetterStopStopAssign(InitialConstruction):
+class HStudentToClosestStopStopAssign(InitialConstruction):
 
     def generate(self, parameters: OperatorParameters):
         problem: ProblemSBRP = parameters.problem

@@ -3,8 +3,11 @@ from typing import List
 from src.operators.distance.distance_manhattan import ManhattanDistance
 from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
-from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_better_stop_stop_assign import \
-    HStudentToBetterStopStopAssign
+from src.problems.problem_sbrp.initial_solution.route_generation.random_route_generator_strategy import \
+    RandomRouteGeneratorStrategy
+from src.problems.problem_sbrp.initial_solution.route_generation.route_generator import RouteGenerator
+from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_closest_stop_stop_assign import \
+    HStudentToClosestStopStopAssign
 from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_centroid_stop_assign import \
     HStudentToStopClosestToCentroidStopAssign
 from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_school_stop_assign import \
@@ -14,7 +17,6 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from shared.aplication.algorithm.crossover_operator import CrossoverOperator
 from shared.aplication.algorithm.hill_climbing import HillClimbing
 from shared.aplication.algorithm.mutation_operator import MutationOperator
-from shared.aplication.pre_algorithm_phases.route_generator import RouteGenerator
 from src.problems.problem_sbrp.model.route import Route
 from shared.presentation.visualizer import Visualizer
 from shared.utils.utils import Utils
@@ -143,7 +145,7 @@ def print_solution():
     c5 = Utils.load_state(file_path="T-MH/save_crossover_child4.pkl")
     c6 = Utils.load_state(file_path="T-MH/save_crossover_child5.pkl")
 
-    a = [c1,c2,c3,c4,c5,c6]
+    a = [c1, c2, c3, c4, c5, c6]
 
     for i in a:
         print(calculate_individual_fitness(sbrp=sbrp, individual=i))
@@ -160,7 +162,7 @@ def mutation():
     # Instancia el operador de cruzamiento
     mutation_operator = MutationOperator(sbrp, mutation_rate=1)
     result = mutation_operator.swap_mutation(solution1)
-    print(calculate_individual_fitness(sbrp,copy))
+    print(calculate_individual_fitness(sbrp, copy))
     print(calculate_individual_fitness(sbrp, result))
     print("")
     Visualizer.plot_routes(sbrp, copy, "save_mutation_father")
@@ -186,23 +188,27 @@ def genetic_algorithm():
 def test_input():
     # Crea una instancia de FileDataInput con la ruta al archivo
     data_input = FileDataInputSBRP("D:/Git/SBRPGenetic/data/instances/real/inst35-10s10-100-c25-w10.xpress")
-    parameters = data_input.conform()
-
+    problem_parameters = data_input.conform()
 
     # Ahora tienes los datos del problema y puedes usarlos para crear una instancia de ProblemSBRP
     problem = ProblemSBRP()
-    problem.construct(problem_parameters=parameters)
-    #print(problem)
+    problem.construct(problem_parameters=problem_parameters)
+    # print(problem)
 
     distance_operator = ManhattanDistance()
     stop_assign_parameters = OperatorParameters(problem=problem, distance_operator=distance_operator)
-    initial_stop_assign_operator = HStudentToBetterStopStopAssign()
+    initial_stop_assign_operator = HStudentToClosestStopStopAssign()
     initial_stop_assign_operator.generate(stop_assign_parameters)
     print(problem)
 
+    route_generator_strategy = RandomRouteGeneratorStrategy()
+    route_generator_parameters = OperatorParameters(problem=problem, route_generator_strategy=route_generator_strategy)
+    route_generator = RouteGenerator()
+    routes = route_generator.generate(route_generator_parameters)
+    print(problem)
+
+
 if __name__ == "__main__":
-    #hill_climbing()
-    #genetic_algorithm()
+    # hill_climbing()
+    # genetic_algorithm()
     test_input()
-
-

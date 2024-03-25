@@ -2,6 +2,7 @@ from typing import List
 
 from src.problems.problem import Problem
 from src.problems.problem_parameters import ProblemParameters
+from src.problems.problem_sbrp.model.bus import Bus
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.model.student import Student
@@ -13,7 +14,7 @@ class ProblemSBRP(Problem):
         self.school: School = None
         self.stops: List[Stop] = None
         self.students: List[Student] = None
-        self.vehicles = None
+        self.vehicles: List[Bus] = None
         self.bus_capacity = None
         self.w_distance = None
 
@@ -24,7 +25,7 @@ class ProblemSBRP(Problem):
                           for i, (coordinates) in enumerate(problem_parameters.sbrp_stops_coordinates)]
         self.students = [Student(id=i, name=f"Student {i}", coordinates=coordinates)
                          for i, (coordinates) in enumerate(problem_parameters.sbrp_student_coordinates)]
-        self.vehicles = problem_parameters.sbrp_vehicles
+        self.vehicles = [Bus(id=i, name=f"Bus{i}")for i in range(problem_parameters.sbrp_vehicles)]
         self.bus_capacity = problem_parameters.sbrp_bus_capacity
         self.w_distance = problem_parameters.sbrp_walk_distance
 
