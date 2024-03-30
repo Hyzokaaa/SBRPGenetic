@@ -10,5 +10,4 @@ class AlgorithmGenetic(OptimizationAlgorithm):
     def optimize(self, parameters: AlgorithmParameters):
         problem: Problem = parameters.problem
         initial_construction_operator: InitialConstructionOperator = parameters.initial_construction_operator
-        initial_construction_operator_final: InitialConstructionOperator = parameters.initial_construction_operator_final
         crossover_operator: CrossoverOperator = parameters.crossover_operator

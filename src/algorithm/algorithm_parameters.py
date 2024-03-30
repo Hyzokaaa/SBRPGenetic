@@ -11,25 +11,32 @@ class AlgorithmParameters:
     def __init__(self,
                  problem: Problem,
                  max_iter: int,
+                 criterion_max: bool = True,
                  initial_construction_operator: InitialConstructionOperator = None,
+                 mutation_operator: MutationOperator = None,
+
                  selection_operator: SelectionOperator = None,
                  crossover_operator: CrossoverOperator = None,
-                 mutation_operator: MutationOperator = None,
-                 repair_operator: RepairOperator = None,
-                 replacement_operator: ReplacementOperator = None):
+                 replacement_operator: ReplacementOperator = None,
+                 crossover_rate: float = 0.90,
+                 mutation_rate: float = 0.10,
 
-        #GlobalParameters
-        self.max_iter: int = max_iter
+                 repair_operator: RepairOperator = None
+                 ):
+
+        # Global Parameters
         self.problem: Problem = problem
+        self.max_iter: int = max_iter
+        self.criterion_max: bool = criterion_max
         self.initial_construction_operator: InitialConstructionOperator = initial_construction_operator
         self.mutation_operator: MutationOperator = mutation_operator
 
-        #ExtraParameters
-        self.repair_operator: RepairOperator = repair_operator
-
-        #PoblationalParameters
+        # Population-based Parameters
         self.selection_operator: SelectionOperator = selection_operator
         self.crossover_operator: CrossoverOperator = crossover_operator
         self.replacement_operator: ReplacementOperator = replacement_operator
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate
 
-
+        # Extra Parameters
+        self.repair_operator: RepairOperator = repair_operator
