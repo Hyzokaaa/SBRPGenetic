@@ -11,7 +11,7 @@ class AlgorithmParameters:
     def __init__(self,
                  problem: Problem,
                  max_iter: int,
-                 criterion_max: bool = True,
+                 objective_max: bool = True,
                  initial_construction_operator: InitialConstructionOperator = None,
                  mutation_operator: MutationOperator = None,
 
@@ -27,7 +27,7 @@ class AlgorithmParameters:
         # Global Parameters
         self.problem: Problem = problem
         self.max_iter: int = max_iter
-        self.criterion_max: bool = criterion_max
+        self.objective_max: bool = objective_max
         self.initial_construction_operator: InitialConstructionOperator = initial_construction_operator
         self.mutation_operator: MutationOperator = mutation_operator
 
