@@ -1,20 +1,20 @@
-from src.operators.initial_construction.initial_solution import InitialConstruction
-from src.operators.operator_parameters import OperatorParameters
-from src.problems.problem_sbrp.initial_solution.stop_assignment.restrictions.stop_assignment_restrictions import \
+from src.operators.distance.distance_operator import DistanceOperator
+from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.restrictions.stop_assignment_restrictions import \
     StopAssignmentRestrictions
+from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.stop_assign_strategy import StopAssignStrategy
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
-class HStudentToClosestStopStopAssign(InitialConstruction):
+class HStudentToClosestStopStrategy(StopAssignStrategy):
 
-    def generate(self, parameters: OperatorParameters):
-        problem: ProblemSBRP = parameters.problem
-        distance_operator = parameters.distance_operator
+    def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator):
 
         # Para cada estudiante en la lista de estudiantes
         for student in problem.students:
             # Obtiene las paradas válidas
-            valid_stops = StopAssignmentRestrictions.get_valid_stops(parameters=parameters, student=student)
+            valid_stops = StopAssignmentRestrictions.get_valid_stops(problem=problem,
+                                                                     distance_operator=distance_operator,
+                                                                     student=student)
 
             # Si no hay paradas válidas, entonces no se asigna parada a este estudiante
             if not valid_stops:

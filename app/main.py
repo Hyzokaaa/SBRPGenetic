@@ -1,18 +1,15 @@
 from typing import List
 
-from src.operators.distance.distance_manhattan import ManhattanDistance
+from src.operators.distance.distance_euclidean import EuclideanDistance
 from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
-from src.problems.problem_sbrp.initial_solution.route_generation.random_route_generator_strategy import \
+from src.problems.problem_sbrp.operators.initial_solution.initial_solution_conform_operator_sbrp import InitialSolutionConformOperator
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.route_generator import RouteGenerator
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.random_route_generator_strategy import \
     RandomRouteGeneratorStrategy
-from src.problems.problem_sbrp.initial_solution.route_generation.route_generator import RouteGenerator
-from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_closest_stop_stop_assign import \
-    HStudentToClosestStopStopAssign
-from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_centroid_stop_assign import \
-    HStudentToStopClosestToCentroidStopAssign
-from src.problems.problem_sbrp.initial_solution.stop_assignment.h_student_to_stop_closest_to_school_stop_assign import \
-    HStudentToStopClosestToSchoolStopAssign
-from src.problems.problem_sbrp.initial_solution.stop_assignment.random_stop_assign import RandomStopAssign
+from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.h_student_to_closest_stop_strategy import \
+    HStudentToClosestStopStrategy
+from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.stop_assigner import StopAssigner
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from shared.aplication.algorithm.crossover_operator import CrossoverOperator
 from shared.aplication.algorithm.hill_climbing import HillClimbing
@@ -195,17 +192,16 @@ def test_input():
     problem.construct(problem_parameters=problem_parameters)
     # print(problem)
 
-    distance_operator = ManhattanDistance()
-    stop_assign_parameters = OperatorParameters(problem=problem, distance_operator=distance_operator)
-    initial_stop_assign_operator = HStudentToClosestStopStopAssign()
-    initial_stop_assign_operator.generate(stop_assign_parameters)
-    print(problem)
+    distance_operator = EuclideanDistance()
+    initial_stop_assign_strategy = HStudentToClosestStopStrategy()
+    initial_route_generator_strategy = RandomRouteGeneratorStrategy()
+    operator_parameters = OperatorParameters(problem=problem,
+                                             distance_operator=distance_operator,
+                                             stop_assign_strategy=initial_stop_assign_strategy,
+                                             route_generator_strategy=initial_route_generator_strategy)
 
-    route_generator_strategy = RandomRouteGeneratorStrategy()
-    route_generator_parameters = OperatorParameters(problem=problem, route_generator_strategy=route_generator_strategy)
-    route_generator = RouteGenerator()
-    routes = route_generator.generate(route_generator_parameters)
-    print(problem)
+    data = InitialSolutionConformOperator().generate(parameters=operator_parameters)
+    print("")
 
 
 if __name__ == "__main__":

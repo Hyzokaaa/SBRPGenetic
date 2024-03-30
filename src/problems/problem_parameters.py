@@ -1,11 +1,11 @@
 from typing import Tuple, List
 
-from src.operators.distance.distance_operator import Distance
+from src.operators.distance.distance_operator import DistanceOperator
 
 
 class ProblemParameters:
     def __init__(self,
-                 distance_operator: Distance = None,
+                 distance_operator: DistanceOperator = None,
                  sbrp_school_coordinates: Tuple[float, float] = None,
                  sbrp_stops_coordinates: List[Tuple[float, float]] = None,
                  sbrp_student_coordinates: List[Tuple[float, float]] = None,

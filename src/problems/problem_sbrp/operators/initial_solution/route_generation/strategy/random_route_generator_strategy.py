@@ -1,8 +1,8 @@
 import random
 
-from src.problems.problem_sbrp.initial_solution.route_generation.restrictions.route_generator_restriction import \
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.restrictions.route_generator_restriction import \
     RouteGeneratorRestriction
-from src.problems.problem_sbrp.initial_solution.route_generation.route_generator_strategy import RouteGeneratorStrategy
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.route_generator_strategy import RouteGeneratorStrategy
 from src.problems.problem_sbrp.model.route import Route
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 

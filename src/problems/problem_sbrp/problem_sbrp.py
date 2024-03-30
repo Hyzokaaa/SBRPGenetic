@@ -42,9 +42,3 @@ class ProblemSBRP(Problem):
             return fitness
         else:
             return None
-
-    def initial_random_solution(self):
-        pass
-
-    def initial_heuristic_solution(self):
-        pass

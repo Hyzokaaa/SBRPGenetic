@@ -1,13 +1,13 @@
-from src.operators.initial_construction.initial_solution import InitialConstruction
+from src.operators.initial_construction.initial_solution import InitialConstructionOperator
 from src.operators.operator_parameters import OperatorParameters
-from src.problems.problem_sbrp.initial_solution.route_generation.route_generator_strategy import RouteGeneratorStrategy
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.route_generator_strategy import RouteGeneratorStrategy
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
-class RouteGenerator(InitialConstruction):
+class RouteGenerator(InitialConstructionOperator):
 
     def generate(self, parameters: OperatorParameters):
-        problem: ProblemSBRP = parameters.problem
+        problem = parameters.problem
         strategy: RouteGeneratorStrategy = parameters.route_generator_strategy
 
         routes = []
