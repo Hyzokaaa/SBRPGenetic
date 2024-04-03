@@ -5,12 +5,5 @@ from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strate
 
 
 class OperatorParameters:
-    def __init__(self,
-                 distance_operator: DistanceOperator = None,
-                 problem: Problem = None,
-                 route_generator_strategy: RouteGeneratorStrategy = None,
-                 stop_assign_strategy: StopAssignStrategy = None):
+    def __init__(self, problem: Problem = None):
         self.problem: Problem = problem
-        self.distance_operator = distance_operator
-        self.route_generator_strategy = route_generator_strategy
-        self.stop_assign_strategy = stop_assign_strategy
