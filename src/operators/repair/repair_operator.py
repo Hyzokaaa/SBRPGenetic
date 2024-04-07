@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 
+from src.operators.repair.repair_parameters import RepairParameters
+
 
 class RepairOperator(ABC):
     @abstractmethod
-    def repair(self, parent1,  parent2):
+    def repair(self, parameters: RepairParameters):
         pass

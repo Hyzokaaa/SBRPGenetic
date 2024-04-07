@@ -1,4 +1,7 @@
-from src.operators.initial_construction.initial_solution import InitialConstructionOperator
+import copy
+
+from src.operators.initial_construction.initial_construction import InitialConstructionOperator
+from src.operators.initial_construction.initial_construction_parameters import InitialConstructionParameters
 from src.operators.operator_parameters import OperatorParameters
 from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.route_generator_strategy import RouteGeneratorStrategy
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
@@ -6,8 +9,8 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 class RouteGenerator(InitialConstructionOperator):
 
-    def generate(self, parameters: OperatorParameters):
-        problem = parameters.problem
+    def generate(self, parameters: InitialConstructionParameters):
+        problem: ProblemSBRP = copy.deepcopy(parameters.problem)
         strategy: RouteGeneratorStrategy = parameters.route_generator_strategy
 
         routes = []

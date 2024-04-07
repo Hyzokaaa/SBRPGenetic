@@ -12,7 +12,7 @@ class Route:
             self.stops = stops
 
     def __str__(self):
-        return f"Route(bus={self.bus}, stops={', '.join(str(stop) for stop in self.stops)})"
+        return f"Route: {', '.join(str(stop) for stop in self.stops)})"
 
     def __repr__(self):
         return self.__str__()

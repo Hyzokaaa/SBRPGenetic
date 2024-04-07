@@ -36,8 +36,8 @@ class ProblemSBRP(Problem):
                 for i in range(len(route.stops) - 1):
                     stop1 = route.stops[i]
                     stop2 = route.stops[i + 1]
-                    location1 = stop1.coordintates
-                    location2 = stop2.coordintates
+                    location1 = stop1.coordinates
+                    location2 = stop2.coordinates
                     fitness += self.distance_calculator.calculate_distance(location1, location2)
             return fitness
         else:
