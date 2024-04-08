@@ -1,3 +1,6 @@
+import csv
+import os
+
 from src.algorithm.algorithm_genetic import AlgorithmGenetic
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.hill_climbing import HillClimbing
@@ -22,10 +25,33 @@ from src.problems.problem_sbrp.operators.repair.repair_operator_sbrp import Repa
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
-def test_ag(problem, initial_construction_parameters, initial_construction_operator):
+def read_instances(path: str):
+    # Get the list of file names in the directory
+    return os.listdir(path)
+
+
+def write_to_file(data, filename):
+    with open(filename, 'a') as f:
+        # Convert each item in data to a string and join them with a comma
+        f.write(', '.join(map(str, data)) + '\n')
+
+def test_ag(instance_):
+    data_input = FileDataInputSBRP(f"D:/Git/SBRPGenetic/data/instances/real/{instance_}")
+    problem_parameters = data_input.conform()
+
+    problem = ProblemSBRP()
+    problem.construct(problem_parameters=problem_parameters)
+
+    initial_construction_parameters = InitialConstructionParameters(
+        problem=problem,
+        distance_operator=EuclideanDistance(),
+        stop_assign_strategy=HStudentToStopClosestToSchoolStrategy(),
+        route_generator_strategy=RandomRouteGeneratorStrategy())
+    initial_construction_operator = InitialSolutionOperatorSBRP()
+
     selection_parameters = SelectionParameters(problem=problem,
                                                objective_max=False,
-                                               tournament_size=2,
+                                               tournament_size=10,
                                                number_of_selected_solutions=2)
     selection_operator = TournamentSelectionOperator()
 
@@ -40,9 +66,9 @@ def test_ag(problem, initial_construction_parameters, initial_construction_opera
 
     algorithm_parameters = AlgorithmParameters(problem=problem,
                                                objective_max=False,
-                                               initial_population_size=20,
+                                               initial_population_size=100,
                                                max_iter=1000,
-                                               mutation_rate=0.90,
+                                               mutation_rate=0.50,
                                                initial_construction_operator=initial_construction_operator,
                                                initial_construction_parameters=initial_construction_parameters,
                                                selection_operator=selection_operator,
@@ -61,70 +87,14 @@ def test_ag(problem, initial_construction_parameters, initial_construction_opera
     print(data[2])
     return data
 
-def test_hc(problem, initial_construction_parameters, initial_construction_operator):
-    mutation_parameters = MutationParameters(problem=problem)
-    mutation_operator = SwapMutationOperatorSBRP()
-
-    algorithm_parameters = AlgorithmParameters(problem=problem,
-                                               objective_max=False,
-                                               max_iter=1000,
-                                               mutation_rate=1,
-                                               initial_construction_operator=initial_construction_operator,
-                                               initial_construction_parameters=initial_construction_parameters,
-                                               mutation_parameters=mutation_parameters,
-                                               mutation_operator=mutation_operator)
-    optimization_algorithm = HillClimbing()
-
-    data = optimization_algorithm.optimize(algorithm_parameters)
-    print(data[0])
-    print(data[1])
-    print(data[2])
-    return data
-
-def test_rs(problem, initial_construction_parameters, initial_construction_operator):
-    algorithm_parameters = AlgorithmParameters(problem=problem,
-                                               objective_max=False,
-                                               max_iter=1000,
-                                               initial_construction_operator=initial_construction_operator,
-                                               initial_construction_parameters=initial_construction_parameters)
-    optimization_algorithm = RandomSearch()
-
-    data = optimization_algorithm.optimize(algorithm_parameters)
-    print(data[0])
-    print(data[1])
-    print(data[2])
-    return data
-
-
-import csv
 
 if __name__ == "__main__":
-    instances = ["inst60-5s20-200-c50-w10"]
-    algorithms = [test_ag, test_hc, test_rs]
-    results = []
+    instances = read_instances("D:/Git/SBRPGenetic/data/instances/real/")
+    i = 0
+    while i < len(instances):
+        result = test_ag(instances[i])
+        data = [instances[i], result[1]]
+        write_to_file(data, 'results_instances.txt')
+        i += 1
 
-    for instance in instances:
-        data_input = FileDataInputSBRP(f"D:/Git/SBRPGenetic/data/instances/real/{instance}.xpress")
-        problem_parameters = data_input.conform()
 
-        problem = ProblemSBRP()
-        problem.construct(problem_parameters=problem_parameters)
-
-        initial_construction_parameters = InitialConstructionParameters(
-                                                            problem=problem,
-                                                            distance_operator=EuclideanDistance(),
-                                                            stop_assign_strategy=HStudentToStopClosestToSchoolStrategy(),
-                                                            route_generator_strategy=RandomRouteGeneratorStrategy())
-        initial_construction_operator = InitialSolutionOperatorSBRP()
-
-        for algorithm in algorithms:
-            for i in range(10):
-                print(f'Running {algorithm.__name__} iteration {i+1} for {instance}')
-                result = algorithm(problem, initial_construction_parameters, initial_construction_operator)
-                results.append((instance, algorithm.__name__, i+1, result))
-
-    with open('results.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Instance', 'Algorithm', 'Iteration', 'Best Solution', 'Objective Function', 'Best Iteration'])
-        for instance, name, iteration, result in results:
-            writer.writerow([instance, name, iteration] + list(result))

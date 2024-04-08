@@ -34,7 +34,7 @@ class AlgorithmParameters:
 
                  crossover_rate: float = 0.90,
                  mutation_rate: float = 0.10,
-                 replacement_type='replace',
+                 replacement_type='replace',# 'replace' or 'best_half'
 
                  repair_operator: RepairOperator = None
                  ):

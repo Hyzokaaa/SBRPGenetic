@@ -65,7 +65,7 @@ class AlgorithmGenetic(OptimizationAlgorithm):
         for i in range(parameters.max_iter):
             # Crear una nueva población para almacenar las soluciones hijas
             new_population = []
-
+            print(i)
             while len(new_population) < initial_population_size:
                 # selection
                 selection_parameters.solutions = population
@@ -96,19 +96,7 @@ class AlgorithmGenetic(OptimizationAlgorithm):
                     if child is not None and len(new_population) < initial_population_size:
                         new_population.append(child)
 
-            # Reemplazar la población antigua con la nueva población
-            if parameters.replacement_type == 'replace':
-                population = new_population
-            elif parameters.replacement_type == 'best_half':
-                # Combina la población antigua y la nueva
-                combined_population = population + new_population
-                # Calcula el valor de aptitud de cada solución en la población combinada
-                fitness_values = {solution: parameters.problem.objective_function(solution) for solution in
-                                  combined_population}
-                # Ordena la población combinada en función del valor de aptitud
-                combined_population.sort(key=lambda x: fitness_values[x], reverse=parameters.objective_max)
-                # Selecciona la mejor mitad de la población combinada
-                population = combined_population[:initial_population_size]
+            population = new_population
 
             # Actualiza la mejor solución si se encuentra una mejor
             for solution in population:
