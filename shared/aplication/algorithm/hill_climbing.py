@@ -11,7 +11,6 @@ class HillClimbing:
     def optimize(self, solution):
         current_solution = solution.copy()
         current_fitness = self.calculate_individual_fitness(self.sbrp, current_solution)
-        print(current_fitness)
 
         for i in range(self.max_iter):
             # Genera una solución vecina utilizando el operador de mutación

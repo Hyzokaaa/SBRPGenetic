@@ -5,7 +5,10 @@ from src.problems.problem_parameters import ProblemParameters
 
 class FileDataInputSBRP(DataInput):
     def __init__(self, file_path):
-        self.file = open(file_path, 'r')
+        if file_path is not None:
+            self.file = open(file_path, 'r')
+        else:
+            self.file = None
 
     def read_parameters(self):
         return map(int, self.file.readline().split())

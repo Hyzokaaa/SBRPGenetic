@@ -12,7 +12,7 @@ from src.operators.repair.repair_parameters import RepairParameters
 from src.operators.selection.selection_operator import SelectionOperator
 
 
-class AlgorithmGenetic(OptimizationAlgorithm):
+class GeneticAlgorithm(OptimizationAlgorithm):
 
     def optimize(self, parameters: AlgorithmParameters):
         # # INITIALIZATION (Operators and parameters)
@@ -48,18 +48,10 @@ class AlgorithmGenetic(OptimizationAlgorithm):
             new_solution = initial_construction_operator.generate(initial_solution_parameters)
             population.append(new_solution)
 
-            if best_solution is None or (
-                    parameters.objective_max and parameters.problem.objective_function(
-                    new_solution) > parameters.problem.objective_function(best_solution)
-            ) or (
-                    not parameters.objective_max and parameters.problem.objective_function(
-                    new_solution) < parameters.problem.objective_function(best_solution)
-            ):
-                best_solution = new_solution
+            best_solution = self.compare_solutions(best_solution, new_solution, parameters, )
 
         # Inicializa la variable para almacenar la iteración en la que se encontró la mejor solución
-        best_iteration = None
-
+        best_iteration = -1
 
         # iterar tanto como el parámetro max_iter
         for i in range(parameters.max_iter):
@@ -71,8 +63,8 @@ class AlgorithmGenetic(OptimizationAlgorithm):
                 selection_parameters.solutions = population
                 parents = selection_operator.selection(selection_parameters)
 
-                child1, child2 = None, None
                 # crossover
+                child1, child2 = None, None
                 if random.random() < parameters.crossover_rate:
                     crossover_parameters.parent1 = parents[0]
                     crossover_parameters.parent2 = parents[1]
@@ -82,14 +74,15 @@ class AlgorithmGenetic(OptimizationAlgorithm):
                     repair_parameters.parents = [crossover_parameters.parent1, crossover_parameters.parent2]
                     repair_parameters.solutions = [child1, child2]
                     child1, child2 = repair_operator.repair(repair_parameters)
+
+                    # mutation
+                    for j in [child1, child2]:
+                        if j is not None and random.random() < parameters.mutation_rate:
+                            mutation_parameters.solution = j
+                            mutation_operator.mutate(mutation_parameters)
+
                 else:
                     child1, child2 = crossover_parameters.parent1, crossover_parameters.parent2
-
-                # mutation
-                for j in [child1, child2]:
-                    if j is not None and random.random() < parameters.mutation_rate:
-                        mutation_parameters.solution = j
-                        mutation_operator.mutate(mutation_parameters)
 
                 # Agregar las soluciones hijas a la nueva población
                 for child in [child1, child2]:
@@ -98,17 +91,29 @@ class AlgorithmGenetic(OptimizationAlgorithm):
 
             population = new_population
 
-            # Actualiza la mejor solución si se encuentra una mejor
-            for solution in population:
-                if best_solution is None or (
-                        parameters.objective_max and parameters.problem.objective_function(
-                    solution) > parameters.problem.objective_function(best_solution)
-                ) or (
-                        not parameters.objective_max and parameters.problem.objective_function(
-                    solution) < parameters.problem.objective_function(best_solution)
-                ):
-                    best_solution = solution
-                    best_iteration = i
+            best_iteration, best_solution = self.update_best_solution(best_iteration, best_solution, i,
+                                                                      parameters.objective_max, population,
+                                                                      parameters.problem)
 
-        return best_solution, parameters.problem.objective_function(best_solution), best_iteration
+        return best_solution, parameters.problem.objective_function(best_solution), best_iteration, parameters.problem
+
+    def compare_solutions(self, solution1, solution2, problem, objective_max):
+        best_solution = solution1
+        if best_solution is None or (
+                objective_max and problem.objective_function(solution2) >
+                problem.objective_function(best_solution)
+        ) or (
+                not objective_max and problem.objective_function(solution2) <
+                problem.objective_function(best_solution)
+        ):
+            best_solution = solution2
+        return best_solution
+
+    def update_best_solution(self, best_iteration, best_solution, i, objective_max, population, problem):
+        # Actualiza la mejor solución si se encuentra una mejor
+        for new_solution in population:
+            best_solution = self.compare_solutions(solution1=best_solution, solution2=new_solution,
+                                                   problem=problem, objective_max=objective_max)
+            best_iteration = i
+        return best_iteration, best_solution
 

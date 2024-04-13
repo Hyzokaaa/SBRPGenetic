@@ -4,7 +4,7 @@ from src.operators.initial_construction.initial_construction import InitialConst
 from src.operators.initial_construction.initial_construction_parameters import InitialConstructionParameters
 
 
-class RandomSearch(OptimizationAlgorithm):
+class RandomSearchAlgorithm(OptimizationAlgorithm):
     def optimize(self, parameters: AlgorithmParameters):
         # # INITIALIZATION (Operators and parameters)
         # initialize initial construction operator

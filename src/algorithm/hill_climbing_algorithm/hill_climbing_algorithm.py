@@ -6,7 +6,7 @@ from src.operators.mutation.mutation_operator import MutationOperator
 from src.operators.mutation.mutation_parameters import MutationParameters
 
 
-class HillClimbing(OptimizationAlgorithm):
+class HillClimbingAlgorithm(OptimizationAlgorithm):
     def optimize(self, parameters: AlgorithmParameters):
         # # INITIALIZATION (Operators and parameters)
         # initialize initial construction operator
