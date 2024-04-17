@@ -1,5 +1,7 @@
 from src.operators.crossover.crossover_operator import CrossoverOperator
 from src.operators.crossover.crossover_parameters import CrossoverParameters
+from src.operators.exhaustive_search.exhaustive_search_operator import ExhaustiveSearchOperator
+from src.operators.exhaustive_search.exhaustive_search_parameters import ExhaustiveSearchParameters
 from src.operators.initial_construction.initial_construction import InitialConstructionOperator
 from src.operators.initial_construction.initial_construction_parameters import InitialConstructionParameters
 from src.operators.mutation.mutation_operator import MutationOperator
@@ -25,6 +27,8 @@ class AlgorithmParameters:
                  selection_parameters: SelectionParameters = None,
                  crossover_parameters: CrossoverParameters = None,
                  repair_parameters: RepairParameters = None,
+                 exhaustive_search_parameters: ExhaustiveSearchParameters = None,
+
 
                  initial_construction_operator: InitialConstructionOperator = None,
                  mutation_operator: MutationOperator = None,
@@ -32,11 +36,12 @@ class AlgorithmParameters:
                  crossover_operator: CrossoverOperator = None,
                  replacement_operator: ReplacementOperator = None,
 
-                 crossover_rate: float = 0.90,
+                 crossover_rate: float = 0.9,
                  mutation_rate: float = 0.10,
-                 replacement_type='replace',# 'replace' or 'best_half'
+                 replacement_type='replace',  # 'replace' or 'best_half'
 
-                 repair_operator: RepairOperator = None
+                 repair_operator: RepairOperator = None,
+                 exhaustive_search_operator: ExhaustiveSearchOperator = None
                  ):
 
         # Global Parameters
@@ -63,3 +68,5 @@ class AlgorithmParameters:
         # Extra Parameters
         self.repair_operator: RepairOperator = repair_operator
         self.repair_parameters: RepairParameters = repair_parameters
+        self.exhaustive_search_operator = exhaustive_search_operator
+        self.exhaustive_search_parameters: ExhaustiveSearchParameters = exhaustive_search_parameters

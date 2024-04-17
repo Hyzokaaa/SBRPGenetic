@@ -1,16 +1,16 @@
 import random
 
 from src.operators.distance.distance_operator import DistanceOperator
+from src.problems.problem_sbrp.model.route import Route
 from src.problems.problem_sbrp.operators.initial_solution.route_generation.restrictions.route_generator_restriction import \
     RouteGeneratorRestriction
-from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.route_generator_strategy import RouteGeneratorStrategy
-from src.problems.problem_sbrp.model.route import Route
+from src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.route_generator_strategy import \
+    RouteGeneratorStrategy
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
-class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
+class HClosestNeighborRouteGeneratorStrategy(RouteGeneratorStrategy):
     def generate_route(self, problem: ProblemSBRP,  distance_operator: DistanceOperator):
-
         # Inicializa una ruta compuesta por una lista vacía de stops
         route = Route()
 
@@ -19,6 +19,18 @@ class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
 
         # Inicializa un contador para la capacidad del autobús
         bus_capacity = problem.bus_capacity
+
+        # Selecciona una parada aleatoria de las paradas disponibles como primera parada
+        if not non_assign_stops:
+            route.stops.insert(0, problem.school)
+            route.stops.append(problem.school)
+            return route
+        first_stop = random.choice(non_assign_stops)
+        route.stops.append(first_stop)
+        route.students += first_stop.num_assigned_students
+        bus_capacity -= first_stop.num_assigned_students
+        first_stop.is_assigned = True
+        non_assign_stops.remove(first_stop)
 
         # Mientras haya paradas disponibles y capacidad en el autobús
         while non_assign_stops and bus_capacity > 0:
@@ -30,8 +42,9 @@ class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
             if not feasible_stops:
                 break
 
-            # Selecciona una parada aleatoria de las paradas disponibles
-            stop = random.choice(feasible_stops)
+            # Selecciona la parada más cercana a la última parada de la ruta
+            stop = min(feasible_stops, key=lambda s: distance_operator.calculate_distance(route.stops[-1].coordinates,
+                                                                                          s.coordinates))
 
             # Agrega la parada a la ruta
             route.stops.append(stop)

@@ -11,10 +11,14 @@ class GeneticAlgorithmConfig:
         self.mutation_operator = None  # Operator for solution mutation
         self.stop_assign_strategy = None  # Strategy for assigning stops
         self.route_generator_strategy = None  # Strategy for generating routes
-        self.objective_max = False  # Boolean to indicate if the objective is to maximize
-        self.tournament_size = 10  # Tournament size for solution selection
-        self.number_of_selected_solutions = 2  # Number of selected solutions
-        self.initial_population_size = 100  # Size of the initial population
-        self.max_iter = 1000  # Maximum number of iterations
-        self.mutation_rate = 0.1  # Mutation rate
-        self.crossover_rate = 0.9   # Crossover rate
+        self.objective_max = None  # Boolean to indicate if the objective is to maximize
+        self.tournament_size = None  # Tournament size for solution selection
+        self.number_of_selected_solutions = None  # Number of selected solutions
+        self.initial_population_size = None  # Size of the initial population
+        self.max_iter = None  # Maximum number of iterations
+        self.mutation_rate = None  # Mutation rate
+        self.crossover_rate = None   # Crossover rate
+
+    def __str__(self):
+        return (self.instance_path + ' ' + self.problem + ' ' + self.objective_max + ' ' + self.max_iter + ' ' +
+                self.mutation_rate + ' ' + self.crossover_rate)

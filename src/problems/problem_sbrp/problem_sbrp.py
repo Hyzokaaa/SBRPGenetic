@@ -42,3 +42,6 @@ class ProblemSBRP(Problem):
             return fitness
         else:
             return None
+
+    def __str__(self):
+        return 'ProblemSBRP'

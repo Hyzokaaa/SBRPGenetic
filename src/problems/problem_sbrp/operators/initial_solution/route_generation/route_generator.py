@@ -15,6 +15,6 @@ class RouteGenerator(InitialConstructionOperator):
 
         routes = []
         for _ in problem.vehicles:
-            route = strategy.generate_route(problem=problem)
+            route = strategy.generate_route(problem=problem, distance_operator=parameters.distance_operator)
             routes.append(route)
         return routes
