@@ -35,7 +35,7 @@ class GeneticAlgorithmConfigSbrp1(GeneticAlgorithmConfig):
         self.objective_max = False
         self.tournament_size = 6
         self.number_of_selected_solutions = 2
-        self.initial_population_size = 1000
+        self.initial_population_size = 100
         self.max_iter = 100
-        self.mutation_rate = 1
-        self.crossover_rate = 1
+        self.crossover_rate = .9
+        self.mutation_rate = .1

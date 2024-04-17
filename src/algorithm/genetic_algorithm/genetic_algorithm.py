@@ -74,13 +74,15 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 child1, child2 = self.repair_operator.repair(self.repair_parameters)
 
                 # mutation
-                for j in [child1, child2]:
-                    if j is not None and random.random() < parameters.mutation_rate:
-                        self.mutation_parameters.solution = j
-                        self.mutation_operator.mutate(self.mutation_parameters)
+                if random.random() < parameters.mutation_rate:
+                    for solution in [child1, child2]:
+                        if solution is not None:
+                            self.mutation_parameters.solution = solution
+                            self.mutation_operator.mutate(self.mutation_parameters)
+                            print('Muté')
 
             else:
-                child1, child2 = self.crossover_parameters.parent1, self.crossover_parameters.parent2
+                child1, child2 = parents[0], parents[1]
 
             for child in [child1, child2]:
                 if child is not None and len(new_population) < self.initial_population_size:

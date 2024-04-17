@@ -41,7 +41,6 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
-    #execute_all_instances(instances_path='data/instances/test/')
+    execute_all_instances(instances_path='data/instances/test/')
 
 
