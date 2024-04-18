@@ -15,7 +15,7 @@ class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
         route = Route()
 
         # Obtiene una copia de las paradas que no han sido asignadas
-        non_assign_stops = RouteGeneratorRestriction.get_non_assign_stops(problem)
+        non_assign_stops = RouteGeneratorRestriction.get_non_assign_stops_with_students(problem)
 
         # Inicializa un contador para la capacidad del autobús
         bus_capacity = problem.bus_capacity

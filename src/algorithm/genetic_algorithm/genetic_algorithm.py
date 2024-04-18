@@ -1,5 +1,6 @@
 import random
 
+from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
 
@@ -19,7 +20,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             best_solution, best_iteration = self.update_best_solution(best_solution, best_iteration, i,
                                                                       parameters.objective_max, population,
                                                                       parameters.problem)
-
+        Visualizer.plot_routes(routes=best_solution, sbrp=parameters.problem, image_name='RESULTADO')
         return (parameters.problem,
                 best_solution,
                 parameters.problem.objective_function(best_solution),
@@ -79,8 +80,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                         if solution is not None:
                             self.mutation_parameters.solution = solution
                             self.mutation_operator.mutate(self.mutation_parameters)
-                            print('Muté')
-
             else:
                 child1, child2 = parents[0], parents[1]
 

@@ -4,12 +4,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 from shared.domain.sbrp import SBRP
 import matplotlib
+
+from src.problems.problem_sbrp.model.stop import Stop
+from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+
 matplotlib.use('TkAgg')  # o 'tkagg' dependiendo del sistema operativo
 
 
 class Visualizer:
     @staticmethod
-    def plot_assignments(sbrp: SBRP):
+    def plot_assignments(sbrp: ProblemSBRP):
         plt.figure()
 
         # Dibuja las paradas como puntos rojos
@@ -18,7 +22,7 @@ class Visualizer:
 
         # Dibuja los estudiantes como puntos azules y líneas desde cada estudiante a su parada asignada
         for student in sbrp.students:
-            plt.plot(student.coord_x, student.coord_y, 'bo')
+            plt.plot(student.coordinates[0], student.coordinates[1], 'bo')
             if student.assigned_stop is not None:
                 plt.plot([student.coordinates[0], student.assigned_stop.coordinates[0]],
                          [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-')
@@ -31,16 +35,16 @@ class Visualizer:
 
         # Dibuja las paradas como puntos rojos
         for stop in sbrp.stops:
-            plt.scatter(stop.coord_x, stop.coord_y, color='red', s=100)
+            plt.scatter(stop.coordinates[0], stop.coordinates[1], color='red', s=100)
 
-        plt.scatter(sbrp.school.coord_y, sbrp.school.coord_y, color='green', s=200)
+        plt.scatter(sbrp.school.coordinates[0], sbrp.school.coordinates[1], color='green', s=200)
 
         # Dibuja los estudiantes como puntos azules y líneas desde cada estudiante a su parada asignada
         for student in sbrp.students:
-            plt.plot(student.coord_x, student.coord_y, 'bo')
+            plt.plot(student.coordinates[0], student.coordinates[1], 'bo')
             if student.assigned_stop is not None:
-                plt.plot([student.coord_x, student.assigned_stop.coord_x],
-                         [student.coord_y, student.assigned_stop.coord_y], 'k-')
+                plt.plot([student.coordinates[0], student.assigned_stop.coordinates[0]],
+                         [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-')
 
         # Dibuja las rutas como líneas de colores aleatorios
         for route in routes:
@@ -50,15 +54,21 @@ class Visualizer:
                 color = np.random.rand(3, )
 
             for i in range(len(route.stops) - 1):
-                stop1 = route.stops[i]
-                stop2 = route.stops[i + 1]
-                plt.plot([stop1.coord_x, stop2.coord_x], [stop1.coord_y, stop2.coord_y], color=color)
+                stop1: Stop = route.stops[i]
+                stop2: Stop = route.stops[i + 1]
+                plt.plot([stop1.coordinates[0], stop2.coordinates[0]], [stop1.coordinates[1],
+                                                                        stop2.coordinates[1]], color=color,
+                         label=f'Route {i}, Students: {route.students}')
 
                 # Añade anotaciones para indicar el orden de las paradas
-                plt.annotate(str(i), (stop1.coord_x, stop1.coord_y), color=color, weight='bold', fontsize=12)
+                plt.annotate(str(i), (stop1.coordinates[0], stop1.coordinates[1]), color=color, weight='bold',
+                             fontsize=12)
+
+        # Añade la leyenda
+        plt.legend()
 
         # Define la ruta de la imagen
-        route = "T-MH/"
+        route = "/"
         base_name = image_name
         ext = ".png"
         counter = 1

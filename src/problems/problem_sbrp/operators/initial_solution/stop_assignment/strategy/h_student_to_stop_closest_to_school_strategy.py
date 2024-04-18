@@ -31,4 +31,3 @@ class HStudentToStopClosestToSchoolStrategy(StopAssignStrategy):
 
                 # Añade al estudiante a la lista de estudiantes asignados a esa parada
                 closest_stop.num_assigned_students += 1
-
