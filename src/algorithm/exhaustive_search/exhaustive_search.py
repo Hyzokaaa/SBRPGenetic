@@ -42,7 +42,6 @@ class ExhaustiveSearch(OptimizationAlgorithm):
                     best_solution = route_combination
                     best_fitness = combination_fitness
 
-        print(best_solution)
         return best_solution, best_fitness
 
     @staticmethod

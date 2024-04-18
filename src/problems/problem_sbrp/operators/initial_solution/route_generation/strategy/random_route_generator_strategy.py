@@ -24,7 +24,8 @@ class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
         while non_assign_stops and bus_capacity > 0:
             # Filtra las paradas disponibles para incluir solo aquellas que tienen un número de estudiantes que no
             # excede la capacidad del autobús
-            feasible_stops = RouteGeneratorRestriction.get_non_exceed_bus_capacity(non_assign_stops, bus_capacity)
+            feasible_stops = RouteGeneratorRestriction.get_non_exceed_bus_capacity(non_assign_stops, route.students,
+                                                                                   problem)
 
             # Si no hay paradas factibles, rompe el bucle
             if not feasible_stops:
@@ -35,8 +36,7 @@ class RandomRouteGeneratorStrategy(RouteGeneratorStrategy):
 
             # Agrega la parada a la ruta
             route.stops.append(stop)
-            route.students += stop.num_assigned_students
-
+            route.students = sum(stop.num_assigned_students for stop in route.stops)
             # Actualiza la capacidad del autobús
             bus_capacity -= stop.num_assigned_students
 

@@ -20,10 +20,11 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             best_solution, best_iteration = self.update_best_solution(best_solution, best_iteration, i,
                                                                       parameters.objective_max, population,
                                                                       parameters.problem)
+        fitness = parameters.problem.objective_function(best_solution)
         Visualizer.plot_routes(routes=best_solution, sbrp=parameters.problem, image_name='RESULTADO')
         return (parameters.problem,
                 best_solution,
-                parameters.problem.objective_function(best_solution),
+                fitness,
                 best_iteration)
 
     def generate_initial_population(self, parameters):
@@ -108,7 +109,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             updated_solution = self.compare_solutions(solution1=best_solution, solution2=new_solution,
                                                       problem=problem, objective_max=objective_max)
             if updated_solution != best_solution:
-                print("encontre mejor solucion hermanao")
                 best_solution = updated_solution
                 best_iteration = current_iteration
         return best_solution, best_iteration

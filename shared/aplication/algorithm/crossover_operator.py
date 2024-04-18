@@ -6,7 +6,7 @@ from src.problems.problem_sbrp.model.route import Route
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 
-
+'''
 class CrossoverOperator:
     def __init__(self, sbrp, crossover_rate):
         self.sbrp = sbrp
@@ -158,3 +158,5 @@ class CrossoverOperator:
             if len(route.stops) > 2:
                 count += 1
         return count
+        
+'''''

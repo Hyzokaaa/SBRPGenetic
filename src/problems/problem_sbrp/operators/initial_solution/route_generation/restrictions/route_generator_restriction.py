@@ -10,5 +10,5 @@ class RouteGeneratorRestriction:
         return [stop for stop in problem.stops if stop.is_assigned is False and stop.num_assigned_students > 0]
 
     @staticmethod
-    def get_non_exceed_bus_capacity(non_assign: List[Stop], bus_capacity):
-        return [stop for stop in non_assign if stop.num_assigned_students <= bus_capacity]
+    def get_non_exceed_bus_capacity(non_assign: List[Stop], actual_capacity, problem: ProblemSBRP):
+        return [stop for stop in non_assign if ((stop.num_assigned_students + actual_capacity) <= problem.bus_capacity)]

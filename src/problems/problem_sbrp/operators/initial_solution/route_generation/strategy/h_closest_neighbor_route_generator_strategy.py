@@ -1,3 +1,4 @@
+import copy
 import random
 
 from src.operators.distance.distance_operator import DistanceOperator
@@ -17,26 +18,25 @@ class HClosestNeighborRouteGeneratorStrategy(RouteGeneratorStrategy):
         # Obtiene una copia de las paradas que no han sido asignadas y tienen estudiantes
         non_assign_stops = RouteGeneratorRestriction.get_non_assign_stops_with_students(problem)
 
-        # Inicializa un contador para la capacidad del autobús
-        bus_capacity = problem.bus_capacity
-
         # Selecciona una parada aleatoria de las paradas disponibles como primera parada
         if not non_assign_stops:
             route.stops.insert(0, problem.school)
             route.stops.append(problem.school)
             return route
+
+        # selecciona aleatoriamente una parada de la lista de paradas posibles
         first_stop = random.choice(non_assign_stops)
         route.stops.append(first_stop)
-        route.students += first_stop.num_assigned_students
-        bus_capacity -= first_stop.num_assigned_students
+        route.students = sum(stop.num_assigned_students for stop in route.stops)
         first_stop.is_assigned = True
         non_assign_stops.remove(first_stop)
 
         # Mientras haya paradas disponibles y capacidad en el autobús
-        while non_assign_stops and bus_capacity > 0:
+        while non_assign_stops and route.students < problem.bus_capacity:
             # Filtra las paradas disponibles para incluir solo aquellas que tienen un número de estudiantes que no
             # excede la capacidad del autobús
-            feasible_stops = RouteGeneratorRestriction.get_non_exceed_bus_capacity(non_assign_stops, bus_capacity)
+            feasible_stops = RouteGeneratorRestriction.get_non_exceed_bus_capacity(non_assign_stops, route.students,
+                                                                                   problem)
 
             # Si no hay paradas factibles, rompe el bucle
             if not feasible_stops:
@@ -48,11 +48,7 @@ class HClosestNeighborRouteGeneratorStrategy(RouteGeneratorStrategy):
 
             # Agrega la parada a la ruta
             route.stops.append(stop)
-            route.students += stop.num_assigned_students
-
-            # Actualiza la capacidad del autobús
-            bus_capacity -= stop.num_assigned_students
-
+            route.students = sum(stop.num_assigned_students for stop in route.stops)
             # Actualiza el estado de la parada
             stop.is_assigned = True
 

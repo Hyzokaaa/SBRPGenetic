@@ -9,64 +9,6 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
 class RepairOperatorSBRP(RepairOperator):
-
-    def repair(self, parameters: RepairParameters):
-        childs = copy.deepcopy(parameters.solutions)
-        problem: ProblemSBRP = parameters.problem
-        parent1 = parameters.parents[0]
-        parent2 = parameters.parents[1]
-
-        unique_stops = self.unique_stops([parent1, parent2])
-
-        for child in childs:
-            feasible_stops = self.get_feasible_stops(child, unique_stops)
-
-            seen_stops = []
-
-            # Itera sobre cada parada en cada ruta de la solution
-            for route in child:
-                i = 0
-                while i < len(route.stops):
-                    stop = route.stops[i]
-                    # Si la parada no es la escuela
-                    if not isinstance(stop, School):
-                        # Si la parada no se encuentra dentro de la lista de paradas visitadas la agrega a la lista
-                        if stop not in seen_stops:
-                            seen_stops.append(stop)
-                            i += 1
-                        # si se encuentra en las paradas visitadas, sustituye la parada por una factible
-                        else:
-                            if feasible_stops:
-                                random_stop: Stop = random.choice(feasible_stops)
-                                if (route.students - stop.num_assigned_students + random_stop.num_assigned_students <
-                                        problem.bus_capacity):
-                                    feasible_stops.remove(random_stop)
-                                    route.stops[i] = random_stop
-                                    route.students = (route.students - stop.num_assigned_students +
-                                                      random_stop.num_assigned_students)
-                                    i += 1
-                                else:
-                                    route.students -= route.stops[i].num_assigned_students
-                                    route.stops.pop(i)
-                                    i += 1
-                            else:
-                                route.students -= route.stops[i].num_assigned_students
-                                route.stops.pop(i)
-                                i += 1
-                    else:
-                        i += 1
-
-            # Segunda parte
-            if len(feasible_stops) > 0:
-                for stop in feasible_stops:
-                    for route in child:
-                        if route.students + stop.num_assigned_students <= problem.bus_capacity and stop not in route.stops:
-                            route.stops.insert(len(route.stops) - 1, stop)
-                            route.students += stop.num_assigned_students
-                            break
-
-        return childs
-
     def unique_stops(self, solutions):
         unique_stops = []
         for solution in solutions:
@@ -92,4 +34,68 @@ class RepairOperatorSBRP(RepairOperator):
             if stop not in child_stops:
                 feasible_stops.append(stop)
 
+
+        return feasible_stops
+    def repair(self, parameters: RepairParameters):
+            childs = copy.deepcopy(parameters.solutions)
+            problem: ProblemSBRP = parameters.problem
+            parent1 = parameters.parents[0]
+            parent2 = parameters.parents[1]
+
+            unique_stops = self.unique_stops([parent1, parent2])
+
+            for child in childs:
+                seen_stops = []
+
+
+                for route in child:
+                    route.students = sum(stop.num_assigned_students for stop in route.stops)
+
+                    # elimina de la ruta tantas paradas hasta satisfacer condición de capacidad del autobus
+                    if route.students > problem.bus_capacity:
+                        while route.students > problem.bus_capacity:
+                            min_stop = min((stop for stop in route.stops if not isinstance(stop, School)), key=lambda stop: stop.num_assigned_students)
+                            route.stops.remove(min_stop)
+                            route.students = sum(stop.num_assigned_students for stop in route.stops)
+
+                    # Itera sobre cada parada en cada ruta de la solution en busca de duplicadas
+                    i = 1
+                    while i < len(route.stops)-1:
+                        stop = route.stops[i]
+                        # Si la parada no se encuentra dentro de la lista de paradas visitadas la agrega
+                        # a la lista de paradas visitadas
+                        if stop not in seen_stops:
+                            seen_stops.append(stop)
+                            i += 1
+                        # si se encuentra en las paradas visitadas, sustituye la parada por una factible
+                        else:
+                            feasible_stops_for_rute = self.feasible_for_route(child,
+                                                                              unique_stops,
+                                                                              problem.bus_capacity,
+                                                                              route)
+                            if feasible_stops_for_rute:
+                                random_stop: Stop = random.choice(feasible_stops_for_rute)
+                                route.stops[i] = random_stop
+                                route.students = sum(stop.num_assigned_students for stop in route.stops)
+                                i += 1
+                            else:
+                                route.stops.pop(i)
+                                i += 1
+                # agrega las paradas faltantes a rutas factibles
+                for stop in self.get_feasible_stops(child,unique_stops):
+                    for route in child:
+                        route.students = sum(stop.num_assigned_students for stop in route.stops)
+                        if (route.students + stop.num_assigned_students <= problem.bus_capacity and
+                                stop not in route.stops):
+                            route.stops.insert(len(route.stops) - 1, stop)
+                            route.students = sum(stop.num_assigned_students for stop in route.stops)
+                            break
+            return childs
+    def feasible_for_route(self, child, unique_stops, bus_capacity, route):
+        child_stops = [stop for stop in [route.stops for route in child]]
+
+        route.students = sum(stop.num_assigned_students for stop in route.stops)
+
+        feasible_stops = [stop for stop in unique_stops if stop not in child_stops
+                          and route.students + stop.num_assigned_students <= bus_capacity]
         return feasible_stops
