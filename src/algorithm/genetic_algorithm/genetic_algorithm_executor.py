@@ -29,7 +29,8 @@ class GeneticAlgorithmExecutor:
 
         repair_parameters = RepairParameters(problem=config.problem)
 
-        mutation_parameters = MutationParameters(problem=config.problem)
+        mutation_parameters = MutationParameters(problem=config.problem,
+                                                 distance_operator=config.distance_operator)
 
         algorithm_parameters = AlgorithmParameters(problem=config.problem,
                                                    objective_max=config.objective_max,

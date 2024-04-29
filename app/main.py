@@ -25,6 +25,7 @@ def execute_all_instances(instances_path):
     with open('test_crossover.csv', 'a') as f:
         # Convert each item in data to a string and join them with a comma
         f.write('EXECUTION' + '\n')
+        f.write('instance, value, iteration' + '\n')
     while i < len(instances):
         instance_name = instances[i]
         config = GeneticAlgorithmConfigSbrp1(instances_path + instance_name)
