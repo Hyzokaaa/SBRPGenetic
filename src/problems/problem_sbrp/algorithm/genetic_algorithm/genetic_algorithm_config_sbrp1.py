@@ -38,7 +38,7 @@ class GeneticAlgorithmConfigSbrp1(GeneticAlgorithmConfig):
         self.stop_assign_strategy = HStudentToStopClosestToSchoolStrategy()
         self.route_generator_strategy = HClosestNeighborAndRandomRouteGeneratorStrategy()
         # Selection Operator
-        self.selection_operator = TournamentSelectionOperator()
+        self.selection_operator = RouletteSelectionOperator()
         # Crossover Operator
         self.crossover_operator = StopCrossoverOperatorSBRP()
         # Repair Operator
@@ -47,9 +47,10 @@ class GeneticAlgorithmConfigSbrp1(GeneticAlgorithmConfig):
         self.mutation_operator = ReorderSegmentMutationOperator()
 
         self.objective_max = False
-        self.tournament_size = 2
+        self.tournament_size = 5
         self.number_of_selected_solutions = 2
-        self.initial_population_size = 20
+        self.initial_population_size = 100
         self.max_iter = 100
-        self.crossover_rate = 1
-        self.mutation_rate = 1
+        self.crossover_rate = 0.5
+        self.mutation_rate = 0.25
+

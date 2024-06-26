@@ -1189,3 +1189,137 @@ inst6-5s5-25-c50-w20.xpress, 110.05805592755293, iteration: 0
 inst7-8s5-25-c25-w40.xpress, 7.629780861859658, iteration: 0
 inst8-8s5-25-c50-w40.xpress, 26.18628392053891, iteration: 0
 inst9-4s5-50-c25-w5.xpress, 286.68066136158, iteration: 0
+EXECUTION
+instance, value, iteration
+inst1-1s5-25-c25-w5.xpress, 141.0062832584822, iteration: 1
+inst10-1s5-50-c50-w5.xpress, 197.20075945085213, iteration: 0
+inst11-1s5-50-c25-w10.xpress, 193.55148263988727, iteration: 0
+inst12-5s5-50-c50-w10.xpress, 218.55898813191394, iteration: 0
+inst13-5s5-50-c25-w20.xpress, 131.98014974299628, iteration: 0
+inst14-5s5-50-c50-w20.xpress, 100.34157714787165, iteration: 0
+inst15-1s5-50-c25-w40.xpress, 13.794390255400218, iteration: 0
+inst16-1s5-50-c50-w40.xpress, 30.293483608728362, iteration: 0
+inst17-5s5-100-c25-w5.xpress, 360.3451920032186, iteration: 0
+inst18-2s5-100-c50-w5.xpress, 304.23032112840565, iteration: 0
+inst19-6s5-100-c25-w10.xpress, 294.207015742599, iteration: 0
+inst2-7s5-25-c50-w5.xpress, 161.62139205301824, iteration: 0
+inst20-1s5-100-c50-w10.xpress, 229.410537873051, iteration: 0
+inst21-7s5-100-c25-w20.xpress, 161.0097368206855, iteration: 0
+inst22-10s5-100-c50-w20.xpress, 145.17338697554388, iteration: 0
+inst23-2s5-100-c25-w40.xpress, 58.947388934586684, iteration: 0
+inst24-3s5-100-c50-w40.xpress, 39.806648137800416, iteration: 0
+inst25-10s10-50-c25-w5.xpress, 269.6308494827784, iteration: 2
+inst26-2s10-50-c50-w5.xpress, 311.660745589474, iteration: 21
+inst27-8s10-50-c25-w10.xpress, 264.94151612501076, iteration: 13
+inst28-6s10-50-c50-w10.xpress, 381.6994548866594, iteration: 2
+inst29-8s10-50-c25-w20.xpress, 119.62533465589033, iteration: 7
+inst3-1s5-25-c25-w10.xpress, 182.5779605095256, iteration: 0
+inst30-5s10-50-c50-w20.xpress, 193.94115638176424, iteration: 22
+inst31-7s10-50-c25-w40.xpress, 35.045187182068574, iteration: 0
+inst32-6s10-50-c50-w40.xpress, 57.301822446409616, iteration: 0
+inst33-1s10-100-c25-w5.xpress, 476.34906247973635, iteration: 5
+inst34-7s10-100-c50-w5.xpress, 330.3821852401623, iteration: 26
+inst35-10s10-100-c25-w10.xpress, 406.58628277428375, iteration: 5
+inst36-1s10-100-c50-w10.xpress, 360.71664305745264, iteration: 65
+inst37-7s10-100-c25-w20.xpress, 220.3588543887504, iteration: 0
+inst38-9s10-100-c50-w20.xpress, 210.14999831276742, iteration: 3
+inst39-5s10-100-c25-w40.xpress, 77.56959682814804, iteration: 1
+inst4-10s5-25-c50-w10.xpress, 195.80375099446871, iteration: 1
+inst40-4s10-100-c50-w40.xpress, 38.359812784942164, iteration: 0
+inst41-3s10-200-c25-w5.xpress, 735.2740681858326, iteration: 0
+inst42-1s10-200-c50-w5.xpress, 515.3197906214559, iteration: 6
+inst43-4s10-200-c25-w10.xpress, 514.1781977114861, iteration: 0
+inst44-1s10-200-c50-w10.xpress, 515.4681288944793, iteration: 9
+inst45-3s10-200-c25-w20.xpress, 382.12935143033604, iteration: 0
+inst5-4s5-25-c25-w20.xpress, 111.64549665365409, iteration: 0
+inst6-5s5-25-c50-w20.xpress, 114.5820686078062, iteration: 0
+inst7-8s5-25-c25-w40.xpress, 7.629780861859658, iteration: 0
+inst8-8s5-25-c50-w40.xpress, 26.18628392053891, iteration: 0
+inst9-4s5-50-c25-w5.xpress, 288.2818903625098, iteration: 0
+EXECUTION
+instance, value, iteration
+inst89-5s40-800-c25-w5.xpress, 2900.745732028978, iteration: 0
+EXECUTION
+instance, value, iteration
+inst89-5s40-800-c25-w5.xpress, 2895.9114963456605, iteration: 0
+EXECUTION
+instance, value, iteration
+inst89-5s40-800-c25-w5.xpress, 2895.91149634566, iteration: 0
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+inst89-5s40-800-c25-w5.xpress, 2895.91149634566, iteration: 0
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 95.54003469314655, iteration: 2
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 99.01561231005138, iteration: 2
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 113.29456749302146, iteration: 9
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 110.27857046145856, iteration: 12
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 103.56643073023115, iteration: 2
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 107.7725889189538, iteration: 3
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 106.00648103025186, iteration: 0
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 111.673095419138, iteration: 0
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 112.62223830450893, iteration: 3
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 95.54003469314657, iteration: 1
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 99.01561231005138, iteration: 1
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 98.97449440878857, iteration: 3
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 106.20431339170537, iteration: 35
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 96.32226665471251, iteration: 3
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 99.01561231005138, iteration: 1
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 96.32226665471252, iteration: 471
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 95.54003469314654, iteration: 1
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 96.32226665471251, iteration: 0
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+EXECUTION
+instance, value, iteration
+inst72-5s20-400-c50-w40.xpress, 95.54003469314655, iteration: 4

@@ -1,7 +1,4 @@
 import os
-
-from src.algorithm.exhaustive_search.exhaustive_search_config import ExhaustiveSearchConfig
-from src.algorithm.exhaustive_search.exhaustive_search_executor import ExhaustiveSearchExecutor
 from src.problems.problem_sbrp.algorithm.genetic_algorithm.genetic_algorithm_config_sbrp1 import \
     GeneticAlgorithmConfigSbrp1
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
@@ -35,13 +32,7 @@ def execute_all_instances(instances_path):
         data_with_instance_name = [instance_name] + list(save_data)
         i += 1
         write_to_file(data_with_instance_name, 'test_crossover.csv')
-def test():
-    es_executor = ExhaustiveSearchExecutor()
-    config = ExhaustiveSearchConfig()
-    es_executor.execute(config=config)
 
 
 if __name__ == "__main__":
     execute_all_instances(instances_path='data/instances/test/')
-
-
