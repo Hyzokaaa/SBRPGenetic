@@ -1,18 +1,20 @@
 import copy
 import random
+from typing import List
 
 from src.operators.repair.repair_operator import RepairOperator
 from src.operators.repair.repair_parameters import RepairParameters
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
 class RepairOperatorSBRP(RepairOperator):
     def unique_stops(self, solutions):
         unique_stops = []
         for solution in solutions:
-            for route in solution:
+            for route in solution.get_representation():
                 for stop in route.stops:
                     if not isinstance(stop, School) and stop not in unique_stops:
                         unique_stops.append(stop)
@@ -23,7 +25,7 @@ class RepairOperatorSBRP(RepairOperator):
         child_stops = []
 
         # Lista las paradas contenidas en la solución
-        for route in child:
+        for route in child.get_representation():
             for stop in route.stops:
                 if not isinstance(stop, School):
                     child_stops.append(stop)
@@ -37,7 +39,7 @@ class RepairOperatorSBRP(RepairOperator):
 
         return feasible_stops
     def repair(self, parameters: RepairParameters):
-            childs = copy.deepcopy(parameters.solutions)
+            childs: List[SolutionRouteSBRP] = copy.deepcopy(parameters.solutions)
             problem: ProblemSBRP = parameters.problem
             parent1 = parameters.parents[0]
             parent2 = parameters.parents[1]
@@ -48,7 +50,7 @@ class RepairOperatorSBRP(RepairOperator):
                 seen_stops = []
 
 
-                for route in child:
+                for route in child.get_representation():
                     route.students = sum(stop.num_assigned_students for stop in route.stops)
 
                     # elimina de la ruta tantas paradas hasta satisfacer condición de capacidad del autobus
@@ -83,7 +85,7 @@ class RepairOperatorSBRP(RepairOperator):
                                 i += 1
                 # agrega las paradas faltantes a rutas factibles
                 for stop in self.get_feasible_stops(child,unique_stops):
-                    for route in child:
+                    for route in child.get_representation():
                         route.students = sum(stop.num_assigned_students for stop in route.stops)
                         if (route.students + stop.num_assigned_students <= problem.bus_capacity and
                                 stop not in route.stops):
@@ -92,7 +94,7 @@ class RepairOperatorSBRP(RepairOperator):
                             break
             return childs
     def feasible_for_route(self, child, unique_stops, bus_capacity, route):
-        child_stops = [stop for stop in [route.stops for route in child]]
+        child_stops = [stop for stop in [route.stops for route in child.get_representation()]]
 
         route.students = sum(stop.num_assigned_students for stop in route.stops)
 

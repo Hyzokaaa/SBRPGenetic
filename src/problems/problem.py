@@ -11,3 +11,11 @@ class Problem(ABC):
     @abstractmethod
     def objective_function(self, solution):
         pass
+
+    @abstractmethod
+    def compare_solutions(self, solution1, solution2, objective_max):
+        pass
+
+    @abstractmethod
+    def update_best_solution(self, best_iteration, current_iteration, objective_max, population):
+        pass

@@ -8,10 +8,14 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 import random
 
+from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
+
 
 class StudentToRandomStopStrategy(StopAssignStrategy):
 
     def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator):
+        # Crea una nueva solución
+        solution = SolutionAssignmentSBRP()
 
         # Para cada estudiante en la lista de estudiantes
         for student in problem.students:
@@ -31,3 +35,8 @@ class StudentToRandomStopStrategy(StopAssignStrategy):
 
                 # Añade al estudiante a la lista de estudiantes asignados a esa parada
                 random_stop.num_assigned_students += 1
+
+            # Añade la asignación del estudiante a la solución
+            solution.assignments.append((student, student.assigned_stop))
+
+        return solution

@@ -13,5 +13,5 @@ class StopAssigner(InitialConstructionOperator):
         strategy: StopAssignStrategy = parameters.stop_assign_strategy
 
         if strategy is not None:
-            strategy.generate_stop_assign(problem, distance_operator)
+            problem.assign_solution = strategy.generate_stop_assign(problem, distance_operator)
             parameters.stop_assign_strategy = None

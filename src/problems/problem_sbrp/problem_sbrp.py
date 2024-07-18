@@ -6,6 +6,8 @@ from src.problems.problem_sbrp.model.bus import Bus
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.model.student import Student
+from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
 class ProblemSBRP(Problem):
@@ -17,6 +19,8 @@ class ProblemSBRP(Problem):
         self.vehicles: List[Bus] = None
         self.bus_capacity = None
         self.w_distance = None
+        self.assign_solution = None
+        self.best_solution = None
 
     def construct(self, problem_parameters: ProblemParameters):
         self.distance_calculator = problem_parameters.distance_operator
@@ -32,7 +36,7 @@ class ProblemSBRP(Problem):
     def objective_function(self, solution):
         fitness = 0
         if solution:
-            for route in solution:
+            for route in solution.get_representation():
                 for i in range(len(route.stops) - 1):
                     stop1 = route.stops[i]
                     stop2 = route.stops[i + 1]
@@ -42,6 +46,32 @@ class ProblemSBRP(Problem):
             return fitness
         else:
             return None
+
+    def compare_solutions(self, solution1, solution2, objective_max):
+        best_solution = solution1
+        if best_solution is None or (
+                objective_max and self.objective_function(solution2) >
+                self.objective_function(best_solution)
+        ) or (
+                not objective_max and self.objective_function(solution2) <
+                self.objective_function(best_solution)
+        ):
+            best_solution = solution2
+        return best_solution
+
+    def update_best_solution(self, best_iteration, current_iteration, objective_max, population):
+        for new_solution in population:
+            updated_solution = self.compare_solutions(solution1=self.best_solution, solution2=new_solution,
+                                                      objective_max=objective_max)
+
+            print('Solución actual:')
+            print(self.objective_function(new_solution))
+            print('Mejor solución actualizada:')
+            print(self.objective_function(updated_solution))
+            if updated_solution != self.best_solution:
+                best_iteration = current_iteration
+                self.best_solution = updated_solution
+        return best_iteration
 
     def __str__(self):
         return 'ProblemSBRP'

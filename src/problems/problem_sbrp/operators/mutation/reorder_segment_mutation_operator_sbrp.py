@@ -7,15 +7,15 @@ from src.operators.mutation.mutation_parameters import MutationParameters
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
 class ReorderSegmentMutationOperator(MutationOperator):
     def mutate(self, parameters: MutationParameters):
         problem: ProblemSBRP = parameters.problem
-        solution = parameters.solution
-        routes = parameters.solution.copy()
+        routes: SolutionRouteSBRP = parameters.solution
 
-        routes = [route for route in routes if len(route.stops) > 3]
+        routes = [route for route in routes.get_representation() if len(route.stops) > 3]
         if routes:
             # Selecciona una ruta al azar
             route = random.choice(routes)
@@ -52,4 +52,4 @@ class ReorderSegmentMutationOperator(MutationOperator):
             school = [stop for stop in route.stops if isinstance(stop, School)][0]
             route.stops = [school] + route.stops[1:-1] + [school]
 
-        return solution
+        return routes

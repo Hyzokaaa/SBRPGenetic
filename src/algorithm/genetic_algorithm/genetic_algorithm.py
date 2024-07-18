@@ -13,17 +13,27 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         # generate initial population
         population, best_solution = self.generate_initial_population(parameters)
         best_iteration = 0
+        parameters.problem.update_best_solution(0, 0, parameters.objective_max, population)
 
         for i in range(1, parameters.max_iter + 1):
-            print(i)
+            print("iteration " + f'{i}')
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
+            print("------------------")
             population = self.create_new_population(population, parameters)
-            best_solution, best_iteration = self.update_best_solution(best_solution, best_iteration, i,
-                                                                      parameters.objective_max, population,
-                                                                      parameters.problem)
-        fitness = parameters.problem.objective_function(best_solution)
-        #Visualizer.plot_routes(routes=best_solution, sbrp=parameters.problem, image_name='RESULTADO')
+            best_iteration = parameters.problem.update_best_solution(best_iteration, i,
+                                                                     parameters.objective_max,
+                                                                     population)
+        fitness = parameters.problem.objective_function(parameters.problem.best_solution)
+        Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='RESULTADO')
         return (parameters.problem,
-                best_solution,
                 fitness,
                 best_iteration)
 
@@ -33,10 +43,9 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         for _ in range(self.initial_population_size):
             new_solution = self.initial_construction_operator.generate(self.initial_solution_parameters)
             population.append(new_solution)
-            best_solution = self.compare_solutions(solution1=best_solution,
-                                                   solution2=new_solution,
-                                                   problem=parameters.problem,
-                                                   objective_max=parameters.objective_max)
+            best_solution = parameters.problem.compare_solutions(solution1=best_solution,
+                                                                 solution2=new_solution,
+                                                                 objective_max=parameters.objective_max)
         return population, best_solution
 
     def initialize_operators_and_parameters(self, parameters: AlgorithmParameters):
@@ -89,26 +98,3 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                     new_population.append(child)
 
         return new_population
-
-    def compare_solutions(self, solution1, solution2, problem, objective_max):
-        best_solution = solution1
-        if best_solution is None or (
-                objective_max and problem.objective_function(solution2) >
-                problem.objective_function(best_solution)
-        ) or (
-                not objective_max and problem.objective_function(solution2) <
-                problem.objective_function(best_solution)
-        ):
-            best_solution = solution2
-        return best_solution
-
-    def update_best_solution(self, best_solution, best_iteration, current_iteration, objective_max, population,
-                             problem):
-        # Actualiza la mejor solución si se encuentra una mejor
-        for new_solution in population:
-            updated_solution = self.compare_solutions(solution1=best_solution, solution2=new_solution,
-                                                      problem=problem, objective_max=objective_max)
-            if updated_solution != best_solution:
-                best_solution = updated_solution
-                best_iteration = current_iteration
-        return best_solution, best_iteration

@@ -8,6 +8,7 @@ from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.stop_assign_strategy \
     import StopAssignStrategy
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
 
 
 def calculate_centroid(stops: List[Stop]):
@@ -21,6 +22,9 @@ def calculate_centroid(stops: List[Stop]):
 class HStudentToStopClosestToCentroidStrategy(StopAssignStrategy):
     def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator):
         centroid = calculate_centroid(problem.stops)
+
+        # Crea una nueva solución
+        solution = SolutionAssignmentSBRP()
 
         # Para cada estudiante en la lista de estudiantes
         for student in problem.students:
@@ -43,3 +47,7 @@ class HStudentToStopClosestToCentroidStrategy(StopAssignStrategy):
                 # Añade al estudiante a la lista de estudiantes asignados a esa parada
                 closest_stop.num_assigned_students += 1
 
+            # Añade la asignación del estudiante a la solución
+            solution.assignments.append((student, student.assigned_stop))
+
+        return solution

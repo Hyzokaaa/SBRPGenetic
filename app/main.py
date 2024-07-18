@@ -2,6 +2,7 @@ import os
 from src.problems.problem_sbrp.algorithm.genetic_algorithm.genetic_algorithm_config_sbrp1 import \
     GeneticAlgorithmConfigSbrp1
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
+from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
 def read_instances(path: str):
@@ -27,7 +28,9 @@ def execute_all_instances(instances_path):
         instance_name = instances[i]
         config = GeneticAlgorithmConfigSbrp1(instances_path + instance_name)
         data = ag_executor.execute(config)
-        save_data = [data[2], f'iteration: {data[3]}']
+        data[0]: ProblemSBRP
+        routes = data[0].best_solution.routes
+        save_data = [data[1], f'iteration: {data[2]}']
         # Incluye el nombre de la instancia en los datos
         data_with_instance_name = [instance_name] + list(save_data)
         i += 1

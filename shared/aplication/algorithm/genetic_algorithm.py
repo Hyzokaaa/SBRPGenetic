@@ -1,9 +1,10 @@
-from shared.aplication.algorithm.crossover_operator import CrossoverOperator
+
 from shared.aplication.algorithm.mutation_operator import MutationOperator
 from shared.aplication.pre_algorithm_phases.route_generator import RouteGenerator
 import copy
 import random
 
+from src.operators.crossover.crossover_operator import CrossoverOperator
 from src.problems.problem_sbrp.model.school import School
 from shared.presentation.visualizer import Visualizer
 
@@ -108,7 +109,6 @@ class GeneticAlgorithm:
     def update_best_solution(self, population, generation):
         # Busca la mejor solución de esta generación
         new_best_solution = self.get_best_solution(population)
-        print(self.calculate_individual_fitness(new_best_solution))
         if self.best_solution is not None:
             if self.calculate_individual_fitness(self.best_solution) > self.calculate_individual_fitness(
                     new_best_solution):

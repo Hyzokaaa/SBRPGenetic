@@ -7,6 +7,7 @@ import matplotlib
 
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 matplotlib.use('TkAgg')  # o 'tkagg' dependiendo del sistema operativo
 
@@ -32,7 +33,7 @@ class Visualizer:
     @staticmethod
     def plot_routes(sbrp: SBRP, routes, image_name):
         plt.figure()
-
+        routes: SolutionRouteSBRP = routes
         # Dibuja las paradas como puntos rojos
         for stop in sbrp.stops:
             plt.scatter(stop.coordinates[0], stop.coordinates[1], color='red', s=100)
@@ -47,7 +48,7 @@ class Visualizer:
                          [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-')
 
         # Dibuja las rutas como líneas de colores aleatorios
-        for route in routes:
+        for route in routes.get_representation():
             # Genera un color aleatorio distinto de blanco o negro
             color = np.random.rand(3, )
             while np.all(color < 0.5) or np.all(color > 0.9):  # Evita colores oscuros y claros
