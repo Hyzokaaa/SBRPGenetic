@@ -10,7 +10,7 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
-class ReorderSegmentMutationOperator(MutationOperator):
+class ReorderSegmentMutationOperatorSBRP(MutationOperator):
     def mutate(self, parameters: MutationParameters):
         problem: ProblemSBRP = parameters.problem
         routes: SolutionRouteSBRP = parameters.solution

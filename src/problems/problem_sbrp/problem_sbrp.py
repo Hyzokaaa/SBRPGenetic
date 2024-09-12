@@ -6,8 +6,6 @@ from src.problems.problem_sbrp.model.bus import Bus
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.model.student import Student
-from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
-from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
 class ProblemSBRP(Problem):

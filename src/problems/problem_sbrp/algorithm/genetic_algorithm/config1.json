@@ -1,0 +1,19 @@
+{
+    "instance_path": "path/to/instance",
+    "problem": "PROBLEM_SBRP",
+    "distance_operator": "EUCLIDEAN_DISTANCE",
+    "initial_construction_operator": "INITIAL_SOLUTION_OPERATOR_SBRP",
+    "stop_assign_strategy": "H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY",
+    "route_generator_strategy": "H_CLOSEST_NEIGHBOR_AND_RANDOM_ROUTE_GENERATOR_STRATEGY",
+    "selection_operator": "TOURNAMENT_SELECTION_OPERATOR",
+    "crossover_operator": "STOP_CROSSOVER_OPERATOR_SBRP",
+    "repair_operator": "REPAIR_OPERATOR_SBRP",
+    "mutation_operator": "REORDER_SEGMENT_MUTATION_OPERATOR_SBRP",
+    "objective_max": false,
+    "tournament_size": 15,
+    "number_of_selected_solutions": 2,
+    "initial_population_size": 40,
+    "max_iter": 10,
+    "crossover_rate": 0.2,
+    "mutation_rate": 0.4
+}
