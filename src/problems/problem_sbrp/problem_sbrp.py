@@ -62,10 +62,6 @@ class ProblemSBRP(Problem):
             updated_solution = self.compare_solutions(solution1=self.best_solution, solution2=new_solution,
                                                       objective_max=objective_max)
 
-            print('Solución actual:')
-            print(self.objective_function(new_solution))
-            print('Mejor solución actualizada:')
-            print(self.objective_function(updated_solution))
             if updated_solution != self.best_solution:
                 best_iteration = current_iteration
                 self.best_solution = updated_solution

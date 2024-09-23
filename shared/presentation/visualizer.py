@@ -28,7 +28,7 @@ class Visualizer:
                 plt.plot([student.coordinates[0], student.assigned_stop.coordinates[0]],
                          [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-')
 
-        plt.show()
+        ##plt.show()
 
     @staticmethod
     def plot_routes(sbrp: SBRP, routes, image_name):
@@ -82,4 +82,4 @@ class Visualizer:
 
         # Guarda la imagen
         plt.savefig(file_path, dpi=300)
-        plt.show()
+        ##plt.show()

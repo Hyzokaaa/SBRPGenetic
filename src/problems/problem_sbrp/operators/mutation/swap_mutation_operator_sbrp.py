@@ -2,54 +2,34 @@ import random
 
 from src.operators.mutation.mutation_operator import MutationOperator
 from src.operators.mutation.mutation_parameters import MutationParameters
-from src.problems.problem_sbrp.model.school import School
-from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 
 class SwapMutationOperatorSBRP(MutationOperator):
     def mutate(self, parameters: MutationParameters):
-        problem: ProblemSBRP = parameters.problem
-        # Crea una copia de las rutas para poder iterar sobre ellas
         solution = parameters.solution
-        routes = parameters.solution.copy()
+        if not isinstance(solution, SolutionRouteSBRP):
+            raise TypeError("La solución debe ser de tipo SolutionRouteSBRP")
 
-        # Mezcla las rutas para intentar con ellas en un orden aleatorio
-        random.shuffle(routes)
+        routes = solution.get_representation()
+        if not routes:
+            return  # No hay rutas para mutar
 
-        for route1 in routes:
-            for route2 in routes:
-                if route1 != route2:
-                    # Crea una copia de las paradas en la primera ruta para poder iterar sobre ellas
-                    stops1 = [stop for stop in route1.stops if not isinstance(stop, School)]
+        # Filtra las rutas que tienen al menos 4 paradas
+        valid_routes = [route for route in routes if len(route.stops) >= 4]
+        
+        if not valid_routes:
+            return  # No hay rutas válidas para mutar
 
-                    # Mezcla las paradas para intentar con ellas en un orden aleatorio
-                    random.shuffle(stops1)
+        # Selecciona una ruta aleatoria de las rutas válidas
+        route = random.choice(valid_routes)
 
-                    for stop1 in stops1:
-                        # Encuentra todas las paradas en la segunda ruta que podrían ser intercambiadas
-                        # sin exceder la capacidad del autobús
-                        feasible_stops = [stop for stop in route2.stops if not isinstance(stop, School) and
-                                          route1.students - stop1.num_assigned_students + stop.num_assigned_students <=
-                                          problem.bus_capacity and route2.students - stop.num_assigned_students +
-                                          stop1.num_assigned_students <= problem.bus_capacity]
+        # Selecciona dos índices aleatorios diferentes (excluyendo el primero y el último)
+        idx1, idx2 = random.sample(range(1, len(route.stops) - 1), 2)
 
-                        # Si hay paradas factibles, selecciona una al azar
-                        if feasible_stops:
-                            stop2 = random.choice(feasible_stops)
+        # Intercambia las paradas
+        route.stops[idx1], route.stops[idx2] = route.stops[idx2], route.stops[idx1]
 
-                            # Encuentra los índices de las paradas seleccionadas
-                            index1 = route1.stops.index(stop1)
-                            index2 = route2.stops.index(stop2)
-
-                            # Intercambia las paradas
-                            route1.stops[index1], route2.stops[index2] = route2.stops[index2], route1.stops[index1]
-                            route1.students = route1.students - stop1.num_assigned_students + stop2.num_assigned_students
-                            route2.students = route2.students - stop2.num_assigned_students + stop1.num_assigned_students
-
-                            # Si se ha realizado un intercambio factible, termina la mutación
-                            return solution
-
-        # Si no se ha encontrado ningún intercambio factible después de probar todas las paradas,
-        # devuelve la solución sin modificar
-        return solution
+        # Actualiza la representación de la solución
+        solution.set_representation(routes)
 

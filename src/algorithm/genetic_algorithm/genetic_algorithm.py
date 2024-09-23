@@ -17,16 +17,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
 
         for i in range(1, parameters.max_iter + 1):
             print("iteration " + f'{i}')
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
-            print("------------------")
             population = self.create_new_population(population, parameters)
             best_iteration = parameters.problem.update_best_solution(best_iteration, i,
                                                                      parameters.objective_max,
