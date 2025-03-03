@@ -52,8 +52,8 @@ class GeneticAlgorithmExecutor:
         optimization_algorithm = GeneticAlgorithm()
 
         data = optimization_algorithm.optimize(algorithm_parameters)
-        print("Mejor ruta:")
-        print(data[0].best_solution.routes)
-        print("Mejor Fitness: " + f'{data[1]}')
-        print("Mejor Iteracion: " + f'{data[2]}')
+        #print("Mejor ruta:")
+        #print(data[0].best_solution.routes)
+        #print("Mejor Fitness: " + f'{data[1]}')
+        #print("Mejor Iteracion: " + f'{data[2]}')
         return data

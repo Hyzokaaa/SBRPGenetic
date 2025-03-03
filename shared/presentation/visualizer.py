@@ -36,16 +36,19 @@ class Visualizer:
         routes: SolutionRouteSBRP = routes
         # Dibuja las paradas como puntos rojos
         for stop in sbrp.stops:
-            plt.scatter(stop.coordinates[0], stop.coordinates[1], color='red', s=100)
+            plt.scatter(stop.coordinates[0], stop.coordinates[1], color='red', s=50)  # Tamaño de los puntos reducido
 
-        plt.scatter(sbrp.school.coordinates[0], sbrp.school.coordinates[1], color='green', s=200)
+        plt.scatter(sbrp.school.coordinates[0], sbrp.school.coordinates[1], color='green',
+                    s=100)  # Tamaño de los puntos reducido
 
         # Dibuja los estudiantes como puntos azules y líneas desde cada estudiante a su parada asignada
         for student in sbrp.students:
-            plt.plot(student.coordinates[0], student.coordinates[1], 'bo')
+            plt.plot(student.coordinates[0], student.coordinates[1], 'bo',
+                     markersize=5)  # Tamaño de los puntos reducido
             if student.assigned_stop is not None:
                 plt.plot([student.coordinates[0], student.assigned_stop.coordinates[0]],
-                         [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-')
+                         [student.coordinates[1], student.assigned_stop.coordinates[1]], 'k-',
+                         linewidth=0.5)  # Líneas más finas
 
         # Dibuja las rutas como líneas de colores aleatorios
         for route in routes.get_representation():
@@ -57,9 +60,9 @@ class Visualizer:
             for i in range(len(route.stops) - 1):
                 stop1: Stop = route.stops[i]
                 stop2: Stop = route.stops[i + 1]
-                plt.plot([stop1.coordinates[0], stop2.coordinates[0]], [stop1.coordinates[1],
-                                                                        stop2.coordinates[1]], color=color,
-                         label=f'Route {i}, Students: {route.students}')
+                plt.plot([stop1.coordinates[0], stop2.coordinates[0]], [stop1.coordinates[1], stop2.coordinates[1]],
+                         color=color,
+                         linewidth=1, label=f'Route {i}, Students: {route.students}')  # Líneas más finas
 
                 # Añade anotaciones para indicar el orden de las paradas
                 plt.annotate(str(i), (stop1.coordinates[0], stop1.coordinates[1]), color=color, weight='bold',
@@ -81,5 +84,5 @@ class Visualizer:
             counter += 1
 
         # Guarda la imagen
-        plt.savefig(file_path, dpi=300)
+        plt.savefig(file_path, dpi=1200)
         ##plt.show()

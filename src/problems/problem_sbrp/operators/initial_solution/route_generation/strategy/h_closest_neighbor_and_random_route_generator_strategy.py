@@ -12,7 +12,7 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 class HClosestNeighborAndRandomRouteGeneratorStrategy(RouteGeneratorStrategy):
     def generate_route(self, problem: ProblemSBRP,  distance_operator: DistanceOperator):
-        if random.randint(0, 1) == 1:
+        if random.random() < 0.02:
             return HClosestNeighborRouteGeneratorStrategy().generate_route(problem, distance_operator)
         else:
             return RandomRouteGeneratorStrategy().generate_route(problem, distance_operator)

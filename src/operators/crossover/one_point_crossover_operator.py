@@ -3,6 +3,7 @@ import random
 from src.operators.crossover.crossover_operator import CrossoverOperator
 from src.operators.crossover.crossover_parameters import CrossoverParameters
 from src.operators.operator_parameters import OperatorParameters
+from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 from src.solution.solution import Solution
 
 
@@ -19,9 +20,9 @@ class OnePointCrossoverOperator(CrossoverOperator):
         child2_repr = parent2[:cxpoint] + parent1[cxpoint:]
 
         # Convierte las representaciones de los hijos en instancias de Solution
-        child1 = Solution()  # Reemplaza 'Solution' con la clase de solución que estés utilizando
+        child1 = SolutionRouteSBRP()  # Reemplaza 'Solution' con la clase de solución que estés utilizando
         child1.set_representation(child1_repr)
-        child2 = Solution()  # Reemplaza 'Solution' con la clase de solución que estés utilizando
+        child2 = SolutionRouteSBRP()  # Reemplaza 'Solution' con la clase de solución que estés utilizando
         child2.set_representation(child2_repr)
 
         return child1, child2

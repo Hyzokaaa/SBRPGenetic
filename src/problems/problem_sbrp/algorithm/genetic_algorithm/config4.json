@@ -4,7 +4,7 @@
     "distance_operator": "EUCLIDEAN_DISTANCE",
     "initial_construction_operator": "INITIAL_SOLUTION_OPERATOR_SBRP",
     "stop_assign_strategy": "H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY",
-    "route_generator_strategy": "H_CLOSEST_NEIGHBOR_ROUTE_GENERATION_STRATEGY",
+    "route_generator_strategy": "RANDOM_ROUTE_GENERATION_STRATEGY",
     "selection_operator": "TOURNAMENT_SELECTION_OPERATOR",
     "crossover_operator": "EAX_CROSSOVER_OPERATOR_SBRP",
     "repair_operator": "REPAIR_OPERATOR_SBRP",
@@ -14,6 +14,6 @@
     "number_of_selected_solutions": 2,
     "initial_population_size": 100,
     "max_iter": 100,
-    "crossover_rate": 0.9,
-    "mutation_rate": 0.4
+    "crossover_rate": 0.5,
+    "mutation_rate": 0.2
 }

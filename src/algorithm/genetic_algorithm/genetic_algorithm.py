@@ -22,7 +22,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                                                                      parameters.objective_max,
                                                                      population)
         fitness = parameters.problem.objective_function(parameters.problem.best_solution)
-        Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='RESULTADO')
+        Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='Evidencia')
         return (parameters.problem,
                 fitness,
                 best_iteration)

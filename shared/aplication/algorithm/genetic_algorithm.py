@@ -164,7 +164,7 @@ class GeneticAlgorithm:
             # Obtiene la mejor solución y su evaluación
             best_solution = self.best_solution
             evaluation = self.calculate_individual_fitness(best_solution)
-            Visualizer.plot_routes(self.sbrp, best_solution, "mejor solucion")
+            #Visualizer.plot_routes(self.sbrp, best_solution, "mejor solucion")
             # Almacena la iteración, la mejor solución y su evaluación
             results.append({
                 'Iteracion': i + 1,
