@@ -31,8 +31,8 @@ class Visualizer:
         ##plt.show()
 
     @staticmethod
-    def plot_routes(sbrp: SBRP, routes, image_name):
-        plt.figure()
+    def plot_routes(sbrp: SBRP, routes, image_path: str):  # image_path ahora es un parámetro
+        plt.figure(figsize=(10, 10))
         routes: SolutionRouteSBRP = routes
         # Dibuja las paradas como puntos rojos
         for stop in sbrp.stops:
@@ -71,18 +71,6 @@ class Visualizer:
         # Añade la leyenda
         plt.legend()
 
-        # Define la ruta de la imagen
-        route = "/"
-        base_name = image_name
-        ext = ".png"
-        counter = 1
-        file_path = f"{route}{base_name}{ext}"
-
-        # Verifica si el archivo ya existe y, si es así, añade un número al final del nombre del archivo
-        while os.path.exists(file_path):
-            file_path = f"{route}{base_name}{counter}{ext}"
-            counter += 1
-
-        # Guarda la imagen
-        plt.savefig(file_path, dpi=1200)
-        ##plt.show()
+        # Guardar la imagen en la ruta especificada
+        plt.savefig(image_path, dpi=300)
+        plt.close()  # ¡Importante! Cierra la figura para liberar memoria

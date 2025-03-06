@@ -1,6 +1,8 @@
 import os
 import re
 from datetime import datetime
+
+from shared.presentation.visualizer import Visualizer
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
 from src.utils.utils import read_instances, get_string_config_data
@@ -31,6 +33,14 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
     config = GeneticAlgorithmConfig()
     config.load_from_file(config_path, instances_path + instance_name)
     data = ag_executor.execute(config)
+
+    # Generar imagen en la carpeta del run
+    image_path = f"{instance_dir}/run_{execution_number}_routes.png"
+    Visualizer.plot_routes(
+        routes=data[0].best_solution,
+        sbrp=data[0],
+        image_path=image_path  # Ruta personalizada
+    )
 
     # Escribir resultados en run_<número>.csv
     output_path = f"{instance_dir}/run_{execution_number}.csv"
