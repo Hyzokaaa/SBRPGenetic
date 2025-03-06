@@ -14,6 +14,7 @@
     "number_of_selected_solutions": 2,
     "initial_population_size": 100,
     "max_iter": 100,
+    "max_stagnation_iter": 2,
     "crossover_rate": 0.9,
     "mutation_rate": 0.5
 }

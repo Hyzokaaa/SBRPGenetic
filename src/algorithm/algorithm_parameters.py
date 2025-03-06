@@ -18,6 +18,7 @@ class AlgorithmParameters:
                  problem: Problem,
                  initial_construction_parameters: InitialConstructionParameters,
                  max_iter: int = 1000,
+                 max_stagnation_iter: int = 50,
                  initial_population_size: int = 100,
                  objective_max: bool = True,
 
@@ -43,6 +44,7 @@ class AlgorithmParameters:
         # Global Parameters
         self.problem: Problem = problem
         self.max_iter: int = max_iter
+        self.max_stagnation_iter = max_stagnation_iter
         self.objective_max: bool = objective_max
 
         self.initial_construction_parameters: InitialConstructionParameters = initial_construction_parameters

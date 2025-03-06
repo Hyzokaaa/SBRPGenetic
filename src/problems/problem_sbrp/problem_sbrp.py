@@ -1,5 +1,7 @@
 from typing import List
 
+import numpy as np
+
 from src.problems.problem import Problem
 from src.problems.problem_parameters import ProblemParameters
 from src.problems.problem_sbrp.model.bus import Bus
@@ -19,6 +21,7 @@ class ProblemSBRP(Problem):
         self.w_distance = None
         self.assign_solution = None
         self.best_solution = None
+        self.distance_matrix = None
 
     def construct(self, problem_parameters: ProblemParameters):
         self.distance_calculator = problem_parameters.distance_operator
@@ -30,20 +33,25 @@ class ProblemSBRP(Problem):
         self.vehicles = [Bus(id=i, name=f"Bus{i}")for i in range(problem_parameters.sbrp_vehicles)]
         self.bus_capacity = problem_parameters.sbrp_bus_capacity
         self.w_distance = problem_parameters.sbrp_walk_distance
+        # Precalcular distancias entre todas las paradas
+        self.distance_matrix = self._build_distance_matrix()
+
+    def _build_distance_matrix(self):
+        stops = [self.school] + self.stops
+        n = len(stops)
+        matrix = np.zeros((n, n))
+        for i in range(n):
+            for j in range(n):
+                matrix[i][j] = self.distance_calculator.calculate_distance(stops[i].coordinates, stops[j].coordinates)
+        return matrix
 
     def objective_function(self, solution):
         fitness = 0
-        if solution:
-            for route in solution.get_representation():
-                for i in range(len(route.stops) - 1):
-                    stop1 = route.stops[i]
-                    stop2 = route.stops[i + 1]
-                    location1 = stop1.coordinates
-                    location2 = stop2.coordinates
-                    fitness += self.distance_calculator.calculate_distance(location1, location2)
-            return fitness
-        else:
-            return None
+        for route in solution.get_representation():
+            stops = [self.school] + route.stops + [self.school]  # Asume que las rutas incluyen la escuela
+            for i in range(len(stops) - 1):
+                fitness += self.distance_matrix[stops[i].id][stops[i + 1].id]
+        return fitness
 
     def compare_solutions(self, solution1, solution2, objective_max):
         best_solution = solution1

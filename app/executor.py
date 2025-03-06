@@ -1,40 +1,39 @@
-from typing import List
+import os
+import re
+from datetime import datetime
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
-from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
-from src.utils.utils import read_instances, write_to_file, get_string_config_data
+from src.utils.utils import read_instances, get_string_config_data
 
-def execute_all_instances(instances_path: str, config_path: str) -> None:
+
+def execute_all_instances(instances_path: str, config_path: str, instance_name: str, execution_number: int, total_executions: int) -> None:
     """
-    Método para ejecutar todas las instancias de un directorio determinado
-
-    Args:
-        instances_path(str): Ruta al directorio que contiene las instancias
-        config_path(str): Ruta al directorio que contiene la configuración
-    Returns:
-        None
-     """
-    # Se leen las instancias e inicializa el executor
-    instances = read_instances(instances_path)
+    Método para ejecutar una instancia específica.
+    """
     ag_executor = GeneticAlgorithmExecutor()
-    config_file_path = config_path
 
-    # Se abre el archivo csv y se define la nueva ejecución asi como los encabezados
-    i = 0
-    with open('test_crossover.csv', 'a') as f:
-        f.write(get_string_config_data(config_file_path) + '\n')
-        f.write('instance, value, iteration' + '\n')
+    # Extraer número de configuración
+    config_filename = os.path.basename(config_path)
+    config_number = re.search(r"config(\d+)", config_filename).group(1)
 
-    # Se itera sobre cada instancia, se carga la configuración y se resuelve la misma
-    while i < len(instances):
-        instance_name = instances[i]
-        config = GeneticAlgorithmConfig()
-        config.load_from_file(config_file_path, instances_path + instance_name)
-        data = ag_executor.execute(config)
-        data[0]: ProblemSBRP
-        routes = data[0].best_solution.routes
-        save_data = [data[1], f'iteration: {data[2]}']
-        # Incluye el nombre de la instancia en los datos
-        data_with_instance_name = [instance_name] + list(save_data)
-        i += 1
-        write_to_file(data_with_instance_name, 'test_crossover.csv')
+    # Crear carpeta de configuración
+    config_dir = f"results/config{config_number}"
+    os.makedirs(config_dir, exist_ok=True)
+    with open(f"{config_dir}/config_params.txt", "w") as f:
+        f.write(get_string_config_data(config_path) + "\n")
+
+    # Procesar la instancia específica
+    instance_clean = os.path.splitext(instance_name)[0]
+    instance_dir = f"{config_dir}/{instance_clean}"
+    os.makedirs(instance_dir, exist_ok=True)
+
+    # Cargar configuración y ejecutar el algoritmo
+    config = GeneticAlgorithmConfig()
+    config.load_from_file(config_path, instances_path + instance_name)
+    data = ag_executor.execute(config)
+
+    # Escribir resultados en run_<número>.csv
+    output_path = f"{instance_dir}/run_{execution_number}.csv"
+    with open(output_path, "w") as f:
+        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration\n")
+        f.write(f"{instance_clean},{data[1]},{data[2]},{data[3]:.2f},{data[4]},{data[5]}\n")
