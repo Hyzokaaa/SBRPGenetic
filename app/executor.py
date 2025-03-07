@@ -35,7 +35,7 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
     data = ag_executor.execute(config)
 
     # Generar imagen en la carpeta del run
-    image_path = f"{instance_dir}/run_{execution_number}_routes.png"
+    image_path = f"{instance_dir}/run_{execution_number}_result.png"
     Visualizer.plot_routes(
         routes=data[0].best_solution,
         sbrp=data[0],
