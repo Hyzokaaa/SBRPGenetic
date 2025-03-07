@@ -49,7 +49,7 @@ class Visualizer:
         # 2. Dibujar elementos sin labels automáticos
         # Escuela
         plt.scatter(sbrp.school.coordinates[0], sbrp.school.coordinates[1],
-                    color='green', s=200, zorder=3)
+                    color='green', s=450, zorder=10)
 
         # Paradas
         plt.scatter([stop.coordinates[0] for stop in sbrp.stops],
