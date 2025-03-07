@@ -21,8 +21,8 @@ def run_instance(args):
 
 if __name__ == "__main__":
     # Parámetros de ejecución
-    total_configurations = 5
-    total_executions = 20
+    total_configurations =6
+    total_executions = 5
     instances_path = 'data/instances/test/'
     configs_base_path = 'src/problems/problem_sbrp/algorithm/genetic_algorithm/'
 

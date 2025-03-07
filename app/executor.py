@@ -5,6 +5,7 @@ from datetime import datetime
 from shared.presentation.visualizer import Visualizer
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
+from src.problems.problem_sbrp.model.school import School
 from src.utils.utils import read_instances, get_string_config_data
 
 
@@ -42,8 +43,36 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
         image_path=image_path  # Ruta personalizada
     )
 
+    # Obtener datos extendidos de la solución
+    problem = data[0]
+    solution = data[0].best_solution
+
+    # 1. Generar mapeo de paradas con estudiantes
+    stop_assignments = {}
+    for stop in problem.stops:
+        if stop.num_assigned_students > 0:
+            students = [f"student{s.id}" for s in problem.students if s.assigned_stop == stop]
+            stop_assignments[f"Stop{stop.id}"] = students
+
+    # 2. Generar descripción de rutas
+    routes_description = []
+    for i, route in enumerate(solution.get_representation(), 1):
+        stops = [f"Stop{stop.id}" if not isinstance(stop, School) else "School"
+                 for stop in route.stops]
+        total_students = sum(stop.num_assigned_students for stop in route.stops if not isinstance(stop, School))
+        routes_description.append(f"Ruta{i}[{', '.join(stops)}] (Total: {total_students})")
+
     # Escribir resultados en run_<número>.csv
     output_path = f"{instance_dir}/run_{execution_number}.csv"
     with open(output_path, "w") as f:
-        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration\n")
-        f.write(f"{instance_clean},{data[1]},{data[2]},{data[3]:.2f},{data[4]},{data[5]}\n")
+        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration,student_assignments,routes\n")
+        f.write(
+            f"{instance_clean},"
+            f"{data[1]},"
+            f"{data[2]},"
+            f"{data[3]:.2f},"
+            f"{data[4]},"
+            f"{data[5]},"
+            f"\"{stop_assignments}\","  # Asignaciones entre paradas y estudiantes
+            f"\"{'; '.join(routes_description)}\"\n"  # Descripción de rutas
+        )

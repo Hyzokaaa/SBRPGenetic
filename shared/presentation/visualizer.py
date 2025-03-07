@@ -78,11 +78,12 @@ class Visualizer:
             line = plt.plot(stops_x, stops_y, color=color, linewidth=2.5,
                             zorder=4, solid_capstyle='round')[0]
 
-            # Crear entrada de leyenda
-            route_handles.append(
-                plt.Line2D([], [], color=color, linewidth=2.5,
-                           label=f'Ruta {route_idx + 1}: {route.students} estudiantes')
-            )
+            # Crear entrada de leyenda SOLO si tiene estudiantes
+            if route.students > 0:  # <--- Condición agregada
+                route_handles.append(
+                    plt.Line2D([], [], color=color, linewidth=2.5,
+                               label=f'Ruta {route_idx + 1}: {route.students} estudiantes')
+                )
 
             # Numeración de paradas
             for i, stop in enumerate(route.stops):

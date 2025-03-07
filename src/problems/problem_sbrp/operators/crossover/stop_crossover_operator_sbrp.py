@@ -3,6 +3,8 @@ import random
 from src.operators.crossover.crossover_operator import CrossoverOperator
 from src.operators.crossover.crossover_parameters import CrossoverParameters
 from src.problems.problem_sbrp.model.route import Route
+from src.problems.problem_sbrp.model.stop import Stop
+from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 from src.solution.solution import Solution
 
@@ -45,3 +47,42 @@ class StopCrossoverOperatorSBRP(CrossoverOperator):
         new_parent2.set_representation(new_parent2_repr)
 
         return new_parent1, new_parent2
+
+
+    def _ensure_mandatory_stops(self, child: SolutionRouteSBRP, problem: ProblemSBRP):
+        """
+        Asegura que todas las paradas con estudiantes estén en la solución.
+        """
+        # Obtener todas las paradas con estudiantes de los padres
+        mandatory_stops = [stop for stop in problem.stops if stop.num_assigned_students > 0]
+
+        # Verificar cada parada obligatoria
+        for stop in mandatory_stops:
+            if not self._is_stop_in_child(child, stop):
+                self._force_insert_stop(child, stop, problem.bus_capacity)
+
+    def _force_insert_stop(self, child: SolutionRouteSBRP, stop: Stop, bus_capacity: int):
+        """
+        Inserta una parada obligatoria en la solución, incluso si es necesario crear una nueva ruta.
+        """
+        # Intentar insertar en rutas existentes
+        for route in child.get_representation():
+            if route.students + stop.num_assigned_students <= bus_capacity:
+                route.stops.insert(-1, stop)  # Insertar antes de la escuela
+                route.students += stop.num_assigned_students
+                return
+
+        # Si no hay espacio, crear nueva ruta solo para esta parada
+        school = child.get_representation()[0].stops[0]  # La escuela es el primer stop de la primera ruta
+        new_route = Route(stops=[school, stop, school])
+        new_route.students = stop.num_assigned_students
+        child.get_representation().append(new_route)
+
+    def _is_stop_in_child(self, child: SolutionRouteSBRP, stop: Stop) -> bool:
+        """
+        Verifica si una parada está presente en alguna ruta de la solución.
+        """
+        for route in child.get_representation():
+            if stop in route.stops:
+                return True
+        return False

@@ -4,6 +4,7 @@ import time
 from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
+from src.utils.utils import print_error
 
 
 class GeneticAlgorithm(OptimizationAlgorithm):
@@ -113,7 +114,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 self.repair_parameters.parents = [self.crossover_parameters.parent1, self.crossover_parameters.parent2]
                 self.repair_parameters.solutions = [child1, child2]
                 child1, child2 = self.repair_operator.repair(self.repair_parameters)
-                self.repair_operator.print_error(self.repair_parameters)
+                print_error(self, parameters.problem, [child1, child2], "Después de la reparacion")
 
                 # mutation
                 if random.random() < parameters.mutation_rate:
