@@ -49,7 +49,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
 
             # Verificar criterio de parada por estancamiento
             if stagnation_counter >= parameters.max_stagnation_iter:
-                print(f"El algoritmo se detuvo en la iteracion: {i} luego de estancarse")
+                #print(f"El algoritmo se detuvo en la iteracion: {i} luego de estancarse")
                 stop_reason = "stagnation"
                 break
 
