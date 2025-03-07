@@ -101,3 +101,31 @@ class RepairOperatorSBRP(RepairOperator):
         feasible_stops = [stop for stop in unique_stops if stop not in child_stops
                           and route.students + stop.num_assigned_students <= bus_capacity]
         return feasible_stops
+
+    def print_error(self, parameters: RepairParameters):
+        problem: ProblemSBRP = parameters.problem
+        assignments: list = problem.assign_solution.assignments
+        stops: list = problem.stops
+        stops_assigned: list = []  # Properly initialize the variable
+        childs: List[SolutionRouteSBRP] = parameters.solutions
+
+        for stop in stops:
+            if stop.num_assigned_students > problem.bus_capacity:
+                print(f"Error: Capacidad excedida en Stop {stop.name}")
+            elif stop.num_assigned_students > 0:
+                stops_assigned.append(stop)  # Now this won't cause an error
+
+        for assignment in assignments:
+            student, stop = assignment
+            if stop is None:
+                print(f"Error: Estudiante {student} no ha sido asignado a una parada.")
+
+        for child in childs:
+            seen_stops = []
+            for route in child.get_representation():
+                seen_stops.extend(route.stops)  # Agrega las paradas de esta ruta a las vistas
+
+            # Verifica que todas las paradas asignadas estén en las rutas vistas
+            for stop in stops_assigned:
+                if stop not in seen_stops:
+                    print(f"Error: La parada {stop.name} con estudiantes asignados no está en ninguna ruta.")
