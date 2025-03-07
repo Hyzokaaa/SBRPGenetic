@@ -12,8 +12,9 @@
     "objective_max": false,
     "tournament_size": 20,
     "number_of_selected_solutions": 2,
-    "initial_population_size": 200,
-    "max_iter": 100,
+    "initial_population_size": 1000,
+    "max_iter": 1000,
+    "max_stagnation_iter": 20,
     "crossover_rate": 1,
     "mutation_rate": 1
 }
