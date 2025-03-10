@@ -1,7 +1,7 @@
+import logging
 import multiprocessing
-import datetime
+import datetime as dt
 import os
-import re
 from executor import execute_all_instances
 
 
@@ -20,9 +20,17 @@ def run_instance(args):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(f'sbrp_log_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.log'),
+            logging.StreamHandler()
+        ]
+    )
     # Parámetros de ejecución
     total_configurations = 6
-    total_executions = 20
+    total_executions = 7
     instances_path = 'data/instances/test/'
     configs_base_path = 'src/problems/problem_sbrp/algorithm/genetic_algorithm/'
 
@@ -48,12 +56,12 @@ if __name__ == "__main__":
     # Iniciar Pool con 4 procesos (ajusta según tu CPU)
     num_cores = 4
     with multiprocessing.Pool(processes=num_cores) as pool:
-        start_time = datetime.datetime.now()
+        start_time = dt.datetime.now()
         print(f"Inicio de la ejecución: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # Ejecutar en paralelo con gestión de progreso
         for i, _ in enumerate(pool.imap_unordered(run_instance, args_list), 1):
-            elapsed_time = datetime.datetime.now() - start_time
+            elapsed_time = dt.datetime.now() - start_time
             progress = (i / total_runs) * 100
 
             # Calcular el tiempo restante estimado
@@ -62,7 +70,7 @@ if __name__ == "__main__":
                 remaining_runs = total_runs - i
                 remaining_time = avg_time_per_run * remaining_runs
             else:
-                remaining_time = datetime.timedelta(0)
+                remaining_time = dt.timedelta(0)
 
             # Mostrar el progreso y el tiempo restante
             print(
@@ -72,5 +80,5 @@ if __name__ == "__main__":
             )
 
         # Mostrar el tiempo total de ejecución
-        total_time = datetime.datetime.now() - start_time
+        total_time = dt.datetime.now() - start_time
         print(f"Tiempo total: {total_time}")

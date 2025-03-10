@@ -69,17 +69,18 @@ def print_error(self, problem: ProblemSBRP, solutions: List[SolutionRouteSBRP], 
     for stop in stops:
         if stop.num_assigned_students > 0:
             stops_assigned.append(stop)  # Now this won't cause an error
-    for child in solutions:
-        for route in child.get_representation():
-            seen_stops.extend(route.stops)  # Agrega las paradas de esta ruta a las vistas
-    # Verifica que todas las paradas asignadas estén en las rutas vistas
-    for stop in stops_assigned:
-        if stop not in seen_stops:
-            print(
-                f"Error: La parada {stop.name} con estudiantes asignados no está en ninguna ruta en indicador {indicator}.")
+    if solutions is not None:
+        for child in solutions:
+            for route in child.get_representation():
+                seen_stops.extend(route.stops)  # Agrega las paradas de esta ruta a las vistas
+        # Verifica que todas las paradas asignadas estén en las rutas vistas
+        for stop in stops_assigned:
+            if stop not in seen_stops:
+                print(
+                    f"Error: La parada {stop.name} con estudiantes asignados no está en ninguna ruta en indicador {indicator}.")
 
-    for route in child.get_representation():
-        students_in_route = sum(stop.num_assigned_students for stop in route.stops)
-        if students_in_route > problem.bus_capacity:
-            print(f"Error: La ruta: {route} excede la capacidad del autobus en: {students_in_route}")
+        for route in child.get_representation():
+            students_in_route = sum(stop.num_assigned_students for stop in route.stops)
+            if students_in_route > problem.bus_capacity:
+                print(f"Error: La ruta: {route} excede la capacidad del autobus en: {students_in_route}")
 
