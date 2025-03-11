@@ -29,8 +29,8 @@ if __name__ == "__main__":
         ]
     )
     # Parámetros de ejecución
-    total_configurations = 6
-    total_executions = 7
+    configurations = [1, 4, 5, 6]
+    total_executions = 1
     instances_path = 'data/instances/test/'
     configs_base_path = 'src/problems/problem_sbrp/algorithm/genetic_algorithm/'
 
@@ -39,14 +39,14 @@ if __name__ == "__main__":
     total_instances = len(instances)
 
     # Calcular el número total de ejecuciones
-    total_runs = total_configurations * total_executions * total_instances
+    total_runs = len(configurations) * total_executions * total_instances
 
     # Crear lista de argumentos para cada ejecución
     args_list = []
-    for config_number in range(1, total_configurations + 1):
-        config_path = os.path.join(configs_base_path, f'config{config_number}.json')
+    for config_number in range(0, len(configurations)):
+        config_path = os.path.join(configs_base_path, f'config{configurations[config_number]}.json')
         if not os.path.exists(config_path):
-            print(f"⚠️ ¡Config{config_number}.json no encontrado! Saltando...")
+            print(f"⚠️ ¡Config{configurations[config_number]}.json no encontrado! Saltando...")
             continue
         for instance_name in instances:
             for execution in range(total_executions):
