@@ -3,7 +3,7 @@
     "problem": "PROBLEM_SBRP",
     "distance_operator": "EUCLIDEAN_DISTANCE",
     "initial_construction_operator": "INITIAL_SOLUTION_OPERATOR_SBRP",
-    "stop_assign_strategy": "STUDENT_TO_RANDOM_STOP_STRATEGY",
+    "stop_assign_strategy": "H_STUDENT_TO_CLOSEST_STOP_STRATEGY",
     "route_generator_strategy": "RANDOM_ROUTE_GENERATION_STRATEGY",
     "selection_operator": "TOURNAMENT_SELECTION_OPERATOR",
     "crossover_operator": "UNIFORM_CROSSOVER_OPERATOR",
@@ -12,8 +12,9 @@
     "objective_max": false,
     "tournament_size": 15,
     "number_of_selected_solutions": 2,
-    "initial_population_size": 100,
-    "max_iter": 100,
+    "initial_population_size": 250,
+    "max_iter": 1000,
+    "max_stagnation_iter": 50,
     "crossover_rate": 0.75,
     "mutation_rate": 0.5
 }
