@@ -1,4 +1,5 @@
 import random
+import time
 
 from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
@@ -6,8 +7,12 @@ from src.algorithm.optimization_algorithm import OptimizationAlgorithm
 
 
 class GeneticAlgorithm(OptimizationAlgorithm):
+
     def optimize(self, parameters: AlgorithmParameters):
-        # initialize operators and best solution
+        # Iniciar el cronómetro
+        start_time = time.time()
+
+        # Inicializar operadores y parámetros
         self.initialize_operators_and_parameters(parameters)
 
         # generate initial population
@@ -15,18 +20,51 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         best_iteration = 0
         parameters.problem.update_best_solution(0, 0, parameters.objective_max, population)
 
+        # Inicializar variables para el criterio de estancamiento
+        best_fitness = None
+        stagnation_counter = 0
+        stop_reason = "max_iter"  # Razón de detención por defecto
+
+        # Bucle principal del algoritmo
         for i in range(1, parameters.max_iter + 1):
             print("iteration " + f'{i}')
             population = self.create_new_population(population, parameters)
+
+            # Actualizar la mejor solución
             best_iteration = parameters.problem.update_best_solution(best_iteration, i,
                                                                      parameters.objective_max,
                                                                      population)
-        fitness = parameters.problem.objective_function(parameters.problem.best_solution)
-        Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='Evidencia')
-        return (parameters.problem,
-                fitness,
-                best_iteration)
 
+            # Obtener el mejor fitness actual
+            current_best_fitness = parameters.problem.objective_function(parameters.problem.best_solution)
+
+            # Actualizar contador de estancamiento
+            if best_fitness is None or current_best_fitness != best_fitness:
+                best_fitness = current_best_fitness
+                stagnation_counter = 0
+            else:
+                stagnation_counter += 1
+
+            # Verificar criterio de parada por estancamiento
+            if stagnation_counter >= parameters.max_stagnation_iter:
+                #print(f"El algoritmo se detuvo en la iteracion: {i} luego de estancarse")
+                stop_reason = "stagnation"
+                break
+
+        # Detener el cronómetro y calcular el tiempo total de ejecución
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        #Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='Evidencia')
+        # Retornar los resultados
+        return (
+            parameters.problem,  # Problema resuelto
+            parameters.problem.objective_function(parameters.problem.best_solution),  # Mejor fitness
+            best_iteration,  # Iteración en la que se encontró el mejor fitness
+            execution_time,  # Tiempo total de ejecución (en segundos)
+            stop_reason,  # Razón de detención ("stagnation" o "max_iter")
+            i  # Iteración en la que se detuvo el algoritmo
+        )
     def generate_initial_population(self, parameters):
         population = []
         best_solution = None

@@ -22,6 +22,7 @@ class GeneticAlgorithmConfig:
         self.number_of_selected_solutions = None
         self.initial_population_size = None
         self.max_iter = None
+        self.max_stagnation_iter = None
         self.mutation_rate = None
         self.crossover_rate = None
 
@@ -37,6 +38,8 @@ class GeneticAlgorithmConfig:
                         setattr(self, key, getattr(module, class_name)())
                     except ValueError:
                         raise ValueError(f"Invalid format for {key}: {value}. Expected 'module_name.ClassName'")
+                elif key == "max_stagnation_iter":  # Nueva condición
+                    setattr(self, key, int(value))
                 else:
                     setattr(self, key, value)
 

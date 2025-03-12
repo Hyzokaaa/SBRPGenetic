@@ -36,6 +36,7 @@ class GeneticAlgorithmExecutor:
                                                    objective_max=config.objective_max,
                                                    initial_population_size=config.initial_population_size,
                                                    max_iter=config.max_iter,
+                                                   max_stagnation_iter=config.max_stagnation_iter,
                                                    mutation_rate=config.mutation_rate,
                                                    crossover_rate=config.crossover_rate,
                                                    initial_construction_operator=config.initial_construction_operator,
