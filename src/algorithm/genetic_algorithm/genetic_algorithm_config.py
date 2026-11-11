@@ -47,7 +47,7 @@ class GeneticAlgorithmConfig:
             if instance_path is not None:
                 self.instance_path = instance_path
             if self.instance_path:
-                self.data_input = FileDataInputSBRP(self.instance_path)
+                self.data_input = FileDataInputSBRP(self.instance_path, distance_operator=self.distance_operator)
 
     def __str__(self):
         return (f"{self.instance_path} {self.problem} {self.objective_max} {self.max_iter} "
