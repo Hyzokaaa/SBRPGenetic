@@ -27,6 +27,7 @@ class Operators(Enum):
     ONE_POINT_CROSSOVER_OPERATOR = "src.operators.crossover.one_point_crossover_operator.OnePointCrossoverOperator"
     TWO_POINT_CROSSOVER_OPERATOR = "src.operators.crossover.two_point_crossover_operator.TwoPointCrossoverOperator"
     UNIFORM_CROSSOVER_OPERATOR = "src.operators.crossover.uniform_crossover_operator.UniformCrossoverOperator"
+    EAX_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.eax_crossover_operator_sbrp.EAXCrossoverOperatorSBRP"
     SHARED_EDGE_RUIN_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.shared_edge_ruin_crossover_operator_sbrp.SharedEdgeRuinCrossoverOperatorSBRP"
     BCRC_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.bcrc_crossover_operator_sbrp.BCRCCrossoverOperatorSBRP"
 
