@@ -122,6 +122,17 @@ class ProblemSBRP(Problem):
 
         return violations, degree
 
+    def solution_signature(self, solution):
+        """
+        Conjunto de rutas como secuencias de paradas; una ruta y su recorrido inverso son la misma ruta.
+        """
+        routes = []
+        for route in solution.get_representation():
+            ids = tuple(stop.id for stop in route.stops if stop is not None and not isinstance(stop, School))
+            if ids:
+                routes.append(min(ids, ids[::-1]))
+        return tuple(sorted(routes))
+
     def is_feasible(self, solution) -> bool:
         return not self.violations(solution)
 

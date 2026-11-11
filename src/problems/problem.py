@@ -23,6 +23,13 @@ class Problem(ABC):
         """
         return 0
 
+    def solution_signature(self, solution):
+        """
+        Representación canónica de la solución para detectar duplicados en la población.
+        None desactiva el control de duplicados.
+        """
+        return None
+
     @abstractmethod
     def compare_solutions(self, solution1, solution2, objective_max):
         pass

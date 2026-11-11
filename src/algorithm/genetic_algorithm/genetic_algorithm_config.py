@@ -25,6 +25,7 @@ class GeneticAlgorithmConfig:
         self.max_stagnation_iter = None
         self.mutation_rate = None
         self.crossover_rate = None
+        self.elitism_size = None
 
     def load_from_file(self, config_file_path, instance_path):
         with open(config_file_path, 'r') as config_file:

@@ -5,6 +5,9 @@ from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
 
+# Intentos de mutación para diferenciar un hijo duplicado antes de aceptarlo
+MAX_DUPLICATE_ATTEMPTS = 10
+
 
 class GeneticAlgorithm(OptimizationAlgorithm):
 
@@ -108,14 +111,18 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         self.mutation_parameters = parameters.mutation_parameters
 
     def create_new_population(self, population, parameters):
-        new_population = []
+        problem = parameters.problem
+
+        # Elitismo: las mejores soluciones pasan intactas a la nueva población
+        new_population = self.select_elite(population, parameters)
+        signatures = {problem.solution_signature(solution) for solution in new_population}
+
         while len(new_population) < self.initial_population_size:
             # selection
             self.selection_parameters.solutions = population
             parents = self.selection_operator.selection(self.selection_parameters)
 
             # crossover
-            child1, child2 = None, None
             if random.random() < parameters.crossover_rate:
                 self.crossover_parameters.parent1 = parents[0]
                 self.crossover_parameters.parent2 = parents[1]
@@ -125,18 +132,52 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 self.repair_parameters.parents = [self.crossover_parameters.parent1, self.crossover_parameters.parent2]
                 self.repair_parameters.solutions = [child1, child2]
                 child1, child2 = self.repair_operator.repair(self.repair_parameters)
-
-                # mutation
-                if random.random() < parameters.mutation_rate:
-                    for solution in [child1, child2]:
-                        if solution is not None:
-                            self.mutation_parameters.solution = solution
-                            self.mutation_operator.mutate(self.mutation_parameters)
             else:
-                child1, child2 = parents[0], parents[1]
+                # Sin cruce, los hijos son copias de los padres (no los mismos objetos)
+                child1, child2 = parents[0].copy(), parents[1].copy()
 
             for child in [child1, child2]:
-                if child is not None and len(new_population) < self.initial_population_size:
-                    new_population.append(child)
+                if child is None or len(new_population) >= self.initial_population_size:
+                    continue
+
+                # mutation: independiente del cruce, con probabilidad mutation_rate por hijo
+                if random.random() < parameters.mutation_rate:
+                    self.mutate(child)
+
+                # Control de duplicados: se muta el hijo mientras sea idéntico a otro de la nueva población
+                signature = problem.solution_signature(child)
+                attempts = 0
+                while signature is not None and signature in signatures and attempts < MAX_DUPLICATE_ATTEMPTS:
+                    self.mutate(child)
+                    signature = problem.solution_signature(child)
+                    attempts += 1
+
+                new_population.append(child)
+                signatures.add(signature)
 
         return new_population
+
+    def mutate(self, solution):
+        self.mutation_parameters.solution = solution
+        self.mutation_operator.mutate(self.mutation_parameters)
+
+    def select_elite(self, population, parameters):
+        """
+        Copias de las elitism_size mejores soluciones distintas de la población, según las reglas de
+        factibilidad: primero las factibles (menor grado de violación) y, entre ellas, la de mejor aptitud.
+        """
+        problem = parameters.problem
+        ranked = sorted(population, key=lambda solution: (
+            problem.constraint_violation(solution),
+            -problem.objective_function(solution) if parameters.objective_max else problem.objective_function(solution)))
+
+        elite, signatures = [], set()
+        for solution in ranked:
+            if len(elite) >= parameters.elitism_size:
+                break
+            signature = problem.solution_signature(solution)
+            if signature is not None and signature in signatures:
+                continue
+            elite.append(solution.copy())
+            signatures.add(signature)
+        return elite

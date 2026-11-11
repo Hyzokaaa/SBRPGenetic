@@ -39,6 +39,7 @@ class GeneticAlgorithmExecutor:
                                                    max_stagnation_iter=config.max_stagnation_iter,
                                                    mutation_rate=config.mutation_rate,
                                                    crossover_rate=config.crossover_rate,
+                                                   elitism_size=config.elitism_size if config.elitism_size is not None else 1,
                                                    initial_construction_operator=config.initial_construction_operator,
                                                    initial_construction_parameters=initial_construction_parameters,
                                                    selection_operator=config.selection_operator,

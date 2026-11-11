@@ -37,6 +37,7 @@ class AlgorithmParameters:
                  crossover_rate: float = 0.9,
                  mutation_rate: float = 0.10,
                  replacement_type='replace',  # 'replace' or 'best_half'
+                 elitism_size: int = 1,
 
                  repair_operator: RepairOperator = None
                  ):
@@ -62,6 +63,7 @@ class AlgorithmParameters:
         self.crossover_parameters = crossover_parameters
         self.selection_parameters = selection_parameters
         self.replacement_type = replacement_type
+        self.elitism_size = elitism_size
 
         # Extra Parameters
         self.repair_operator: RepairOperator = repair_operator
