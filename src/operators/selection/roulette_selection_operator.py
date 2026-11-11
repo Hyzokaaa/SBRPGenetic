@@ -3,30 +3,42 @@ import random
 from src.operators.selection.selection_operator import SelectionOperator
 from src.operators.selection.selection_parameters import SelectionParameters
 
+MIN_WEIGHT = 1e-9
+
 
 class RouletteSelectionOperator(SelectionOperator):
     def selection(self, parameters: SelectionParameters):
-        selected_solutions = []
-        population_copy = parameters.solutions.copy()
+        """
+        Selección proporcional a la aptitud respetando la factibilidad:
+        - Se seleccionan primero soluciones factibles, con probabilidad proporcional a su aptitud.
+        - Si no hay suficientes factibles, se completa con infactibles, con probabilidad inversamente
+          proporcional a su grado de violación.
+        No se selecciona dos veces el mismo individuo.
+        """
+        problem = parameters.problem
+        number = parameters.number_of_selected_solutions
+        feasible = [s for s in parameters.solutions if problem.constraint_violation(s) == 0]
+        infeasible = [s for s in parameters.solutions if problem.constraint_violation(s) > 0]
 
-        # Calcula la aptitud total de la población una sola vez
-        if not parameters.objective_max:
-            fitnesses = [1 / parameters.problem.objective_function(individual) for individual in population_copy]
-        else:
-            fitnesses = [parameters.problem.objective_function(individual) for individual in population_copy]
-        total_fitness = sum(fitnesses)
-
-        for _ in range(parameters.number_of_selected_solutions):
-            # Selecciona un número aleatorio entre 0 y la aptitud total
-            random_fitness = random.uniform(0, total_fitness)
-            cumulative_fitness = 0
-
-            for individual, fitness in zip(population_copy, fitnesses):
-                cumulative_fitness += fitness
-                if cumulative_fitness > random_fitness:
-                    selected_solutions.append(individual)
-                    break
-
+        selected_solutions = self._spin(feasible, [self._fitness_weight(s, parameters) for s in feasible], number)
+        if len(selected_solutions) < number:
+            weights = [1 / (1 + problem.constraint_violation(s)) for s in infeasible]
+            selected_solutions += self._spin(infeasible, weights, number - len(selected_solutions))
         return selected_solutions
 
+    @staticmethod
+    def _spin(candidates, weights, number):
+        candidates, weights = list(candidates), list(weights)
+        selected = []
+        for _ in range(min(number, len(candidates))):
+            index = random.choices(range(len(candidates)), weights=weights)[0]
+            selected.append(candidates.pop(index))
+            weights.pop(index)
+        return selected
 
+    @staticmethod
+    def _fitness_weight(solution, parameters: SelectionParameters) -> float:
+        fitness = parameters.problem.objective_function(solution)
+        if parameters.objective_max:
+            return max(fitness, MIN_WEIGHT)
+        return 1 / max(fitness, MIN_WEIGHT)
