@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
@@ -6,10 +6,11 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 class CheapestInsertion:
     @staticmethod
-    def insert(routes: List[List[Stop]], stop: Stop, problem: ProblemSBRP) -> bool:
+    def insert(routes: List[List[Stop]], stop: Stop, problem: ProblemSBRP, max_routes: Optional[int] = None) -> bool:
         """
         Inserta la parada en la posición de menor costo de una ruta con capacidad disponible.
-        Las rutas son listas de paradas sin la escuela; las rutas vacías también son candidatas.
+        Las rutas son listas de paradas sin la escuela. Si se indica max_routes y hay menos rutas
+        no vacías que ese máximo, abrir una ruta nueva también es una opción.
         Devuelve False si la parada no cabe en ninguna ruta.
         """
         best = None
@@ -23,10 +24,20 @@ class CheapestInsertion:
                          - CheapestInsertion.distance(problem, path[position], path[position + 1]))
                 if best is None or delta < best[0]:
                     best = (delta, stops, position)
+
+        # Abrir una ruta nueva si la flota lo permite
+        if max_routes is not None and sum(1 for stops in routes if stops) < max_routes:
+            delta = 2 * CheapestInsertion.distance(problem, problem.school, stop)
+            if best is None or delta < best[0]:
+                best = (delta, None, 0)
+
         if best is None:
             return False
         _, stops, position = best
-        stops.insert(position, stop)
+        if stops is None:
+            routes.append([stop])
+        else:
+            stops.insert(position, stop)
         return True
 
     @staticmethod

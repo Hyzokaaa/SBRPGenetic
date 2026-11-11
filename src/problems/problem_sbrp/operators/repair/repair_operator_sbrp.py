@@ -45,7 +45,8 @@ class RepairOperatorSBRP(RepairOperator):
             # Paso 6: Reinsertar las paradas pendientes en la posición más barata con capacidad disponible
             self._insert_pending_stops(routes, pending, problem)
 
-            child.set_representation([self._build_route(stops, problem) for stops in routes])
+            # Solo se representan las rutas que visitan alguna parada
+            child.set_representation([self._build_route(stops, problem) for stops in routes if stops])
 
         return childs
 
@@ -108,18 +109,15 @@ class RepairOperatorSBRP(RepairOperator):
 
     def _enforce_fleet_size(self, routes: List[List[Stop]], problem: ProblemSBRP) -> List[Stop]:
         """
-        Deja exactamente tantas rutas como vehículos. Si sobran, elimina primero las vacías y luego
-        disuelve las de menor carga, devolviendo sus paradas para reinsertarlas. Si faltan, añade rutas vacías.
+        Elimina las rutas vacías y, si quedan más rutas que vehículos, disuelve las de menor carga,
+        devolviendo sus paradas para reinsertarlas.
         """
         removed = []
-        fleet_size = len(problem.vehicles)
-        while len(routes) > fleet_size:
-            empty_routes = [stops for stops in routes if not stops]
-            route = empty_routes[0] if empty_routes else min(routes, key=self._load)
+        routes[:] = [stops for stops in routes if stops]
+        while len(routes) > len(problem.vehicles):
+            route = min(routes, key=self._load)
             routes.remove(route)
             removed.extend(route)
-        while len(routes) < fleet_size:
-            routes.append([])
         return removed
 
     def _insert_pending_stops(self, routes: List[List[Stop]], pending: List[Stop], problem: ProblemSBRP):
@@ -129,7 +127,7 @@ class RepairOperatorSBRP(RepairOperator):
         Si una parada no cabe en ninguna ruta, se intenta liberar capacidad reubicando otra parada.
         """
         for stop in sorted(pending, key=lambda s: s.num_assigned_students, reverse=True):
-            if not CheapestInsertion.insert(routes, stop, problem):
+            if not CheapestInsertion.insert(routes, stop, problem, max_routes=len(problem.vehicles)):
                 self._insert_with_relocation(routes, stop, problem)
 
     def _insert_with_relocation(self, routes: List[List[Stop]], stop: Stop, problem: ProblemSBRP) -> bool:

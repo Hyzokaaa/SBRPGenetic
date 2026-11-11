@@ -48,10 +48,10 @@ class BCRCCrossoverOperatorSBRP(CrossoverOperator):
 
         # Reinserta las paradas de la ruta donante en la posición de menor costo
         for stop in donor_route:
-            CheapestInsertion.insert(routes, stop, problem)
+            CheapestInsertion.insert(routes, stop, problem, max_routes=len(problem.vehicles))
 
         return SolutionRouteSBRP(routes=[Route(stops=[problem.school] + stops + [problem.school])
-                                         for stops in routes])
+                                         for stops in routes if stops])
 
     @staticmethod
     def _route_stops(route: Route) -> List[Stop]:

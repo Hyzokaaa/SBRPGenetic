@@ -17,5 +17,7 @@ class RouteGenerator(InitialConstructionOperator):
 
         for _ in problem.vehicles:
             route = strategy.generate_route(problem=problem, distance_operator=parameters.distance_operator)
-            solution.routes.append(route)
+            # Solo se representan las rutas que visitan alguna parada
+            if len(route.stops) > 2:
+                solution.routes.append(route)
         return solution
