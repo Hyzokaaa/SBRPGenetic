@@ -22,7 +22,7 @@ class TestGeneticAlgorithmConfig(unittest.TestCase):
         self.assertEqual(self.config.stop_assign_strategy.__class__.__name__, 'HStudentToStopClosestToSchoolStrategy')
         self.assertEqual(self.config.route_generator_strategy.__class__.__name__, 'RandomRouteGeneratorStrategy')
         self.assertEqual(self.config.selection_operator.__class__.__name__, 'TournamentSelectionOperator')
-        self.assertEqual(self.config.crossover_operator.__class__.__name__, 'EAXCrossoverOperatorSBRP')
+        self.assertEqual(self.config.crossover_operator.__class__.__name__, 'SharedEdgeRuinCrossoverOperatorSBRP')
         self.assertEqual(self.config.repair_operator.__class__.__name__, 'RepairOperatorSBRP')
         self.assertEqual(self.config.mutation_operator.__class__.__name__, 'ReorderSegmentMutationOperatorSBRP')
         self.assertFalse(self.config.objective_max)

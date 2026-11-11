@@ -7,7 +7,13 @@ from src.problems.problem_sbrp.model.route import Route
 import random
 from collections import defaultdict
 
-class EAXCrossoverOperatorSBRP(CrossoverOperator):
+class SharedEdgeRuinCrossoverOperatorSBRP(CrossoverOperator):
+    """
+    Variante inspirada en EAX que, en la práctica, no realiza un EAX: los ciclos que encuentra son casi siempre
+    aristas comunes a ambos padres recorridas de ida y vuelta. Cada hijo parte de un solo padre, elimina las paradas
+    que forman esas aristas comunes y las añade como rutas aparte; el operador de reparación reconstruye la solución
+    (ruin & recreate guiado por las aristas compartidas). Se conserva para comparar con el EAX real.
+    """
     def crossover(self, parameters: CrossoverParameters):
         parent1, parent2 = parameters.parent1.get_representation(), parameters.parent2.get_representation()
 
