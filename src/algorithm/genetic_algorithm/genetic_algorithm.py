@@ -4,7 +4,6 @@ import time
 from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
-from src.utils.utils import print_error
 
 
 class GeneticAlgorithm(OptimizationAlgorithm):
@@ -39,7 +38,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                                                                      population)
 
             # Obtener el mejor fitness actual
-            current_best_fitness = parameters.problem.objective_function(parameters.problem.best_solution)
+            current_best_fitness = self.best_fitness(parameters.problem)
 
             # Actualizar contador de estancamiento
             if best_fitness is None or current_best_fitness != best_fitness:
@@ -62,12 +61,17 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         # Retornar los resultados
         return (
             parameters.problem,  # Problema resuelto
-            parameters.problem.objective_function(parameters.problem.best_solution),  # Mejor fitness
+            self.best_fitness(parameters.problem),  # Mejor fitness (None si no hubo solución factible)
             best_iteration,  # Iteración en la que se encontró el mejor fitness
             execution_time,  # Tiempo total de ejecución (en segundos)
             stop_reason,  # Razón de detención ("stagnation" o "max_iter")
             i  # Iteración en la que se detuvo el algoritmo
         )
+
+    @staticmethod
+    def best_fitness(problem):
+        return problem.objective_function(problem.best_solution) if problem.best_solution is not None else None
+
     def generate_initial_population(self, parameters):
         population = []
         best_solution = None
@@ -114,7 +118,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 self.repair_parameters.parents = [self.crossover_parameters.parent1, self.crossover_parameters.parent2]
                 self.repair_parameters.solutions = [child1, child2]
                 child1, child2 = self.repair_operator.repair(self.repair_parameters)
-                print_error(self, parameters.problem, [child1, child2], "Después de la reparacion")
 
                 # mutation
                 if random.random() < parameters.mutation_rate:

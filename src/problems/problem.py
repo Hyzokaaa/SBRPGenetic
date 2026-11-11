@@ -13,6 +13,10 @@ class Problem(ABC):
         pass
 
     @abstractmethod
+    def violations(self, solution):
+        pass
+
+    @abstractmethod
     def compare_solutions(self, solution1, solution2, objective_max):
         pass
 

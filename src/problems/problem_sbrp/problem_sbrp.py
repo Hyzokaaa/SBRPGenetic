@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import List
 
 import numpy as np
@@ -65,8 +66,52 @@ class ProblemSBRP(Problem):
             best_solution = solution2
         return best_solution
 
+    def violations(self, solution) -> List[str]:
+        """
+        Devuelve la lista de restricciones que incumple la solución (vacía si es factible).
+        """
+        routes = solution.get_representation()
+        loads = {stop.id: stop.num_assigned_students for stop in self.stops}
+        mandatory = {stop_id for stop_id, load in loads.items() if load > 0}
+        visits = Counter()
+        violations = []
+
+        for i, route in enumerate(routes):
+            if any(stop is None for stop in route.stops):
+                violations.append(f"Ruta {i} contiene paradas nulas")
+                continue
+            if (len(route.stops) < 2 or not isinstance(route.stops[0], School)
+                    or not isinstance(route.stops[-1], School)
+                    or any(isinstance(stop, School) for stop in route.stops[1:-1])):
+                violations.append(f"Ruta {i} no sale y regresa a la escuela")
+            route_stops = [stop for stop in route.stops if not isinstance(stop, School)]
+            visits.update(stop.id for stop in route_stops)
+            load = sum(loads.get(stop.id, 0) for stop in route_stops)
+            if load > self.bus_capacity:
+                violations.append(f"Ruta {i} excede la capacidad: {load} > {self.bus_capacity}")
+
+        used_routes = sum(1 for route in routes if any(
+            stop is not None and not isinstance(stop, School) for stop in route.stops))
+        if used_routes > len(self.vehicles):
+            violations.append(f"Rutas utilizadas exceden la flota: {used_routes} > {len(self.vehicles)}")
+
+        missing = sorted(mandatory - set(visits))
+        if missing:
+            violations.append(f"Paradas con estudiantes sin visitar: {missing}")
+        duplicated = sorted(stop_id for stop_id, count in visits.items() if count > 1)
+        if duplicated:
+            violations.append(f"Paradas visitadas más de una vez: {duplicated}")
+
+        return violations
+
+    def is_feasible(self, solution) -> bool:
+        return not self.violations(solution)
+
     def update_best_solution(self, best_iteration, current_iteration, objective_max, population):
         for new_solution in population:
+            # Solo las soluciones factibles pueden convertirse en la mejor solución
+            if not self.is_feasible(new_solution):
+                continue
             updated_solution = self.compare_solutions(solution1=self.best_solution, solution2=new_solution,
                                                       objective_max=objective_max)
 
