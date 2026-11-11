@@ -7,6 +7,7 @@ from src.operators.repair.repair_parameters import RepairParameters
 from src.problems.problem_sbrp.model.route import Route
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
+from src.problems.problem_sbrp.operators.insertion.cheapest_insertion import CheapestInsertion
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
@@ -127,20 +128,7 @@ class RepairOperatorSBRP(RepairOperator):
         Se insertan primero las paradas con más estudiantes para facilitar el empaquetado.
         """
         for stop in sorted(pending, key=lambda s: s.num_assigned_students, reverse=True):
-            best = None
-            for stops in routes:
-                if self._load(stops) + stop.num_assigned_students > problem.bus_capacity:
-                    continue
-                path = [problem.school] + stops + [problem.school]
-                for position in range(len(path) - 1):
-                    delta = (self._distance(problem, path[position], stop)
-                             + self._distance(problem, stop, path[position + 1])
-                             - self._distance(problem, path[position], path[position + 1]))
-                    if best is None or delta < best[0]:
-                        best = (delta, stops, position)
-            if best is not None:
-                _, stops, position = best
-                stops.insert(position, stop)
+            CheapestInsertion.insert(routes, stop, problem)
 
     def _build_route(self, stops: List[Stop], problem: ProblemSBRP) -> Route:
         route = Route(stops=[problem.school] + stops + [problem.school])
@@ -161,8 +149,4 @@ class RepairOperatorSBRP(RepairOperator):
 
     @staticmethod
     def _load(stops: List[Stop]) -> int:
-        return sum(stop.num_assigned_students for stop in stops)
-
-    @staticmethod
-    def _distance(problem: ProblemSBRP, stop1: Stop, stop2: Stop) -> float:
-        return problem.distance_matrix[stop1.id][stop2.id]
+        return CheapestInsertion.load(stops)
