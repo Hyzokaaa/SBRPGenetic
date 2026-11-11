@@ -14,157 +14,155 @@ from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 class RepairOperatorSBRP(RepairOperator):
     def repair(self, parameters: RepairParameters):
         """
-        Repara las soluciones hijas garantizando:
-        1. Eliminar duplicados.
-        2. Incluir todas las paradas con estudiantes del problema.
+        Repara las soluciones hijas garantizando, siempre que sea posible:
+        1. Que cada ruta salga y regrese a la escuela.
+        2. Que no existan paradas duplicadas.
+        3. Que ninguna ruta exceda la capacidad del autobús.
+        4. Que no se utilicen más rutas que vehículos.
+        5. Que todas las paradas con estudiantes del problema estén en la solución.
+        Las paradas que no puedan reinsertarse quedan fuera y la solución resulta infactible.
         """
         childs: List[SolutionRouteSBRP] = copy.deepcopy(parameters.solutions)
         problem: ProblemSBRP = parameters.problem
 
         for child in childs:
-            # Paso 1: Eliminar duplicados y reemplazar con paradas faltantes de los padres
-            self._handle_duplicates(child, parameters.parents, problem)
+            # Paso 1: Trabajar solo con las paradas de cada ruta (sin escuela ni paradas nulas)
+            routes = self._normalize_routes(child)
 
-            # Paso 2: Asegurar que TODAS las paradas con estudiantes del problema estén en la solución
-            self._ensure_all_mandatory_stops(child, problem)
+            # Paso 2: Eliminar duplicados y reemplazar con paradas faltantes de los padres
+            self._handle_duplicates(routes, parameters.parents)
 
-            # Paso 3: Verificación final de capacidad en todas las rutas
-            self._enforce_capacity(child, problem)
+            # Paso 3: Retirar paradas de las rutas que exceden la capacidad
+            pending = self._enforce_capacity(routes, problem)
+
+            # Paso 4: Añadir las paradas con estudiantes que no están en la solución
+            pending += self._get_missing_mandatory_stops(routes, pending, problem)
+
+            # Paso 5: Ajustar el número de rutas al número de vehículos
+            pending += self._enforce_fleet_size(routes, problem)
+
+            # Paso 6: Reinsertar las paradas pendientes en la posición más barata con capacidad disponible
+            self._insert_pending_stops(routes, pending, problem)
+
+            child.set_representation([self._build_route(stops, problem) for stops in routes])
 
         return childs
 
-    def _enforce_capacity(self, child: SolutionRouteSBRP, problem: ProblemSBRP):
+    def _normalize_routes(self, child: SolutionRouteSBRP) -> List[List[Stop]]:
         """
-        Asegura que ninguna ruta exceda la capacidad del autobús.
-        Si excede, elimina paradas (priorizando las menos críticas) hasta cumplir.
+        Extrae las paradas de cada ruta, descartando la escuela y las paradas nulas.
         """
-        new_routes = []
-        for route in child.get_representation():
-            current_students = sum(stop.num_assigned_students for stop in route.stops)
+        return [[stop for stop in route.stops if stop is not None and not isinstance(stop, School)]
+                for route in child.get_representation()]
 
-            # Si la ruta excede la capacidad, eliminar paradas menos críticas
-            while current_students > problem.bus_capacity:
+    def _handle_duplicates(self, routes: List[List[Stop]], parents):
+        """
+        Elimina paradas duplicadas y las reemplaza con paradas faltantes de los padres.
+        """
+        parent_stops = self._get_unique_parent_stops(parents)
+        seen_ids = set()
+
+        for i, stops in enumerate(routes):
+            new_stops = []
+            for stop in stops:
+                # Si la parada ya fue vista, es un duplicado
+                if stop.id in seen_ids:
+                    # Buscar una parada faltante de los padres para reemplazar
+                    feasible_stops = [s for s in parent_stops if s.id not in seen_ids]
+                    if feasible_stops:
+                        new_stop = random.choice(feasible_stops)
+                        new_stops.append(new_stop)
+                        seen_ids.add(new_stop.id)
+                else:
+                    new_stops.append(stop)
+                    seen_ids.add(stop.id)
+            routes[i] = new_stops
+
+    def _enforce_capacity(self, routes: List[List[Stop]], problem: ProblemSBRP) -> List[Stop]:
+        """
+        Retira paradas de las rutas que exceden la capacidad (priorizando las menos críticas)
+        y las devuelve para reinsertarlas.
+        """
+        removed = []
+        for stops in routes:
+            while self._load(stops) > problem.bus_capacity:
                 # Priorizar eliminar paradas sin estudiantes (si existen)
-                non_mandatory_stops = [
-                    stop for stop in route.stops
-                    if not isinstance(stop, School)
-                       and stop.num_assigned_students == 0
-                ]
-
+                non_mandatory_stops = [stop for stop in stops if stop.num_assigned_students == 0]
                 if non_mandatory_stops:
-                    # Eliminar la parada sin estudiantes más reciente
                     removed_stop = non_mandatory_stops[-1]
                 else:
                     # Eliminar la parada con menos estudiantes
-                    removed_stop = min(
-                        [stop for stop in route.stops if not isinstance(stop, School)],
-                        key=lambda s: s.num_assigned_students
-                    )
+                    removed_stop = min(stops, key=lambda s: s.num_assigned_students)
+                stops.remove(removed_stop)
+                removed.append(removed_stop)
+        return removed
 
-                route.stops.remove(removed_stop)
-                current_students -= removed_stop.num_assigned_students
-
-                # Intentar mover la parada eliminada a otra ruta
-                self._relocate_stop(child, removed_stop, problem.bus_capacity)
-
-            new_routes.append(route)
-
-        child.set_representation(new_routes)
-
-    def _relocate_stop(self, child: SolutionRouteSBRP, stop: Stop, bus_capacity: int):
+    def _get_missing_mandatory_stops(self, routes: List[List[Stop]], pending: List[Stop],
+                                     problem: ProblemSBRP) -> List[Stop]:
         """
-        Intenta mover una parada eliminada a otra ruta con espacio.
+        Obtiene las paradas con estudiantes del problema que no están en las rutas ni pendientes.
         """
-        for route in child.get_representation():
-            if route.students + stop.num_assigned_students <= bus_capacity:
-                route.stops.insert(-1, stop)  # Insertar antes de la escuela
-                route.students += stop.num_assigned_students
-                return
+        present_ids = {stop.id for stops in routes for stop in stops} | {stop.id for stop in pending}
+        return [stop for stop in problem.stops if stop.num_assigned_students > 0 and stop.id not in present_ids]
 
-        # Si no hay espacio, crear nueva ruta
-        school = child.get_representation()[0].stops[0] if child.get_representation() else School(id=0,
-                                                                                                  name="School",
-                                                                                                  coordinates=(
-                                                                                                  0, 0))
-        new_route = Route(stops=[school, stop, school])
-        new_route.students = stop.num_assigned_students
-        child.get_representation().append(new_route)
-
-    def _handle_duplicates(self, child: SolutionRouteSBRP, parents, problem: ProblemSBRP):
+    def _enforce_fleet_size(self, routes: List[List[Stop]], problem: ProblemSBRP) -> List[Stop]:
         """
-        Elimina paradas duplicadas y reemplaza con paradas faltantes de los padres.
+        Deja exactamente tantas rutas como vehículos. Si sobran, elimina primero las vacías y luego
+        disuelve las de menor carga, devolviendo sus paradas para reinsertarlas. Si faltan, añade rutas vacías.
         """
-        # Obtener paradas únicas de los padres
-        parent_stops = self._get_unique_parent_stops(parents)
-        seen_stops = []
+        removed = []
+        fleet_size = len(problem.vehicles)
+        while len(routes) > fleet_size:
+            empty_routes = [stops for stops in routes if not stops]
+            route = empty_routes[0] if empty_routes else min(routes, key=self._load)
+            routes.remove(route)
+            removed.extend(route)
+        while len(routes) < fleet_size:
+            routes.append([])
+        return removed
 
-        # Procesar cada ruta del hijo
-        new_routes = []
-        for route in child.get_representation():
-            new_route = Route(stops=[])
-            for stop in route.stops:
-                if isinstance(stop, School):
-                    new_route.stops.append(stop)
+    def _insert_pending_stops(self, routes: List[List[Stop]], pending: List[Stop], problem: ProblemSBRP):
+        """
+        Inserta cada parada pendiente en la posición de menor costo de una ruta con capacidad disponible.
+        Se insertan primero las paradas con más estudiantes para facilitar el empaquetado.
+        """
+        for stop in sorted(pending, key=lambda s: s.num_assigned_students, reverse=True):
+            best = None
+            for stops in routes:
+                if self._load(stops) + stop.num_assigned_students > problem.bus_capacity:
                     continue
+                path = [problem.school] + stops + [problem.school]
+                for position in range(len(path) - 1):
+                    delta = (self._distance(problem, path[position], stop)
+                             + self._distance(problem, stop, path[position + 1])
+                             - self._distance(problem, path[position], path[position + 1]))
+                    if best is None or delta < best[0]:
+                        best = (delta, stops, position)
+            if best is not None:
+                _, stops, position = best
+                stops.insert(position, stop)
 
-                # Si la parada ya fue vista, es un duplicado
-                if stop in seen_stops:
-                    # Buscar una parada faltante de los padres para reemplazar
-                    feasible_stops = [s for s in parent_stops if s not in seen_stops]
-                    if feasible_stops:
-                        new_stop = random.choice(feasible_stops)
-                        new_route.stops.append(new_stop)
-                        seen_stops.append(new_stop)
-                else:
-                    new_route.stops.append(stop)
-                    seen_stops.append(stop)
-
-            new_route.students = sum(s.num_assigned_students for s in new_route.stops)
-            new_routes.append(new_route)
-
-        child.set_representation(new_routes)
-
-    def _ensure_all_mandatory_stops(self, child: SolutionRouteSBRP, problem: ProblemSBRP):
-        """
-        Asegura que TODAS las paradas con estudiantes del problema estén en la solución.
-        """
-        # Obtener todas las paradas del problema con estudiantes
-        mandatory_stops = [stop for stop in problem.stops if stop.num_assigned_students > 0]
-
-        # Paradas presentes en el hijo
-        child_stops = [stop for route in child.get_representation() for stop in route.stops]
-
-        # Para cada parada obligatoria faltante
-        for stop in mandatory_stops:
-            if stop not in child_stops:
-                self._force_insert_stop(child, stop, problem.bus_capacity)
-
-    def _force_insert_stop(self, child: SolutionRouteSBRP, stop: Stop, bus_capacity: int):
-        """
-        Inserta una parada en la solución, creando una nueva ruta si es necesario.
-        """
-        # Intentar añadir a rutas existentes
-        for route in child.get_representation():
-            if route.students + stop.num_assigned_students <= bus_capacity:
-                route.stops.insert(-1, stop)  # Insertar antes de la escuela
-                route.students += stop.num_assigned_students
-                return
-
-        # Crear nueva ruta si no hay espacio
-        school = child.get_representation()[0].stops[0] if child.get_representation() else School(id=0, name="School", coordinates=(0,0))
-        new_route = Route(stops=[school, stop, school])
-        new_route.students = stop.num_assigned_students
-        child.get_representation().append(new_route)
+    def _build_route(self, stops: List[Stop], problem: ProblemSBRP) -> Route:
+        route = Route(stops=[problem.school] + stops + [problem.school])
+        route.students = self._load(stops)
+        return route
 
     def _get_unique_parent_stops(self, parents):
         """
         Obtiene todas las paradas únicas de las soluciones padres.
         """
-        unique_stops = []
+        unique_stops = {}
         for parent in parents:
             for route in parent.get_representation():
                 for stop in route.stops:
-                    if not isinstance(stop, School) and stop not in unique_stops:
-                        unique_stops.append(stop)
-        return unique_stops
+                    if stop is not None and not isinstance(stop, School) and stop.id not in unique_stops:
+                        unique_stops[stop.id] = stop
+        return list(unique_stops.values())
 
+    @staticmethod
+    def _load(stops: List[Stop]) -> int:
+        return sum(stop.num_assigned_students for stop in stops)
+
+    @staticmethod
+    def _distance(problem: ProblemSBRP, stop1: Stop, stop2: Stop) -> float:
+        return problem.distance_matrix[stop1.id][stop2.id]
