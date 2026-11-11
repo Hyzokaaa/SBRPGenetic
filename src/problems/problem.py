@@ -16,6 +16,13 @@ class Problem(ABC):
     def violations(self, solution):
         pass
 
+    def constraint_violation(self, solution):
+        """
+        Grado de violación de restricciones (0 si la solución es factible).
+        Por defecto el problema no tiene restricciones.
+        """
+        return 0
+
     @abstractmethod
     def compare_solutions(self, solution1, solution2, objective_max):
         pass

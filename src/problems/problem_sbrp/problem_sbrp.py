@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -70,39 +70,57 @@ class ProblemSBRP(Problem):
         """
         Devuelve la lista de restricciones que incumple la solución (vacía si es factible).
         """
+        return self._evaluate_constraints(solution)[0]
+
+    def constraint_violation(self, solution) -> int:
+        """
+        Grado de violación de la solución (0 si es factible). Suma los estudiantes sin recoger,
+        los estudiantes que exceden la capacidad, las visitas repetidas, las rutas que exceden
+        la flota y las rutas mal formadas. Se usa para comparar soluciones infactibles en la selección.
+        """
+        return self._evaluate_constraints(solution)[1]
+
+    def _evaluate_constraints(self, solution) -> Tuple[List[str], int]:
         routes = solution.get_representation()
         loads = {stop.id: stop.num_assigned_students for stop in self.stops}
         mandatory = {stop_id for stop_id, load in loads.items() if load > 0}
         visits = Counter()
         violations = []
+        degree = 0
 
         for i, route in enumerate(routes):
             if any(stop is None for stop in route.stops):
                 violations.append(f"Ruta {i} contiene paradas nulas")
+                degree += 1
                 continue
             if (len(route.stops) < 2 or not isinstance(route.stops[0], School)
                     or not isinstance(route.stops[-1], School)
                     or any(isinstance(stop, School) for stop in route.stops[1:-1])):
                 violations.append(f"Ruta {i} no sale y regresa a la escuela")
+                degree += 1
             route_stops = [stop for stop in route.stops if not isinstance(stop, School)]
             visits.update(stop.id for stop in route_stops)
             load = sum(loads.get(stop.id, 0) for stop in route_stops)
             if load > self.bus_capacity:
                 violations.append(f"Ruta {i} excede la capacidad: {load} > {self.bus_capacity}")
+                degree += load - self.bus_capacity
 
         used_routes = sum(1 for route in routes if any(
             stop is not None and not isinstance(stop, School) for stop in route.stops))
         if used_routes > len(self.vehicles):
             violations.append(f"Rutas utilizadas exceden la flota: {used_routes} > {len(self.vehicles)}")
+            degree += used_routes - len(self.vehicles)
 
         missing = sorted(mandatory - set(visits))
         if missing:
             violations.append(f"Paradas con estudiantes sin visitar: {missing}")
+            degree += sum(loads[stop_id] for stop_id in missing)
         duplicated = sorted(stop_id for stop_id, count in visits.items() if count > 1)
         if duplicated:
             violations.append(f"Paradas visitadas más de una vez: {duplicated}")
+            degree += sum(visits[stop_id] - 1 for stop_id in duplicated)
 
-        return violations
+        return violations, degree
 
     def is_feasible(self, solution) -> bool:
         return not self.violations(solution)
