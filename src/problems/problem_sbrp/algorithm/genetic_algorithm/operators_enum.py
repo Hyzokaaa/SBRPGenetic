@@ -30,6 +30,7 @@ class Operators(Enum):
     EAX_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.eax_crossover_operator_sbrp.EAXCrossoverOperatorSBRP"
 
     REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.reorder_segment_mutation_operator_sbrp.ReorderSegmentMutationOperatorSBRP"
+    BEST_REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.best_reorder_segment_mutation_operator_sbrp.BestReorderSegmentMutationOperatorSBRP"
     SWAP_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.swap_mutation_operator_sbrp.SwapMutationOperatorSBRP"
 
     REPAIR_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.repair.repair_operator_sbrp.RepairOperatorSBRP"
