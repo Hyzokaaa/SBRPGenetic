@@ -33,6 +33,9 @@ class Operators(Enum):
 
     REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.reorder_segment_mutation_operator_sbrp.ReorderSegmentMutationOperatorSBRP"
     BEST_REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.best_reorder_segment_mutation_operator_sbrp.BestReorderSegmentMutationOperatorSBRP"
+    RELOCATE_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.relocate_mutation_operator_sbrp.RelocateMutationOperatorSBRP"
+    EXCHANGE_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.exchange_mutation_operator_sbrp.ExchangeMutationOperatorSBRP"
+    COMPOSITE_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.composite_mutation_operator_sbrp.CompositeMutationOperatorSBRP"
     SWAP_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.swap_mutation_operator_sbrp.SwapMutationOperatorSBRP"
 
     REPAIR_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.repair.repair_operator_sbrp.RepairOperatorSBRP"
