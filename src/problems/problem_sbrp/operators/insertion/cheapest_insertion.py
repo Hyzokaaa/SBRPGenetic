@@ -30,6 +30,11 @@ class CheapestInsertion:
         return True
 
     @staticmethod
+    def route_cost(stops: List[Stop], problem: ProblemSBRP) -> float:
+        path = [problem.school] + stops + [problem.school]
+        return sum(CheapestInsertion.distance(problem, path[i], path[i + 1]) for i in range(len(path) - 1))
+
+    @staticmethod
     def load(stops: List[Stop]) -> int:
         return sum(stop.num_assigned_students for stop in stops)
 

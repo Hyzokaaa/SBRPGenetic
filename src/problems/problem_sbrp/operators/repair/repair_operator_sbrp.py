@@ -126,9 +126,36 @@ class RepairOperatorSBRP(RepairOperator):
         """
         Inserta cada parada pendiente en la posición de menor costo de una ruta con capacidad disponible.
         Se insertan primero las paradas con más estudiantes para facilitar el empaquetado.
+        Si una parada no cabe en ninguna ruta, se intenta liberar capacidad reubicando otra parada.
         """
         for stop in sorted(pending, key=lambda s: s.num_assigned_students, reverse=True):
-            CheapestInsertion.insert(routes, stop, problem)
+            if not CheapestInsertion.insert(routes, stop, problem):
+                self._insert_with_relocation(routes, stop, problem)
+
+    def _insert_with_relocation(self, routes: List[List[Stop]], stop: Stop, problem: ProblemSBRP) -> bool:
+        """
+        Mueve una parada de una ruta (origen) a otra (destino) para liberar la capacidad necesaria en el origen
+        e inserta allí la parada. Elige la combinación de menor costo total. Devuelve False si no es posible.
+        """
+        best = None
+        for i, origin in enumerate(routes):
+            for moved in origin:
+                if self._load(origin) - moved.num_assigned_students + stop.num_assigned_students > problem.bus_capacity:
+                    continue
+                for j, target in enumerate(routes):
+                    if j == i or self._load(target) + moved.num_assigned_students > problem.bus_capacity:
+                        continue
+                    candidate = [list(stops) for stops in routes]
+                    candidate[i].remove(moved)
+                    CheapestInsertion.insert([candidate[j]], moved, problem)
+                    CheapestInsertion.insert([candidate[i]], stop, problem)
+                    cost = sum(CheapestInsertion.route_cost(stops, problem) for stops in candidate)
+                    if best is None or cost < best[0]:
+                        best = (cost, candidate)
+        if best is None:
+            return False
+        routes[:] = best[1]
+        return True
 
     def _build_route(self, stops: List[Stop], problem: ProblemSBRP) -> Route:
         route = Route(stops=[problem.school] + stops + [problem.school])
