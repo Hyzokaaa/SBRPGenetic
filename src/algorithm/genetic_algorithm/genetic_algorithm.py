@@ -77,6 +77,13 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         best_solution = None
         for _ in range(self.initial_population_size):
             new_solution = self.initial_construction_operator.generate(self.initial_solution_parameters)
+
+            # Reparar las soluciones iniciales infactibles
+            if self.repair_operator is not None and parameters.problem.violations(new_solution):
+                self.repair_parameters.parents = [new_solution]
+                self.repair_parameters.solutions = [new_solution]
+                new_solution = self.repair_operator.repair(self.repair_parameters)[0]
+
             population.append(new_solution)
             best_solution = parameters.problem.compare_solutions(solution1=best_solution,
                                                                  solution2=new_solution,
