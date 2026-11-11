@@ -13,13 +13,13 @@ class SwapMutationOperatorSBRP(MutationOperator):
 
         routes = solution.get_representation()
         if not routes:
-            return  # No hay rutas para mutar
+            return solution  # No hay rutas para mutar
 
         # Filtra las rutas que tienen al menos 4 paradas
         valid_routes = [route for route in routes if len(route.stops) >= 4]
         
         if not valid_routes:
-            return  # No hay rutas válidas para mutar
+            return solution  # No hay rutas válidas para mutar
 
         # Selecciona una ruta aleatoria de las rutas válidas
         route = random.choice(valid_routes)
@@ -32,4 +32,6 @@ class SwapMutationOperatorSBRP(MutationOperator):
 
         # Actualiza la representación de la solución
         solution.set_representation(routes)
+
+        return solution
 
