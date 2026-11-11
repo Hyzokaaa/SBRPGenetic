@@ -28,6 +28,7 @@ class Operators(Enum):
     TWO_POINT_CROSSOVER_OPERATOR = "src.operators.crossover.two_point_crossover_operator.TwoPointCrossoverOperator"
     UNIFORM_CROSSOVER_OPERATOR = "src.operators.crossover.uniform_crossover_operator.UniformCrossoverOperator"
     EAX_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.eax_crossover_operator_sbrp.EAXCrossoverOperatorSBRP"
+    BCRC_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.bcrc_crossover_operator_sbrp.BCRCCrossoverOperatorSBRP"
 
     REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.reorder_segment_mutation_operator_sbrp.ReorderSegmentMutationOperatorSBRP"
     BEST_REORDER_SEGMENT_MUTATION_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.mutation.best_reorder_segment_mutation_operator_sbrp.BestReorderSegmentMutationOperatorSBRP"
