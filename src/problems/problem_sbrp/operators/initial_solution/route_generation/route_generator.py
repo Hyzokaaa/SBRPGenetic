@@ -15,6 +15,7 @@ class RouteGenerator(InitialConstructionOperator):
         strategy: RouteGeneratorStrategy = parameters.route_generator_strategy
         solution = SolutionRouteSBRP()
 
+        strategy.start_solution()
         for _ in problem.vehicles:
             route = strategy.generate_route(problem=problem, distance_operator=parameters.distance_operator)
             # Solo se representan las rutas que visitan alguna parada

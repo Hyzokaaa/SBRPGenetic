@@ -11,8 +11,22 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 
 class HClosestNeighborAndRandomRouteGeneratorStrategy(RouteGeneratorStrategy):
-    def generate_route(self, problem: ProblemSBRP,  distance_operator: DistanceOperator):
-        if random.random() < 0.02:
-            return HClosestNeighborRouteGeneratorStrategy().generate_route(problem, distance_operator)
+    """
+    Genera cada solución completa con la heurística del vecino más cercano (con probabilidad
+    closest_neighbor_probability) o de forma aleatoria. La decisión se toma por solución, no por ruta.
+    """
+
+    def __init__(self, closest_neighbor_probability: float = 0.02):
+        self.closest_neighbor_probability = closest_neighbor_probability
+        self.closest_neighbor_strategy = HClosestNeighborRouteGeneratorStrategy()
+        self.random_strategy = RandomRouteGeneratorStrategy()
+        self.current_strategy: RouteGeneratorStrategy = self.random_strategy
+
+    def start_solution(self):
+        if random.random() < self.closest_neighbor_probability:
+            self.current_strategy = self.closest_neighbor_strategy
         else:
-            return RandomRouteGeneratorStrategy().generate_route(problem, distance_operator)
+            self.current_strategy = self.random_strategy
+
+    def generate_route(self, problem: ProblemSBRP, distance_operator: DistanceOperator):
+        return self.current_strategy.generate_route(problem, distance_operator)
