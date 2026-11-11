@@ -35,17 +35,21 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
     config.load_from_file(config_path, instances_path + instance_name)
     data = ag_executor.execute(config)
 
-    # Generar imagen en la carpeta del run
-    image_path = f"{instance_dir}/run_{execution_number}_result.png"
-    Visualizer.plot_routes(
-        routes=data[0].best_solution,
-        sbrp=data[0],
-        image_path=image_path  # Ruta personalizada
-    )
-
     # Obtener datos extendidos de la solución
     problem = data[0]
     solution = data[0].best_solution
+
+    # Generar imagen en la carpeta del run (solo si se encontró una solución factible)
+    if solution is not None:
+        image_path = f"{instance_dir}/run_{execution_number}_result.png"
+        Visualizer.plot_routes(
+            routes=solution,
+            sbrp=problem,
+            image_path=image_path  # Ruta personalizada
+        )
+
+    # Validar la solución antes de registrarla
+    violations = problem.violations(solution) if solution is not None else ["No se encontró ninguna solución factible"]
 
     # 1. Generar mapeo de paradas con estudiantes
     stop_assignments = {}
@@ -56,7 +60,7 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
 
     # 2. Generar descripción de rutas
     routes_description = []
-    for i, route in enumerate(solution.get_representation(), 1):
+    for i, route in enumerate(solution.get_representation() if solution is not None else [], 1):
         stops = [f"Stop{stop.id}" if not isinstance(stop, School) else "School"
                  for stop in route.stops]
         total_students = sum(stop.num_assigned_students for stop in route.stops if not isinstance(stop, School))
@@ -65,7 +69,7 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
     # Escribir resultados en run_<número>.csv
     output_path = f"{instance_dir}/run_{execution_number}.csv"
     with open(output_path, "w") as f:
-        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration,student_assignments,routes\n")
+        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration,feasible,violations,student_assignments,routes\n")
         f.write(
             f"{instance_clean},"
             f"{data[1]},"
@@ -73,6 +77,8 @@ def execute_all_instances(instances_path: str, config_path: str, instance_name: 
             f"{data[3]:.2f},"
             f"{data[4]},"
             f"{data[5]},"
+            f"{not violations},"
+            f"\"{'; '.join(violations)}\","  # Restricciones incumplidas (vacío si es factible)
             f"\"{stop_assignments}\","  # Asignaciones entre paradas y estudiantes
             f"\"{'; '.join(routes_description)}\"\n"  # Descripción de rutas
         )
