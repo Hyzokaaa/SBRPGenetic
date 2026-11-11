@@ -36,9 +36,9 @@ class StopCrossoverOperatorSBRP(CrossoverOperator):
                 new_parent1_repr.append(new_route1)
                 new_parent2_repr.append(new_route2)
             else:
-                # If a route only has two stops, keep it as is
-                new_parent1_repr.append(route1)
-                new_parent2_repr.append(route2)
+                # If a route only has two stops, keep a copy of it as is
+                new_parent1_repr.append(Route(stops=list(route1.stops)))
+                new_parent2_repr.append(Route(stops=list(route2.stops)))
 
         # Convert the representations of the children into instances of Solution
         new_parent1 = SolutionRouteSBRP()
