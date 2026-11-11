@@ -8,6 +8,10 @@
 * En cada ruta, no se debe exceder la capacidad del autobús.
 * Cada parada a la que se asigna algún estudiante, debe ser visitada por las rutas de autobuses una y solo una vez.
 * A cada parada debe asignarse a lo sumo tantos estudiantes como capacidad de los autobuses.
+* Cada autobús realiza una única ruta, por lo que el número de rutas no puede exceder el número de vehículos `v` de la instancia.
+* Cada ruta sale de la escuela y regresa a la escuela; la distancia de ambos trayectos forma parte del costo.
+* Objetivo: minimizar la distancia total recorrida por los autobuses.
+* Resolución en dos fases: primero se asignan los estudiantes a las paradas (una única vez, de forma heurística) y luego el algoritmo genético optimiza la generación de rutas. A futuro se pretende optimizar ambas fases de manera conjunta.
 ## Definiciones de las clases
 ### 1. Bus
 - **Atributos**:
