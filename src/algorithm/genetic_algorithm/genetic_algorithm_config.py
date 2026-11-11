@@ -32,10 +32,12 @@ class GeneticAlgorithmConfig:
             for key, value in config_data.items():
                 if key.endswith('_operator') or key.endswith('_strategy') or key == 'problem':
                     try:
-                        full_class_path = Operators[value].value
+                        # El operador puede indicarse por nombre o como {"name": ..., "params": {...}}
+                        name, params = (value["name"], value.get("params", {})) if isinstance(value, dict) else (value, {})
+                        full_class_path = Operators[name].value
                         module_name, class_name = full_class_path.rsplit('.', 1)
                         module = importlib.import_module(module_name)
-                        setattr(self, key, getattr(module, class_name)())
+                        setattr(self, key, getattr(module, class_name)(**params))
                     except ValueError:
                         raise ValueError(f"Invalid format for {key}: {value}. Expected 'module_name.ClassName'")
                 elif key == "max_stagnation_iter":  # Nueva condición
