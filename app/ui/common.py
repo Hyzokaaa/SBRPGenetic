@@ -36,9 +36,18 @@ NEUTRAL = "#9a9890"
 TEXT_MUTED = "#52514e"
 SEQUENTIAL = ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#104281"]
 HIGHLIGHT = "#eb6834"
+# Tinta de los puntos fijos del mapa (escuela y paradas) y color de su contorno, según el tema claro u oscuro
+INK = {False: ("#0b0b0b", TEXT_MUTED, "white"), True: ("#f4f3ef", "#c9c7bf", "#0e1117")}
 
 EDGE_COLORS = {"A": SERIES[0], "B": SERIES[1], "nueva": SERIES[2], "AB": NEUTRAL}
+# El origen de una arista se codifica también con el trazo, para no depender solo del color
+EDGE_DASH = {"A": "solid", "B": "dash", "nueva": "dot", "AB": "solid"}
 EDGE_LABELS = {"A": "Del padre A", "B": "Del padre B", "nueva": "Nueva", "AB": "Común a ambos padres"}
+
+STOP_REASONS = {"stagnation": "estancamiento", "max_iter": "límite de generaciones"}
+
+INSTANCE_HELP = ("El nombre codifica la instancia: inst<N>-<k>s<paradas>-<estudiantes>-c<capacidad>-w<distancia a pie>. "
+                 "La instancia elegida se mantiene al cambiar de página.")
 
 
 # ------------------------- Instancias, configuraciones y operadores -------------------------
@@ -49,6 +58,11 @@ def list_instances():
         for file in sorted(folder.glob("*.xpress"), key=lambda f: _natural_key(f.name)):
             instances[f"{folder.name}/{file.name}"] = file
     return instances
+
+
+def instance_name(label: str) -> str:
+    """Etiqueta de una instancia sin la extensión del archivo."""
+    return label.removesuffix(".xpress")
 
 
 def list_configs():
@@ -128,6 +142,17 @@ def instance_summary(problem: ProblemSBRP) -> dict:
     }
 
 
+SUMMARY_HELP = {
+    "Paradas (m)": "Paradas candidatas de la instancia.",
+    "Paradas usadas": "Paradas con al menos un estudiante asignado: son las que las rutas deben visitar.",
+    "Estudiantes (n)": "Estudiantes que hay que recoger.",
+    "Buses (v)": "Buses disponibles: número máximo de rutas.",
+    "Capacidad (c)": "Estudiantes que caben en un bus.",
+    "Distancia a pie (w)": "Distancia máxima que un estudiante puede caminar hasta su parada, en las unidades de las coordenadas.",
+    "Buses mínimos (⌈n/c⌉)": "Cota inferior del número de rutas: estudiantes asignados entre la capacidad, redondeado hacia arriba.",
+}
+
+
 def route_stops(route):
     return [stop for stop in route.stops if stop is not None and not isinstance(stop, School)]
 
@@ -155,7 +180,8 @@ def _base_layout(fig: go.Figure, title: str = None, height: int = 520):
     return fig
 
 
-def _points_traces(problem: ProblemSBRP, show_students: bool, show_assignment: bool):
+def _points_traces(problem: ProblemSBRP, show_students: bool, show_assignment: bool, dark: bool = False):
+    school_color, stop_color, outline = INK[dark]
     traces = []
     if show_students:
         if show_assignment:
@@ -168,7 +194,7 @@ def _points_traces(problem: ProblemSBRP, show_students: bool, show_assignment: b
                                      hoverinfo="skip", showlegend=False))
         traces.append(go.Scatter(
             x=[s.coordinates[0] for s in problem.students], y=[s.coordinates[1] for s in problem.students],
-            mode="markers", name="Estudiantes", marker=dict(size=4, color=NEUTRAL),
+            mode="markers", name="Estudiante", marker=dict(size=4, color=NEUTRAL),
             text=[f"Estudiante {s.id}<br>Parada {s.assigned_stop.id if s.assigned_stop else '—'}" for s in problem.students],
             hovertemplate="%{text}<extra></extra>"))
     used = [s for s in problem.stops if s.num_assigned_students > 0]
@@ -180,31 +206,49 @@ def _points_traces(problem: ProblemSBRP, show_students: bool, show_assignment: b
             text=[f"Parada {s.id} (sin estudiantes)" for s in unused], hovertemplate="%{text}<extra></extra>"))
     traces.append(go.Scatter(
         x=[s.coordinates[0] for s in used], y=[s.coordinates[1] for s in used], mode="markers",
-        name="Parada", marker=dict(size=[8 + 10 * s.num_assigned_students / problem.bus_capacity for s in used],
-                                   color=TEXT_MUTED, line=dict(color="white", width=2)),
+        name="Parada (tamaño = estudiantes)",
+        marker=dict(size=[8 + 10 * s.num_assigned_students / problem.bus_capacity for s in used],
+                    color=stop_color, line=dict(color=outline, width=2)),
         text=[f"Parada {s.id}<br>{s.num_assigned_students} estudiantes" for s in used],
         hovertemplate="%{text}<extra></extra>"))
     traces.append(go.Scatter(
         x=[problem.school.coordinates[0]], y=[problem.school.coordinates[1]], mode="markers", name="Escuela",
-        marker=dict(size=18, symbol="star", color="#0b0b0b", line=dict(color="white", width=2)),
+        marker=dict(size=18, symbol="star", color=school_color, line=dict(color=outline, width=2)),
         hovertemplate="Escuela<extra></extra>"))
     return traces
 
 
-def instance_figure(problem: ProblemSBRP, show_students=True, show_assignment=True, height=520) -> go.Figure:
-    fig = go.Figure(_points_traces(problem, show_students, show_assignment))
+def instance_figure(problem: ProblemSBRP, show_students=True, show_assignment=True, height=520,
+                    dark: bool = False) -> go.Figure:
+    fig = go.Figure(_points_traces(problem, show_students, show_assignment, dark))
     return _base_layout(fig, height=height)
 
 
+# Umbral inferior de ocupación de cada tono de la rampa, desde el segundo (el más claro no se distingue del fondo)
+OCCUPANCY_STEPS = [0.0, 0.4, 0.6, 0.8]
+
+
 def _load_color(occupancy: float) -> str:
-    index = min(len(SEQUENTIAL) - 1, max(0, int(occupancy * len(SEQUENTIAL))))
-    return SEQUENTIAL[max(index, 1)]
+    return SEQUENTIAL[sum(occupancy >= step for step in OCCUPANCY_STEPS)]
+
+
+def _occupancy_colorbar() -> go.Scatter:
+    """Traza sin puntos que solo dibuja la escala de colores de la ocupación de las rutas."""
+    bounds = OCCUPANCY_STEPS + [1.0]
+    scale = []
+    for k, color in enumerate(SEQUENTIAL[1:]):
+        scale += [[bounds[k], color], [bounds[k + 1], color]]
+    return go.Scatter(
+        x=[None], y=[None], mode="markers", showlegend=False, hoverinfo="skip",
+        marker=dict(colorscale=scale, cmin=0, cmax=1, color=[0], showscale=True,
+                    colorbar=dict(title=dict(text="Ocupación", side="right"), tickformat=".0%", tickvals=bounds,
+                                  thickness=10, len=0.6, outlinewidth=0)))
 
 
 def solution_figure(problem: ProblemSBRP, solution, title=None, highlight_route: int = None,
-                    show_students=False, height=520) -> go.Figure:
+                    show_students=False, height=520, dark: bool = False) -> go.Figure:
     """
-    Rutas de la solución coloreadas por ocupación (azul más oscuro = más llena).
+    Rutas de la solución coloreadas por ocupación (azul más oscuro = más llena), con su escala de colores.
     highlight_route (1..R) resalta una ruta.
     """
     fig = go.Figure()
@@ -224,13 +268,18 @@ def solution_figure(problem: ProblemSBRP, solution, title=None, highlight_route:
             name=f"Ruta {i}", showlegend=False,
             hovertemplate=f"Ruta {i}<br>{len(stops)} paradas<br>{load}/{problem.bus_capacity} estudiantes "
                           f"({occupancy:.0%})<extra></extra>"))
-    for trace in _points_traces(problem, show_students, False):
+    for trace in _points_traces(problem, show_students, False, dark):
         fig.add_trace(trace)
+    fig.add_trace(_occupancy_colorbar())
     return _base_layout(fig, title, height)
 
 
-def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None, height=420, labels: dict = None) -> go.Figure:
-    """Aristas de la solución coloreadas según su origen (padre A, padre B, común o nueva)."""
+def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None, height=420, labels: dict = None,
+                       dark: bool = False) -> go.Figure:
+    """
+    Aristas de la solución coloreadas según su origen (padre A, padre B, común o nueva). El trazo también
+    cambia con el origen, para distinguirlas sin depender del color.
+    """
     labels = {**EDGE_LABELS, **(labels or {})}
     coords = {problem.school.id: problem.school.coordinates}
     coords.update({s.id: s.coordinates for s in problem.stops})
@@ -243,24 +292,25 @@ def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None,
                 ys += [coords[u][1], coords[v][1], None]
         if xs:
             fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", name=f"{labels[kind]} ({len(xs) // 3})",
-                                     line=dict(color=EDGE_COLORS[kind], width=1.5 if kind == "AB" else 2.5),
+                                     line=dict(color=EDGE_COLORS[kind], dash=EDGE_DASH[kind],
+                                               width=1.5 if kind == "AB" else 2.5),
                                      hoverinfo="skip"))
-    for trace in _points_traces(problem, False, False):
+    for trace in _points_traces(problem, False, False, dark):
         trace.showlegend = False
         fig.add_trace(trace)
     return _base_layout(fig, title, height)
 
 
 def convergence_figure(history: pd.DataFrame, height=300) -> go.Figure:
-    """Mejor aptitud de la población y media por generación (un solo eje: distancia)."""
+    """Mejor aptitud de la población y media de las factibles por generación (un solo eje: distancia)."""
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=history["generación"], y=history["mejor"], mode="lines", name="Mejor",
-                             line=dict(color=SERIES[0], width=2)))
-    fig.add_trace(go.Scatter(x=history["generación"], y=history["media"], mode="lines", name="Media",
-                             line=dict(color=SERIES[1], width=2)))
+    fig.add_trace(go.Scatter(x=history["generación"], y=history["mejor"], mode="lines", name="Mejor de la población",
+                             line=dict(color=SERIES[0], width=2), hovertemplate="%{y:.2f}"))
+    fig.add_trace(go.Scatter(x=history["generación"], y=history["media"], mode="lines", name="Media de las factibles",
+                             line=dict(color=SERIES[1], width=2), hovertemplate="%{y:.2f}"))
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10), hovermode="x unified",
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
-                      xaxis_title="Generación", yaxis_title="Distancia")
+                      xaxis_title="Generación", yaxis_title="Distancia total")
     return fig
 
 
@@ -271,4 +321,16 @@ def percentage_figure(history: pd.DataFrame, column: str, label: str, height=220
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=30, b=10), title=label, showlegend=False,
                       yaxis=dict(tickformat=".0%", range=[0, 1.05] if fixed_range else None, rangemode="tozero"),
                       xaxis_title="Generación")
+    return fig
+
+
+def rate_figure(history: pd.DataFrame, columns: dict, title: str, yaxis_title: str, height=260) -> go.Figure:
+    """Varias series de la misma magnitud por generación ({columna: nombre}), en un solo eje."""
+    fig = go.Figure()
+    for k, (column, name) in enumerate(columns.items()):
+        fig.add_trace(go.Scatter(x=history["generación"], y=history[column], mode="lines", name=name,
+                                 line=dict(color=SERIES[k], width=2), hovertemplate="%{y:.2f}"))
+    fig.update_layout(height=height, margin=dict(l=10, r=10, t=60, b=10), title=title, hovermode="x unified",
+                      legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0), showlegend=len(columns) > 1,
+                      yaxis=dict(rangemode="tozero", title=yaxis_title), xaxis_title="Generación")
     return fig

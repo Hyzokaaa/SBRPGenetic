@@ -5,20 +5,20 @@ import pandas as pd
 import streamlit as st
 
 import common
+import widgets
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
 from src.analysis.metrics import population_stats
 
 st.title("Ejecutar en vivo")
 
-instances, configs = common.list_instances(), common.list_configs()
+configs = common.list_configs()
 
 # ------------------------- Parámetros -------------------------
 with st.sidebar:
     st.header("Ejecución")
-    instance_label = st.selectbox("Instancia", list(instances),
-                                  index=list(instances).index("real/inst54-7s20-100-c50-w20.xpress")
-                                  if "real/inst54-7s20-100-c50-w20.xpress" in instances else 0)
-    config_name = st.selectbox("Configuración", list(configs), index=len(configs) - 1)
+    instance_label, instance_path = widgets.instance_select()
+    config_name = st.selectbox("Configuración", list(configs), index=len(configs) - 1,
+                               help="Punto de partida: carga sus operadores y parámetros, que puedes cambiar abajo.")
     base = common.read_config(configs[config_name])
 
     def operator_select(label, key, family):
@@ -35,36 +35,57 @@ with st.sidebar:
         mutation = operator_select("Mutación", "mutation_operator", "mutation")
 
     with st.expander("Parámetros", expanded=True):
-        population_size = st.number_input("Población", 4, 5000, min(int(base["initial_population_size"]), 200), step=10,
-                                          key=f"{config_name}-pop")
-        max_iter = st.number_input("Máx. generaciones", 1, 5000, min(int(base["max_iter"]), 50), key=f"{config_name}-iter")
+        population_size = st.number_input(
+            "Población", 4, 5000, min(int(base["initial_population_size"]), 100), step=10, key=f"{config_name}-pop",
+            help=f"Individuos por generación. La configuración usa {base['initial_population_size']}; "
+                 "aquí se limita a 100 por defecto para que la primera ejecución sea rápida.")
+        max_iter = st.number_input(
+            "Máx. generaciones", 1, 5000, min(int(base["max_iter"]), 50), key=f"{config_name}-iter",
+            help=f"La configuración usa {base['max_iter']}; aquí se limita a 50 por defecto.")
         max_stagnation = st.number_input("Parar tras N generaciones sin mejora", 1, 5000,
-                                         int(base["max_stagnation_iter"]), key=f"{config_name}-stag")
-        tournament_size = st.number_input("Tamaño de torneo", 2, 100, int(base["tournament_size"]), key=f"{config_name}-tour")
-        crossover_rate = st.slider("Tasa de cruce", 0.0, 1.0, float(base["crossover_rate"]), key=f"{config_name}-cr")
-        mutation_rate = st.slider("Tasa de mutación", 0.0, 1.0, float(base["mutation_rate"]), key=f"{config_name}-mr")
-        elitism_size = st.number_input("Élite", 0, 50, int(base.get("elitism_size", 1)), key=f"{config_name}-elite")
-        seed = st.number_input("Semilla", 0, 10 ** 6, 1)
-        map_every = st.number_input("Actualizar el mapa cada N generaciones", 1, 100, 5)
+                                         int(base["max_stagnation_iter"]), key=f"{config_name}-stag",
+                                         help="Criterio de estancamiento: la ejecución termina si la mejor distancia "
+                                              "no mejora durante N generaciones seguidas.")
+        tournament_size = st.number_input("Tamaño de torneo", 2, 100, int(base["tournament_size"]),
+                                          key=f"{config_name}-tour",
+                                          help="Individuos que compiten en cada selección por torneo. "
+                                               "Debe ser menor que la población.")
+        crossover_rate = st.slider("Tasa de cruce", 0.0, 1.0, float(base["crossover_rate"]), key=f"{config_name}-cr",
+                                   help="Probabilidad de cruzar cada pareja seleccionada; si no se cruza, "
+                                        "los hijos son copias de los padres.")
+        mutation_rate = st.slider("Tasa de mutación", 0.0, 1.0, float(base["mutation_rate"]), key=f"{config_name}-mr",
+                                  help="Probabilidad de mutar cada hijo, haya habido cruce o no.")
+        elitism_size = st.number_input("Élite", 0, 50, int(base.get("elitism_size", 1)), key=f"{config_name}-elite",
+                                       help="Mejores soluciones distintas que pasan intactas a la siguiente generación.")
+        seed = st.number_input("Semilla", 0, 10 ** 6, 1, help="Con la misma semilla y parámetros, la ejecución se repite igual.")
+        map_every = st.number_input("Actualizar el mapa cada N generaciones", 1, 100, 5,
+                                    help="El mapa también se actualiza siempre que mejora la mejor solución. "
+                                         "Valores altos aceleran la ejecución.")
 
-    run = st.button("▶ Ejecutar", type="primary", width="stretch")
+    problems = []
+    if population_size <= tournament_size:
+        problems.append("La población debe ser mayor que el tamaño del torneo.")
+    if elitism_size >= population_size:
+        problems.append("La élite debe ser menor que la población; si no, no se generan hijos.")
+    run = st.button("▶ Ejecutar", type="primary", width="stretch", disabled=bool(problems))
+    for problem_text in problems:
+        st.error(problem_text)
 
-if population_size <= tournament_size:
-    st.warning("La población debe ser mayor que el tamaño del torneo.")
-    st.stop()
+params = {
+    "Instancia": common.instance_name(instance_label), "Configuración base": config_name,
+    "Asignación": common.operator_label(stop_assign), "Generación de rutas": common.operator_label(route_generator),
+    "Selección": common.operator_label(selection), "Cruce": common.operator_label(crossover),
+    "Mutación": common.operator_label(mutation), "Población": int(population_size),
+    "Máx. generaciones": int(max_iter), "Parar tras N sin mejora": int(max_stagnation),
+    "Tamaño de torneo": int(tournament_size), "Tasa de cruce": float(crossover_rate),
+    "Tasa de mutación": float(mutation_rate), "Élite": int(elitism_size), "Semilla": int(seed),
+}
 
 # ------------------------- Ejecución -------------------------
 if run:
     random.seed(int(seed))
-    config = common.build_config(configs[config_name], instances[instance_label], {
-        "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
-        "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
-        "initial_population_size": int(population_size), "max_iter": int(max_iter),
-        "max_stagnation_iter": int(max_stagnation), "tournament_size": int(tournament_size),
-        "crossover_rate": float(crossover_rate), "mutation_rate": float(mutation_rate), "elitism_size": int(elitism_size),
-    })
-
     progress = st.progress(0.0, text="Generando población inicial…")
+    st.caption("Cambiar cualquier control durante la ejecución la interrumpe.")
     metrics_placeholder = st.empty()
     left, right = st.columns([3, 2])
     map_placeholder = left.empty()
@@ -88,34 +109,47 @@ if run:
         df = pd.DataFrame(history)
         progress.progress(min(1.0, generation / config.max_iter),
                           text=f"Generación {generation}/{config.max_iter} · {time.time() - start:.0f} s")
+        best, first = history[-1]["mejor_global"], history[0]["mejor_global"]
         with metrics_placeholder.container():
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Mejor global", f"{history[-1]['mejor_global']:.1f}" if history[-1]["mejor_global"] else "—",
-                      delta=(f"{history[-1]['mejor_global'] - history[0]['mejor_global']:.1f}"
-                             if generation and history[0]["mejor_global"] else None), delta_color="inverse")
-            c2.metric("Diversidad", f"{summary['diversity']:.0%}")
-            c3.metric("Factibles", f"{summary['feasible']:.0%}")
-            c4.metric("Generación", generation)
+            c1.metric("Mejor distancia", f"{best:.2f}" if best is not None else "—",
+                      delta=f"{best - first:+.2f}" if generation and best is not None and first is not None else None,
+                      delta_color="inverse", help="Mejor solución factible encontrada hasta ahora. "
+                                                  "La variación es respecto a la población inicial.")
+            c2.metric("Diversidad", f"{summary['diversity']:.0%}",
+                      help="Fracción de individuos distintos en la población (100% = todos diferentes).")
+            c3.metric("Factibles", f"{summary['feasible']:.0%}",
+                      help="Fracción de la población que cumple todas las restricciones.")
+            c4.metric("Generación", f"{generation}/{config.max_iter}")
         convergence_placeholder.plotly_chart(common.convergence_figure(df), width="stretch", key=f"conv-{generation}")
         diversity_placeholder.plotly_chart(common.percentage_figure(df, "diversidad", "Diversidad de la población"),
                                            width="stretch", key=f"div-{generation}")
-        best = history[-1]["mejor_global"]
         if problem.best_solution is not None and (best != last_best["value"] or generation % map_every == 0):
             last_best["value"] = best
-            map_placeholder.plotly_chart(common.solution_figure(problem, problem.best_solution,
+            map_placeholder.plotly_chart(common.solution_figure(problem, problem.best_solution, dark=widgets.is_dark(),
                                                                 title=f"Mejor solución · generación {generation}"),
                                          width="stretch", key=f"map-{generation}")
 
     try:
+        config = common.build_config(configs[config_name], instance_path, {
+            "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
+            "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
+            "initial_population_size": int(population_size), "max_iter": int(max_iter),
+            "max_stagnation_iter": int(max_stagnation), "tournament_size": int(tournament_size),
+            "crossover_rate": float(crossover_rate), "mutation_rate": float(mutation_rate),
+            "elitism_size": int(elitism_size),
+        })
         result = GeneticAlgorithmExecutor().execute(config, on_generation=on_generation)
     except Exception as error:
-        st.exception(error)
+        progress.empty()
+        widgets.show_error("La ejecución falló", error)
         st.stop()
     progress.empty()
     st.session_state["live_run"] = {
         "problem": result[0], "fitness": result[1], "best_iteration": result[2], "time": result[3],
         "stop_reason": result[4], "stop_iteration": result[5], "history": pd.DataFrame(history),
-        "label": f"{config_name} · {instance_label}",
+        "label": f"{config_name} · {common.instance_name(instance_label)}", "params": params,
+        "max_stagnation": int(max_stagnation),
     }
     st.rerun()
 
@@ -123,22 +157,38 @@ if run:
 run_data = st.session_state.get("live_run")
 if run_data is None:
     st.info("Elige la instancia, la configuración y los operadores en la barra lateral y pulsa **Ejecutar**. "
-            "Las configuraciones se cargan como punto de partida y puedes cambiar cualquier operador o parámetro.")
+            "La configuración es solo un punto de partida: puedes cambiar cualquier operador o parámetro. "
+            "Con los valores por defecto la ejecución tarda unos segundos.")
     st.stop()
 
 problem, history = run_data["problem"], run_data["history"]
 solution = problem.best_solution
 st.subheader(f"Resultado · {run_data['label']}")
+if run_data.get("params") != params:
+    st.info("Los controles de la barra lateral cambiaron desde esta ejecución: este resultado corresponde a los "
+            "parámetros de «Parámetros usados». Pulsa **Ejecutar** para aplicar los nuevos.")
+
 c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Mejor distancia", f"{run_data['fitness']:.2f}" if run_data["fitness"] is not None else "—")
+c1.metric("Mejor distancia", f"{run_data['fitness']:.2f}" if run_data["fitness"] is not None else "—",
+          help="Distancia total recorrida por todas las rutas de la mejor solución factible.")
 c2.metric("Encontrada en la generación", run_data["best_iteration"])
-c3.metric("Parada", f"{'estancamiento' if run_data['stop_reason'] == 'stagnation' else 'máx. generaciones'} "
-                    f"({run_data['stop_iteration']})")
+stop_reason = common.STOP_REASONS.get(run_data["stop_reason"], run_data["stop_reason"])
+c3.metric("Generaciones ejecutadas", run_data["stop_iteration"], help=f"Se detuvo por {stop_reason}.")
 c4.metric("Tiempo", f"{run_data['time']:.1f} s")
-c5.metric("Rutas", f"{len(solution.get_representation())}/{len(problem.vehicles)}" if solution else "—")
+c5.metric("Rutas / buses", f"{len(solution.get_representation())}/{len(problem.vehicles)}" if solution else "—",
+          help="Rutas de la mejor solución frente a buses disponibles.")
+if run_data["stop_reason"] == "stagnation":
+    st.caption(f"Se detuvo por estancamiento: {run_data.get('max_stagnation', '')} generaciones seguidas sin mejorar.")
+else:
+    st.caption("Se detuvo al llegar al límite de generaciones: aumentarlo puede seguir mejorando la solución.")
+
+with st.expander("Parámetros usados"):
+    st.dataframe(pd.DataFrame({"Parámetro": list(run_data.get("params", {})),
+                               "Valor": [str(v) for v in run_data.get("params", {}).values()]}),
+                 hide_index=True, width="stretch")
 
 if solution is None:
-    st.error("No se encontró ninguna solución factible.")
+    st.error("No se encontró ninguna solución factible. Prueba con más población o generaciones, u otra generación de rutas.")
     st.stop()
 
 violations = problem.violations(solution)
@@ -154,18 +204,37 @@ with right:
                              format_func=lambda r: "Ninguna" if r is None else f"Ruta {r}")
     st.dataframe(routes, hide_index=True, width="stretch",
                  column_config={"Ocupación": st.column_config.ProgressColumn("Ocupación", format="percent",
-                                                                             min_value=0, max_value=1)})
-left.plotly_chart(common.solution_figure(problem, solution, highlight_route=highlight, show_students=False),
-                  width="stretch")
-st.caption("Color de las rutas: azul más oscuro = ruta más llena (estudiantes / capacidad). La ruta resaltada en naranja.")
+                                                                             min_value=0, max_value=1),
+                                "Distancia": st.column_config.NumberColumn("Distancia", format="%.2f")})
+left.plotly_chart(common.solution_figure(problem, solution, highlight_route=highlight, show_students=False,
+                                         dark=widgets.is_dark()),
+                  width="stretch", alt=f"Mapa de las {len(routes)} rutas de la mejor solución.")
+st.caption("Cada ruta sale de la escuela (★) y regresa a ella; su color indica la ocupación del bus "
+           "(ver la escala). La ruta resaltada se dibuja en naranja y el resto se atenúa.")
 
-tab1, tab2, tab3 = st.tabs(["Convergencia", "Diversidad y mutaciones", "Datos por generación"])
-tab1.plotly_chart(common.convergence_figure(history, height=360), width="stretch")
+tab1, tab2, tab3, tab4 = st.tabs(["Convergencia", "Población", "Mutaciones", "Datos por generación"])
+with tab1:
+    st.plotly_chart(common.convergence_figure(history, height=360), width="stretch")
+    st.caption("«Mejor de la población» es la mejor distancia factible de cada generación; «Media de las factibles», "
+               "la media de las soluciones factibles. Si las dos curvas se juntan, la población ha convergido.")
 with tab2:
     c1, c2 = st.columns(2)
     c1.plotly_chart(common.percentage_figure(history, "diversidad", "Diversidad de la población"), width="stretch")
-    c2.plotly_chart(common.percentage_figure(history, "mutaciones_duplicados", "Mutaciones extra por hijo para evitar duplicados",
-                                                fixed_range=False),
-                    width="stretch")
-tab3.dataframe(history, hide_index=True, width="stretch")
-tab3.download_button("Descargar CSV", history.to_csv(index=False).encode("utf-8"), "generaciones.csv", "text/csv")
+    c2.plotly_chart(common.percentage_figure(history, "factibles", "Soluciones factibles"), width="stretch")
+    st.caption("Diversidad = fracción de individuos distintos. Una caída rápida indica convergencia prematura.")
+with tab3:
+    st.plotly_chart(common.rate_figure(history, {"mutaciones": "Por la tasa de mutación",
+                                                 "mutaciones_duplicados": "Extra para evitar duplicados"},
+                                       "Mutaciones por hijo", "Mutaciones por hijo"), width="stretch")
+    st.caption("Si las mutaciones extra crecen, el cruce está produciendo muchos hijos idénticos a otros ya aceptados.")
+with tab4:
+    st.dataframe(history, hide_index=True, width="stretch", column_config={
+        "mejor": st.column_config.NumberColumn(format="%.2f"), "media": st.column_config.NumberColumn(format="%.2f"),
+        "peor": st.column_config.NumberColumn(format="%.2f"),
+        "mejor_global": st.column_config.NumberColumn("mejor global", format="%.2f"),
+        "diversidad": st.column_config.NumberColumn(format="percent"),
+        "factibles": st.column_config.NumberColumn(format="percent"),
+        "mutaciones": st.column_config.NumberColumn("mutaciones por hijo", format="%.2f"),
+        "mutaciones_duplicados": st.column_config.NumberColumn("mutaciones extra por hijo", format="%.2f"),
+    })
+    st.download_button("Descargar CSV", history.to_csv(index=False).encode("utf-8"), "generaciones.csv", "text/csv")

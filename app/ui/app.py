@@ -3,7 +3,10 @@ Punto de entrada de la interfaz: streamlit run app/ui/app.py
 """
 import streamlit as st
 
+import widgets
+
 st.set_page_config(page_title="SBRPGenetic", page_icon="🚌", layout="wide")
+widgets.keep_shared_state()
 
 navigation = st.navigation([
     st.Page("views/home.py", title="Inicio", icon="🏠", default=True),
