@@ -81,9 +81,37 @@ params = {
     "Tasa de mutación": float(mutation_rate), "Élite": int(elitism_size), "Semilla": int(seed),
 }
 
+# ------------------------- Reproducción de una corrida guardada -------------------------
+replay = st.session_state.get("replay_request")
+replay_now = False
+if replay:
+    with st.container(border=True):
+        st.markdown(f"**Reproducir una corrida guardada** · {replay['label']} · semilla {replay['seed']}")
+        st.caption("Se usan la copia de la configuración guardada con la corrida y su semilla, por lo que se repite "
+                   "exactamente la misma evolución. Los controles de la barra lateral no se aplican.")
+        b1, b2, _ = st.columns([1, 1, 3])
+        replay_now = b1.button("▶ Reproducir en vivo", type="primary", width="stretch")
+        if b2.button("Descartar", width="stretch"):
+            st.session_state.pop("replay_request")
+            st.rerun()
+
 # ------------------------- Ejecución -------------------------
-if run:
-    random.seed(int(seed))
+if run or replay_now:
+    if replay_now:
+        run_seed, run_label = int(replay["seed"]), replay["label"]
+        run_params = {"Reproducción de": replay["label"], "Configuración": replay["config_path"], "Semilla": run_seed}
+        build_run_config = lambda: common.build_config(replay["config_path"], replay["instance_path"], {})
+    else:
+        run_seed, run_label, run_params = int(seed), f"{config_name} · {common.instance_name(instance_label)}", params
+        build_run_config = lambda: common.build_config(configs[config_name], instance_path, {
+            "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
+            "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
+            "initial_population_size": int(population_size), "max_iter": int(max_iter),
+            "max_stagnation_iter": int(max_stagnation), "tournament_size": int(tournament_size),
+            "crossover_rate": float(crossover_rate), "mutation_rate": float(mutation_rate),
+            "elitism_size": int(elitism_size),
+        })
+    random.seed(run_seed)
     progress = st.progress(0.0, text="Generando población inicial…")
     st.caption("Cambiar cualquier control durante la ejecución la interrumpe.")
     metrics_placeholder = st.empty()
@@ -131,14 +159,7 @@ if run:
                                          width="stretch", key=f"map-{generation}")
 
     try:
-        config = common.build_config(configs[config_name], instance_path, {
-            "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
-            "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
-            "initial_population_size": int(population_size), "max_iter": int(max_iter),
-            "max_stagnation_iter": int(max_stagnation), "tournament_size": int(tournament_size),
-            "crossover_rate": float(crossover_rate), "mutation_rate": float(mutation_rate),
-            "elitism_size": int(elitism_size),
-        })
+        config = build_run_config()
         result = GeneticAlgorithmExecutor().execute(config, on_generation=on_generation)
     except Exception as error:
         progress.empty()
@@ -148,9 +169,11 @@ if run:
     st.session_state["live_run"] = {
         "problem": result[0], "fitness": result[1], "best_iteration": result[2], "time": result[3],
         "stop_reason": result[4], "stop_iteration": result[5], "history": pd.DataFrame(history),
-        "label": f"{config_name} · {common.instance_name(instance_label)}", "params": params,
-        "max_stagnation": int(max_stagnation),
+        "label": run_label, "params": run_params, "max_stagnation": int(config.max_stagnation_iter),
+        "replay_of": replay if replay_now else None,
     }
+    if replay_now:
+        st.session_state.pop("replay_request", None)
     st.rerun()
 
 # ------------------------- Resultado -------------------------
@@ -164,7 +187,15 @@ if run_data is None:
 problem, history = run_data["problem"], run_data["history"]
 solution = problem.best_solution
 st.subheader(f"Resultado · {run_data['label']}")
-if run_data.get("params") != params:
+replayed = run_data.get("replay_of")
+if replayed:
+    original, reproduced = replayed.get("original"), run_data["fitness"]
+    if original is not None and reproduced is not None and abs(original - reproduced) < 1e-9:
+        st.success(f"Reproducción exacta: la distancia coincide con la de la corrida original ({original:.2f}).")
+    else:
+        st.warning(f"La distancia reproducida ({reproduced if reproduced is None else f'{reproduced:.2f}'}) no coincide "
+                   f"con la original ({original}). Puede deberse a cambios en el código desde que se ejecutó.")
+elif run_data.get("params") != params:
     st.info("Los controles de la barra lateral cambiaron desde esta ejecución: este resultado corresponde a los "
             "parámetros de «Parámetros usados». Pulsa **Ejecutar** para aplicar los nuevos.")
 

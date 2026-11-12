@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 from pathlib import Path
 
@@ -13,8 +14,11 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
 st.title("Resultados guardados")
-st.caption("Explora los resultados que genera app/main.py (results/config<N>/<instancia>/run_<k>.csv). "
-           "Los resultados antiguos, sin columna de factibilidad, se pueden revalidar con el validador actual.")
+st.caption("Explora los resultados que genera app/main.py: cada lanzamiento crea results/<fecha_hora>/ con "
+           "config<N>/<instancia>/run_<k>.csv. Los resultados antiguos, sin columna de factibilidad, se pueden revalidar "
+           "con el validador actual, y las corridas con semilla se pueden reproducir en vivo.")
+
+ROOT_LAUNCH = "(carpeta raíz)"
 
 ROUTE_PATTERN = re.compile(r"Ruta(\d+)\[(.*?)\]")
 
@@ -23,17 +27,23 @@ ROUTE_PATTERN = re.compile(r"Ruta(\d+)\[(.*?)\]")
 @st.cache_data(show_spinner="Leyendo resultados…")
 def load_runs(results_dir: str) -> pd.DataFrame:
     rows = []
-    for csv_path in Path(results_dir).glob("config*/*/run_*.csv"):
+    base = Path(results_dir)
+    # Busca en la carpeta y en las carpetas de cada lanzamiento: <lanzamiento>/config<N>/<instancia>/run_<k>.csv
+    for csv_path in base.rglob("run_*.csv"):
+        if not csv_path.parent.parent.name.startswith("config"):
+            continue
+        launch_dir = csv_path.parents[2]
+        launch = ROOT_LAUNCH if launch_dir == base else launch_dir.relative_to(base).as_posix()
+        location = {"config": csv_path.parts[-3], "instancia": csv_path.parts[-2], "lanzamiento": launch,
+                    "carpeta_lanzamiento": str(launch_dir), "archivo": str(csv_path)}
         try:
             data = pd.read_csv(csv_path)
         except Exception as error:
-            rows.append({"config": csv_path.parts[-3], "instancia": csv_path.parts[-2], "archivo": str(csv_path),
-                         "error": str(error)})
+            rows.append({**location, "error": str(error)})
             continue
         for _, record in data.iterrows():
             run = record.to_dict()
-            run.update({"config": csv_path.parts[-3], "instancia": csv_path.parts[-2],
-                        "corrida": int(re.search(r"run_(\d+)", csv_path.name).group(1)), "archivo": str(csv_path)})
+            run.update({**location, "corrida": int(re.search(r"run_(\d+)", csv_path.name).group(1))})
             rows.append(run)
     if not rows:
         return pd.DataFrame()
@@ -46,22 +56,51 @@ def load_runs(results_dir: str) -> pd.DataFrame:
         runs[column] = pd.to_numeric(runs[column], errors="coerce") if column in runs else float("nan")
     if "stop_reason" in runs:
         runs["stop_reason"] = runs["stop_reason"].map(lambda r: common.STOP_REASONS.get(r, r))
-    return runs.sort_values(["config", "instancia", "corrida"],
+    return runs.sort_values(["lanzamiento", "config", "instancia", "corrida"],
                             key=lambda c: c.map(lambda v: tuple(common._natural_key(v))) if c.name != "corrida" else c)
 
 
-def find_instance(name: str):
-    matches = [path for label, path in common.list_instances().items() if Path(label).stem == name]
+def read_manifest(launch_dir: str):
+    path = Path(launch_dir) / "manifest.json"
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as file:
+        return json.load(file)
+
+
+def find_instance(run: dict):
+    """Instancia de la corrida: la registrada en el manifiesto del lanzamiento o, si no hay, la de data/instances."""
+    manifest = read_manifest(run["carpeta_lanzamiento"])
+    if manifest and run["instancia"] in manifest.get("instances", {}):
+        path = Path(manifest["instances"][run["instancia"]])
+        path = path if path.is_absolute() else common.ROOT / path
+        if path.exists():
+            return path
+    matches = [path for label, path in common.list_instances().items() if Path(label).stem == run["instancia"]]
     return matches[0] if matches else None
+
+
+def replay_request(run: dict):
+    """Datos para reproducir la corrida en vivo, o None si no registra semilla o configuración."""
+    manifest = read_manifest(run["carpeta_lanzamiento"])
+    seed = run.get("seed")
+    if manifest is None or seed is None or pd.isna(seed) or run["config"] not in manifest.get("configs", {}):
+        return None
+    instance_path = find_instance(run)
+    if instance_path is None:
+        return None
+    return {"config_path": str(Path(run["carpeta_lanzamiento"]) / manifest["configs"][run["config"]]),
+            "instance_path": str(instance_path), "seed": int(seed), "original": None if pd.isna(run["value"]) else run["value"],
+            "label": f"{run['config']} · {run['instancia']} · run {run['corrida']} ({run['lanzamiento']})"}
 
 
 def rebuild_solution(run: dict):
     """
     Reconstruye el problema (con la asignación guardada) y la solución a partir de las columnas del CSV.
     """
-    instance_path = find_instance(run["instancia"])
+    instance_path = find_instance(run)
     if instance_path is None:
-        raise ValueError(f"No se encontró la instancia {run['instancia']} en data/instances")
+        raise ValueError(f"No se encontró la instancia {run['instancia']}")
     problem = ProblemSBRP()
     problem.construct(FileDataInputSBRP(str(instance_path)).conform())
     stops = {stop.id: stop for stop in problem.stops}
@@ -89,7 +128,8 @@ def fmt(value, pattern="{:.2f}", empty="—"):
 # ------------------------- Carga y filtros -------------------------
 c1, c2 = st.columns([5, 1], vertical_alignment="bottom")
 results_dir = c1.text_input("Carpeta de resultados", str(common.RESULTS_DIR),
-                            help="Carpeta con la estructura config<N>/<instancia>/run_<k>.csv que genera app/main.py.")
+                            help="Carpeta donde app/main.py crea un lanzamiento por ejecución (<fecha_hora>/config<N>/...). "
+                                 "También se leen resultados antiguos con config<N>/ directamente en la carpeta.")
 if c2.button("Recargar", width="stretch", help="Vuelve a leer los CSV (por ejemplo, tras una nueva ejecución)."):
     load_runs.clear()
     st.rerun()
@@ -99,7 +139,7 @@ if not Path(results_dir).is_dir():
 
 runs = load_runs(results_dir)
 if runs.empty:
-    st.info("La carpeta no contiene resultados con la estructura config<N>/<instancia>/run_<k>.csv.")
+    st.info("La carpeta no contiene resultados con la estructura [<lanzamiento>/]config<N>/<instancia>/run_<k>.csv.")
     st.stop()
 if "error" in runs:
     for _, failed in runs[runs["error"].notna()].iterrows():
@@ -108,7 +148,15 @@ if "error" in runs:
     if runs.empty:
         st.stop()
 
-c1, c2 = st.columns([2, 3])
+# Lanzamientos del más reciente al más antiguo (el nombre de la carpeta es su fecha y hora); la carpeta raíz al final
+launches = sorted((l for l in runs["lanzamiento"].unique() if l != ROOT_LAUNCH), key=lambda l: Path(l).name, reverse=True)
+launches += [ROOT_LAUNCH] if ROOT_LAUNCH in set(runs["lanzamiento"]) else []
+c0, c1, c2 = st.columns([2, 2, 3])
+launch = c0.selectbox("Lanzamiento", ["Todos"] + launches, index=1 if launches else 0,
+                      help="Cada ejecución de app/main.py es un lanzamiento (carpeta <fecha_hora>). "
+                           "Por defecto se muestra el más reciente.")
+if launch != "Todos":
+    runs = runs[runs["lanzamiento"] == launch]
 configs = c1.multiselect("Configuraciones", sorted(runs["config"].unique(), key=common._natural_key),
                          placeholder="Todas")
 instances = c2.multiselect("Instancias", sorted(runs["instancia"].unique(), key=common._natural_key),
@@ -135,7 +183,7 @@ with tab_summary:
     st.markdown("**Distancia media por instancia y configuración** (la menor de cada fila, en negrita y resaltada)")
     # Texto oscuro explícito para que el resaltado se lea también con el tema oscuro
     st.dataframe(pivot.style.format("{:.2f}", na_rep="—").highlight_min(
-        axis=1, props=f"background-color: {common.SEQUENTIAL[0]}; color: #0b0b0b; font-weight: bold"), width="stretch")
+        axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"), width="stretch")
     feasibility = filtered.groupby(["config", "factibilidad"]).size().unstack(fill_value=0)
     feasibility = feasibility.reindex(columns=[c for c in ("Factible", "Infactible", "Sin dato") if c in feasibility])
     st.markdown("**Factibilidad registrada por configuración** (número de corridas)")
@@ -165,6 +213,16 @@ with tab_detail:
                           f"{filtered.loc[i, 'instancia']} · run {filtered.loc[i, 'corrida']} · "
                           f"{fmt(filtered.loc[i, 'value'])}")
     run = filtered.loc[choice].to_dict()
+    request = replay_request(run)
+    if request:
+        if st.button("▶ Reproducir en vivo", type="primary",
+                     help="Abre «Ejecutar en vivo» con la configuración guardada y la semilla de esta corrida, "
+                          "para ver generación a generación cómo se llegó a este resultado."):
+            st.session_state["replay_request"] = request
+            st.switch_page("views/live_run.py")
+    else:
+        st.caption("Esta corrida no se puede reproducir: no registra semilla o su lanzamiento no tiene manifest.json "
+                   "(resultados anteriores a la ejecución por lanzamientos).")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Distancia", fmt(run["value"]))
     c2.metric("Encontrada en la generación", fmt(run.get("iteration"), "{:.0f}"))
