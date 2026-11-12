@@ -99,6 +99,10 @@ def instantiate(name: str, **params):
     return getattr(importlib.import_module(module_name), class_name)(**params)
 
 
+# Nombre visible de cada valor de la clave "algorithm" de las configuraciones
+ALGORITHM_LABELS = {"GA": "Algoritmo genético", "RANDOM_SEARCH": "Búsqueda aleatoria", "HILL_CLIMBING": "Escalada"}
+
+
 def operator_label(name: str) -> str:
     return name.replace("_OPERATOR", "").replace("_SBRP", "").replace("_STRATEGY", "").replace("_", " ").title()
 

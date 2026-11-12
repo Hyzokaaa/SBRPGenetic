@@ -63,7 +63,7 @@ with st.sidebar:
     for name in selected:
         config = common.read_config(configs[name])
         population = int(population_size) or int(config["initial_population_size"])
-        if population <= int(config["tournament_size"]):
+        if "tournament_size" in config and population <= int(config["tournament_size"]):
             problems.append(f"{name}: la población ({population}) debe ser mayor que su tamaño de torneo "
                             f"({config['tournament_size']}).")
     total = len(selected) * int(seeds)

@@ -41,3 +41,16 @@ def test_operator_lab_applies_crossover_and_mutation(app):
     for label in ("Aplicar cruce", "Mutar padre A"):
         next(b for b in app.button if b.label == label).click().run()
         assert exceptions(app) == [], label
+
+
+def test_live_run_with_a_baseline_hides_ga_controls(app):
+    app.switch_page("views/live_run.py").run()
+    app.sidebar.selectbox[1].set_value("config11").run()
+    labels = {n.label for n in app.sidebar.number_input}
+    assert "Tamaño de torneo" not in labels and "Élite" not in labels
+    inputs = {n.label: n for n in app.sidebar.number_input}
+    inputs["Población"].set_value(20)
+    inputs["Máx. generaciones"].set_value(3)
+    next(b for b in app.sidebar.button if "Ejecutar" in b.label).click().run()
+    assert exceptions(app) == []
+    assert any("factible" in s.value for s in app.success)

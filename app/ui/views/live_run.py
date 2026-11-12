@@ -20,6 +20,11 @@ with st.sidebar:
     config_name = st.selectbox("Configuración", list(configs), index=len(configs) - 1,
                                help="Punto de partida: carga sus operadores y parámetros, que puedes cambiar abajo.")
     base = common.read_config(configs[config_name])
+    algorithm = base.get("algorithm", "GA")
+    is_ga = algorithm == "GA"
+    if not is_ga:
+        st.info(f"Algoritmo de referencia: **{common.ALGORITHM_LABELS[algorithm]}**. Usa el mismo presupuesto "
+                "que el GA (población × generaciones evaluaciones) para comparar con él.")
 
     def operator_select(label, key, family):
         options = common.operator_names(family)
@@ -30,9 +35,9 @@ with st.sidebar:
     with st.expander("Operadores", expanded=True):
         stop_assign = operator_select("Asignación", "stop_assign_strategy", "stop_assign")
         route_generator = operator_select("Generación de rutas", "route_generator_strategy", "route_generator")
-        selection = operator_select("Selección", "selection_operator", "selection")
-        crossover = operator_select("Cruce", "crossover_operator", "crossover")
-        mutation = operator_select("Mutación", "mutation_operator", "mutation")
+        selection = operator_select("Selección", "selection_operator", "selection") if is_ga else None
+        crossover = operator_select("Cruce", "crossover_operator", "crossover") if is_ga else None
+        mutation = operator_select("Mutación", "mutation_operator", "mutation") if "mutation_operator" in base else None
 
     with st.expander("Parámetros", expanded=True):
         population_size = st.number_input(
@@ -46,40 +51,49 @@ with st.sidebar:
                                          int(base["max_stagnation_iter"]), key=f"{config_name}-stag",
                                          help="Criterio de estancamiento: la ejecución termina si la mejor distancia "
                                               "no mejora durante N generaciones seguidas.")
-        tournament_size = st.number_input("Tamaño de torneo", 2, 100, int(base["tournament_size"]),
-                                          key=f"{config_name}-tour",
-                                          help="Individuos que compiten en cada selección por torneo. "
-                                               "Debe ser menor que la población.")
-        crossover_rate = st.slider("Tasa de cruce", 0.0, 1.0, float(base["crossover_rate"]), key=f"{config_name}-cr",
-                                   help="Probabilidad de cruzar cada pareja seleccionada; si no se cruza, "
-                                        "los hijos son copias de los padres.")
-        mutation_rate = st.slider("Tasa de mutación", 0.0, 1.0, float(base["mutation_rate"]), key=f"{config_name}-mr",
-                                  help="Probabilidad de mutar cada hijo, haya habido cruce o no.")
-        elitism_size = st.number_input("Élite", 0, 50, int(base.get("elitism_size", 1)), key=f"{config_name}-elite",
-                                       help="Mejores soluciones distintas que pasan intactas a la siguiente generación.")
+        tournament_size = crossover_rate = mutation_rate = elitism_size = None
+        if is_ga:
+            tournament_size = st.number_input("Tamaño de torneo", 2, 100, int(base["tournament_size"]),
+                                              key=f"{config_name}-tour",
+                                              help="Individuos que compiten en cada selección por torneo. "
+                                                   "Debe ser menor que la población.")
+            crossover_rate = st.slider("Tasa de cruce", 0.0, 1.0, float(base["crossover_rate"]), key=f"{config_name}-cr",
+                                       help="Probabilidad de cruzar cada pareja seleccionada; si no se cruza, "
+                                            "los hijos son copias de los padres.")
+            mutation_rate = st.slider("Tasa de mutación", 0.0, 1.0, float(base["mutation_rate"]), key=f"{config_name}-mr",
+                                      help="Probabilidad de mutar cada hijo, haya habido cruce o no.")
+            elitism_size = st.number_input("Élite", 0, 50, int(base.get("elitism_size", 1)), key=f"{config_name}-elite",
+                                           help="Mejores soluciones distintas que pasan intactas a la siguiente generación.")
         seed = st.number_input("Semilla", 0, 10 ** 6, 1, help="Con la misma semilla y parámetros, la ejecución se repite igual.")
         map_every = st.number_input("Actualizar el mapa cada N generaciones", 1, 100, 5,
                                     help="El mapa también se actualiza siempre que mejora la mejor solución. "
                                          "Valores altos aceleran la ejecución.")
 
     problems = []
-    if population_size <= tournament_size:
+    if is_ga and population_size <= tournament_size:
         problems.append("La población debe ser mayor que el tamaño del torneo.")
-    if elitism_size >= population_size:
+    if is_ga and elitism_size >= population_size:
         problems.append("La élite debe ser menor que la población; si no, no se generan hijos.")
     run = st.button("▶ Ejecutar", type="primary", width="stretch", disabled=bool(problems))
     for problem_text in problems:
         st.error(problem_text)
 
+def optional(convert, value):
+    """Convierte el valor de un control, o None si el control no se muestra para este algoritmo."""
+    return None if value is None else convert(value)
+
+
 params = {
     "Instancia": common.instance_name(instance_label), "Configuración base": config_name,
+    "Algoritmo": common.ALGORITHM_LABELS[algorithm],
     "Asignación": common.operator_label(stop_assign), "Generación de rutas": common.operator_label(route_generator),
-    "Selección": common.operator_label(selection), "Cruce": common.operator_label(crossover),
-    "Mutación": common.operator_label(mutation), "Población": int(population_size),
+    "Selección": optional(common.operator_label, selection), "Cruce": optional(common.operator_label, crossover),
+    "Mutación": optional(common.operator_label, mutation), "Población": int(population_size),
     "Máx. generaciones": int(max_iter), "Parar tras N sin mejora": int(max_stagnation),
-    "Tamaño de torneo": int(tournament_size), "Tasa de cruce": float(crossover_rate),
-    "Tasa de mutación": float(mutation_rate), "Élite": int(elitism_size), "Semilla": int(seed),
+    "Tamaño de torneo": optional(int, tournament_size), "Tasa de cruce": optional(float, crossover_rate),
+    "Tasa de mutación": optional(float, mutation_rate), "Élite": optional(int, elitism_size), "Semilla": int(seed),
 }
+params = {key: value for key, value in params.items() if value is not None}
 
 # ------------------------- Reproducción de una corrida guardada -------------------------
 replay = st.session_state.get("replay_request")
@@ -107,9 +121,9 @@ if run or replay_now:
             "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
             "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
             "initial_population_size": int(population_size), "max_iter": int(max_iter),
-            "max_stagnation_iter": int(max_stagnation), "tournament_size": int(tournament_size),
-            "crossover_rate": float(crossover_rate), "mutation_rate": float(mutation_rate),
-            "elitism_size": int(elitism_size),
+            "max_stagnation_iter": int(max_stagnation), "tournament_size": optional(int, tournament_size),
+            "crossover_rate": optional(float, crossover_rate), "mutation_rate": optional(float, mutation_rate),
+            "elitism_size": optional(int, elitism_size),
         })
     random.seed(run_seed)
     progress = st.progress(0.0, text="Generando población inicial…")
@@ -126,7 +140,7 @@ if run or replay_now:
 
     def on_generation(generation, population, problem, stats):
         summary = population_stats(population, problem)
-        children = max(1, len(population) - config.elitism_size)
+        children = max(1, len(population) - (config.elitism_size or 0))
         history.append({
             "generación": generation, "mejor": summary["best"], "media": summary["mean"], "peor": summary["worst"],
             "mejor_global": problem.objective_function(problem.best_solution) if problem.best_solution else None,
@@ -170,6 +184,7 @@ if run or replay_now:
         "problem": result[0], "fitness": result[1], "best_iteration": result[2], "time": result[3],
         "stop_reason": result[4], "stop_iteration": result[5], "history": pd.DataFrame(history),
         "label": run_label, "params": run_params, "max_stagnation": int(config.max_stagnation_iter),
+        "algorithm": config.algorithm,
         "replay_of": replay if replay_now else None,
     }
     if replay_now:
@@ -243,7 +258,10 @@ left.plotly_chart(common.solution_figure(problem, solution, highlight_route=high
 st.caption("Cada ruta sale de la escuela (★) y regresa a ella; su color indica la ocupación del bus "
            "(ver la escala). La ruta resaltada se dibuja en naranja y el resto se atenúa.")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Convergencia", "Población", "Mutaciones", "Datos por generación"])
+# Las mutaciones por hijo solo tienen sentido en el GA; las referencias evalúan bloques de soluciones
+is_ga_run = run_data.get("algorithm", "GA") == "GA"
+tab1, tab2, tab3, tab4 = st.tabs(["Convergencia", "Población" if is_ga_run else "Soluciones evaluadas",
+                                  "Mutaciones", "Datos por generación"])
 with tab1:
     st.plotly_chart(common.convergence_figure(history, height=360), width="stretch")
     st.caption("«Mejor de la población» es la mejor distancia factible de cada generación; «Media de las factibles», "
@@ -254,10 +272,14 @@ with tab2:
     c2.plotly_chart(common.percentage_figure(history, "factibles", "Soluciones factibles"), width="stretch")
     st.caption("Diversidad = fracción de individuos distintos. Una caída rápida indica convergencia prematura.")
 with tab3:
-    st.plotly_chart(common.rate_figure(history, {"mutaciones": "Por la tasa de mutación",
-                                                 "mutaciones_duplicados": "Extra para evitar duplicados"},
-                                       "Mutaciones por hijo", "Mutaciones por hijo"), width="stretch")
-    st.caption("Si las mutaciones extra crecen, el cruce está produciendo muchos hijos idénticos a otros ya aceptados.")
+    if is_ga_run:
+        st.plotly_chart(common.rate_figure(history, {"mutaciones": "Por la tasa de mutación",
+                                                     "mutaciones_duplicados": "Extra para evitar duplicados"},
+                                           "Mutaciones por hijo", "Mutaciones por hijo"), width="stretch")
+        st.caption("Si las mutaciones extra crecen, el cruce está produciendo muchos hijos idénticos a otros ya "
+                   "aceptados.")
+    else:
+        st.info("Esta vista solo aplica al algoritmo genético.")
 with tab4:
     st.dataframe(history, hide_index=True, width="stretch", column_config={
         "mejor": st.column_config.NumberColumn(format="%.2f"), "media": st.column_config.NumberColumn(format="%.2f"),
