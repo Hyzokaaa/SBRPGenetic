@@ -11,7 +11,10 @@ from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 class RouteGenerator(InitialConstructionOperator):
 
     def generate(self, parameters: InitialConstructionParameters):
-        problem: ProblemSBRP = copy.deepcopy(parameters.problem)
+        # Copia del problema con sus propias paradas, que las estrategias marcan como asignadas;
+        # el resto de datos (escuela, estudiantes, matriz de distancias) se comparte sin copiar
+        problem: ProblemSBRP = copy.copy(parameters.problem)
+        problem.stops = [copy.copy(stop) for stop in parameters.problem.stops]
         strategy: RouteGeneratorStrategy = parameters.route_generator_strategy
         solution = SolutionRouteSBRP()
 
