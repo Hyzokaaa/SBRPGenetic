@@ -1,84 +1,306 @@
-import logging
-import multiprocessing
+"""
+Ejecución por lotes del algoritmo genético.
+
+Ejemplos (desde la raíz del proyecto):
+    python app/main.py --configs 7 8 9 --pattern "inst5*" --runs 3
+    python app/main.py --dry-run
+    python app/main.py --replay results/20261111_193809/config7/inst54-7s20-100-c50-w20/run_2.csv
+
+Cada lanzamiento escribe en results/<fecha_hora>/ los resultados (config<N>/<instancia>/run_<k>.csv), una copia de las
+configuraciones usadas, el manifiesto (manifest.json: argumentos, semillas, versión del código), el log (run.log),
+el resumen (summary.csv) y las corridas fallidas (errors.csv).
+"""
+import argparse
+import csv
 import datetime as dt
+import json
+import logging
+import logging.handlers
+import multiprocessing
 import os
-from executor import execute_all_instances
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from app.executor import run_single  # noqa: E402
+from src.utils.utils import get_string_config_data  # noqa: E402
+
+CONFIGS_DIR = ROOT / "src" / "problems" / "problem_sbrp" / "algorithm" / "genetic_algorithm"
+SUMMARY_COLUMNS = ["config", "instance", "run", "seed", "value", "iteration", "execution_time", "stop_reason",
+                   "stop_iteration", "feasible", "violations"]
 
 
-def run_instance(args):
-    """
-    Función para ejecutar una instancia en un proceso separado.
-    """
-    config_path, instances_path, instance_name, execution, total_executions, config_number = args
-    execute_all_instances(
-        instances_path=instances_path,
-        config_path=config_path,
-        instance_name=instance_name,
-        execution_number=execution + 1,
-        total_executions=total_executions
-    )
+# ------------------------- Utilidades -------------------------
+def natural_key(text: str):
+    return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", text)]
+
+
+def relative_to_root(path: Path) -> str:
+    path = Path(path).resolve()
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def resolve(path: str) -> Path:
+    path = Path(path)
+    return path if path.is_absolute() else ROOT / path
+
+
+def git_info() -> dict:
+    try:
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT,
+                                    capture_output=True, text=True).stdout.strip())
+        return {"commit": commit or None, "dirty": dirty}
+    except OSError:
+        return {"commit": None, "dirty": None}
+
+
+def new_session_dir(output: Path, suffix: str = "") -> Path:
+    name = dt.datetime.now().strftime("%Y%m%d_%H%M%S") + suffix
+    session = output / name
+    counter = 1
+    while session.exists():
+        session = output / f"{name}_{counter}"
+        counter += 1
+    session.mkdir(parents=True)
+    return session
+
+
+def write_json(path: Path, data: dict):
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+
+# ------------------------- Procesos y log -------------------------
+def worker_init(queue, level: int):
+    """Inicializa cada proceso: backend gráfico sin ventana y log enviado al proceso principal."""
+    import matplotlib
+    matplotlib.use("Agg")
+    root = logging.getLogger()
+    root.handlers = [logging.handlers.QueueHandler(queue)]
+    root.setLevel(level)
+
+
+def run_job(job: dict) -> dict:
+    """Ejecuta una corrida sin interrumpir el lote si falla."""
+    try:
+        record = run_single(job["config"], job["config_path"], job["instance_path"], job["run"], job["seed"],
+                            job["output_dir"], job.get("save_image", True))
+        return {"status": "ok", **record}
+    except Exception as error:
+        logging.getLogger(__name__).error(f"Falló {job['config']} · {job['instance']} · run {job['run']}: {error}")
+        return {"status": "error", "config": job["config"], "instance": job["instance"], "run": job["run"],
+                "seed": job["seed"], "error": f"{type(error).__name__}: {error}", "traceback": traceback.format_exc()}
+
+
+def start_logging(session: Path, level: int):
+    queue = multiprocessing.Queue()
+    formatter = logging.Formatter("%(asctime)s - %(processName)s - %(levelname)s - %(message)s")
+    file_handler = logging.FileHandler(session / "run.log", encoding="utf-8")
+    console_handler = logging.StreamHandler()
+    for handler in (file_handler, console_handler):
+        handler.setFormatter(formatter)
+    listener = logging.handlers.QueueListener(queue, file_handler, console_handler)
+    listener.start()
+    worker_init(queue, level)
+    return queue, listener
+
+
+def run_jobs(jobs: list, workers: int, queue, level: int) -> list:
+    results = []
+    start = time.time()
+    with multiprocessing.Pool(processes=workers, initializer=worker_init, initargs=(queue, level)) as pool:
+        for done, result in enumerate(pool.imap_unordered(run_job, jobs), 1):
+            results.append(result)
+            elapsed = time.time() - start
+            remaining = elapsed / done * (len(jobs) - done)
+            outcome = f"{result['value']:.2f}" if result["status"] == "ok" and result["value"] is not None \
+                else ("sin solución" if result["status"] == "ok" else "ERROR")
+            print(f"[{done}/{len(jobs)}] {result['config']} · {result['instance']} · run {result['run']} → {outcome} "
+                  f"| transcurrido {dt.timedelta(seconds=int(elapsed))} · restante ~{dt.timedelta(seconds=int(remaining))}",
+                  flush=True)
+    return results
+
+
+# ------------------------- Lote -------------------------
+def batch(args):
+    instances_dir = resolve(args.instances)
+    instances = sorted((p for p in instances_dir.glob(args.pattern) if p.is_file()), key=lambda p: natural_key(p.name))
+    configs = {f"config{n}": resolve(args.configs_dir) / f"config{n}.json" for n in args.configs}
+    missing = [name for name, path in configs.items() if not path.exists()]
+    if missing:
+        sys.exit(f"No existen las configuraciones: {', '.join(missing)}")
+    if not instances:
+        sys.exit(f"No hay instancias que coincidan con '{args.pattern}' en {instances_dir}")
+
+    jobs = []
+    for config_name, config_path in configs.items():
+        for instance in instances:
+            for run in range(1, args.runs + 1):
+                jobs.append({"config": config_name, "instance": instance.stem, "instance_path": str(instance),
+                             "run": run, "seed": args.seed + len(jobs), "save_image": not args.no_images})
+
+    print(f"{len(configs)} configuraciones × {len(instances)} instancias × {args.runs} corridas = {len(jobs)} ejecuciones "
+          f"con {args.workers} procesos (semillas {args.seed}–{args.seed + len(jobs) - 1})")
+    if args.dry_run:
+        for instance in instances:
+            print(f"  {relative_to_root(instance)}")
+        return
+
+    session = new_session_dir(resolve(args.output))
+    (session / "configs").mkdir()
+    for config_name, config_path in configs.items():
+        # Copia de la configuración usada (con los cambios indicados por argumentos), para poder reproducir la corrida
+        with open(config_path, encoding="utf-8") as file:
+            config_data = json.load(file)
+        if args.population is not None:
+            config_data["initial_population_size"] = args.population
+        if args.max_iter is not None:
+            config_data["max_iter"] = args.max_iter
+        write_json(session / "configs" / f"{config_name}.json", config_data)
+        config_path = session / "configs" / f"{config_name}.json"
+        (session / config_name).mkdir()
+        with open(session / config_name / "config_params.txt", "w", encoding="utf-8") as file:
+            file.write(get_string_config_data(str(config_path)) + "\n")
+    for job in jobs:
+        job["config_path"] = str(session / "configs" / f"{job['config']}.json")
+        job["output_dir"] = str(session)
+
+    manifest = {
+        "started": dt.datetime.now().isoformat(timespec="seconds"), "status": "running",
+        "arguments": {key: value for key, value in vars(args).items() if key != "replay"},
+        "code": git_info(), "python": platform.python_version(),
+        "configs": {name: f"configs/{name}.json" for name in configs},
+        "instances": {p.stem: relative_to_root(p) for p in instances},
+        "runs": [{k: job[k] for k in ("config", "instance", "run", "seed")} for job in jobs],
+    }
+    write_json(session / "manifest.json", manifest)
+    print(f"Resultados en {relative_to_root(session)}")
+
+    queue, listener = start_logging(session, getattr(logging, args.log_level))
+    start = time.time()
+    try:
+        results = run_jobs(jobs, args.workers, queue, getattr(logging, args.log_level))
+    finally:
+        listener.stop()
+
+    ok = [r for r in results if r["status"] == "ok"]
+    failed = [r for r in results if r["status"] == "error"]
+    key = lambda r: (natural_key(r["config"]), natural_key(r["instance"]), r["run"])
+    with open(session / "summary.csv", "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=SUMMARY_COLUMNS, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(sorted(ok, key=key))
+    if failed:
+        with open(session / "errors.csv", "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=["config", "instance", "run", "seed", "error", "traceback"],
+                                    extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(sorted(failed, key=key))
+
+    manifest.update({"status": "finished", "finished": dt.datetime.now().isoformat(timespec="seconds"),
+                     "duration_seconds": round(time.time() - start, 1), "completed": len(ok), "failed": len(failed)})
+    write_json(session / "manifest.json", manifest)
+
+    print(f"\nTerminado en {dt.timedelta(seconds=int(time.time() - start))}: {len(ok)} correctas, {len(failed)} fallidas")
+    for config_name in configs:
+        values = [r["value"] for r in ok if r["config"] == config_name and r["value"] is not None]
+        errors = sum(1 for r in failed if r["config"] == config_name)
+        if values:
+            print(f"  {config_name}: media {sum(values) / len(values):.2f} · mejor {min(values):.2f} · "
+                  f"{len(values)} corridas{f' · {errors} fallidas' if errors else ''}")
+        else:
+            print(f"  {config_name}: sin resultados{f' · {errors} fallidas' if errors else ''}")
+    if failed:
+        print(f"Detalle de los fallos en {relative_to_root(session / 'errors.csv')}")
+
+
+# ------------------------- Reproducción -------------------------
+def replay(args):
+    """Repite exactamente una corrida guardada (misma configuración, instancia y semilla)."""
+    run_csv = resolve(args.replay)
+    with open(run_csv, encoding="utf-8") as file:
+        record = next(csv.DictReader(file))
+    if not record.get("seed"):
+        sys.exit("La corrida no registra su semilla (formato anterior): no se puede reproducir.")
+
+    session = next((p for p in run_csv.parents if (p / "manifest.json").exists()), None)
+    if session is None:
+        sys.exit("No se encontró el manifest.json del lanzamiento al que pertenece la corrida.")
+    with open(session / "manifest.json", encoding="utf-8") as file:
+        manifest = json.load(file)
+
+    config_name, instance_name = record["config"], record["instance"]
+    config_path = session / manifest["configs"][config_name]
+    instance_path = resolve(manifest["instances"][instance_name])
+    code = git_info()
+    original_code = manifest["code"]
+    if original_code.get("commit") != code["commit"]:
+        print(f"Aviso: el código actual ({(code['commit'] or '?')[:7]}) no es el de la corrida original "
+              f"({(original_code.get('commit') or '?')[:7]}); el resultado podría diferir.")
+    elif code["dirty"] or original_code.get("dirty"):
+        print("Aviso: el código tiene cambios sin confirmar (ahora o cuando se ejecutó la corrida original); "
+              "el resultado podría diferir.")
+
+    output = new_session_dir(resolve(args.output), "_replay")
+    write_json(output / "manifest.json", {
+        "started": dt.datetime.now().isoformat(timespec="seconds"), "replay_of": relative_to_root(run_csv),
+        "code": code, "python": platform.python_version(), "configs": {config_name: f"configs/{config_name}.json"},
+        "instances": {instance_name: relative_to_root(instance_path)},
+        "runs": [{"config": config_name, "instance": instance_name, "run": int(record["run"]), "seed": int(record["seed"])}],
+    })
+    (output / "configs").mkdir()
+    shutil.copy(config_path, output / "configs" / f"{config_name}.json")
+
+    logging.basicConfig(level=getattr(logging, args.log_level))
+    print(f"Reproduciendo {config_name} · {instance_name} · run {record['run']} (semilla {record['seed']})…")
+    result = run_single(config_name, str(output / "configs" / f"{config_name}.json"), str(instance_path),
+                        int(record["run"]), int(record["seed"]), str(output), not args.no_images)
+
+    original = float(record["value"]) if record["value"] not in ("", "None") else None
+    reproduced = result["value"]
+    print(f"Original: {original} · Reproducido: {reproduced} · Resultados en {relative_to_root(output)}")
+    if original is not None and reproduced is not None and abs(original - reproduced) < 1e-9:
+        print("✓ Resultado idéntico al original")
+    else:
+        print("✗ El resultado difiere del original")
+        sys.exit(1)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Ejecución por lotes del algoritmo genético para el SBRP.")
+    parser.add_argument("--configs", type=int, nargs="+", default=[7, 8, 9], help="Números de configuración (config<N>.json)")
+    parser.add_argument("--configs-dir", default=str(CONFIGS_DIR), help="Carpeta de las configuraciones")
+    parser.add_argument("--population", type=int, help="Sustituye el tamaño de población de las configuraciones")
+    parser.add_argument("--max-iter", type=int, help="Sustituye el número máximo de generaciones de las configuraciones")
+    parser.add_argument("--instances", default="data/instances/real", help="Carpeta de instancias")
+    parser.add_argument("--pattern", default="*.xpress", help="Patrón de nombres de instancia, p. ej. 'inst5*'")
+    parser.add_argument("--runs", type=int, default=1, help="Corridas por configuración e instancia")
+    parser.add_argument("--workers", type=int, default=min(4, os.cpu_count() or 1), help="Procesos en paralelo")
+    parser.add_argument("--seed", type=int, default=1, help="Semilla base (cada corrida usa base + índice)")
+    parser.add_argument("--output", default="results", help="Carpeta donde se crea la carpeta del lanzamiento")
+    parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
+    parser.add_argument("--no-images", action="store_true", help="No guardar la imagen de cada corrida")
+    parser.add_argument("--dry-run", action="store_true", help="Mostrar el plan sin ejecutar")
+    parser.add_argument("--replay", help="Reproducir exactamente una corrida guardada (ruta a su run_<k>.csv)")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(f'sbrp_log_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.log'),
-            logging.StreamHandler()
-        ]
-    )
-    # Parámetros de ejecución
-    configurations = [1, 4, 5, 6]
-    total_executions = 1
-    instances_path = 'data/instances/test/'
-    configs_base_path = 'src/problems/problem_sbrp/algorithm/genetic_algorithm/'
-
-    # Obtener la lista de instancias
-    instances = os.listdir(instances_path)
-    total_instances = len(instances)
-
-    # Calcular el número total de ejecuciones
-    total_runs = len(configurations) * total_executions * total_instances
-
-    # Crear lista de argumentos para cada ejecución
-    args_list = []
-    for config_number in range(0, len(configurations)):
-        config_path = os.path.join(configs_base_path, f'config{configurations[config_number]}.json')
-        if not os.path.exists(config_path):
-            print(f"⚠️ ¡Config{configurations[config_number]}.json no encontrado! Saltando...")
-            continue
-        for instance_name in instances:
-            for execution in range(total_executions):
-                args_list.append(
-                    (config_path, instances_path, instance_name, execution, total_executions, config_number))
-
-    # Iniciar Pool con 4 procesos (ajusta según tu CPU)
-    num_cores = 4
-    with multiprocessing.Pool(processes=num_cores) as pool:
-        start_time = dt.datetime.now()
-        print(f"Inicio de la ejecución: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-        # Ejecutar en paralelo con gestión de progreso
-        for i, _ in enumerate(pool.imap_unordered(run_instance, args_list), 1):
-            elapsed_time = dt.datetime.now() - start_time
-            progress = (i / total_runs) * 100
-
-            # Calcular el tiempo restante estimado
-            if i > 0:  # Evitar división por cero
-                avg_time_per_run = elapsed_time / i
-                remaining_runs = total_runs - i
-                remaining_time = avg_time_per_run * remaining_runs
-            else:
-                remaining_time = dt.timedelta(0)
-
-            # Mostrar el progreso y el tiempo restante
-            print(
-                f"Progreso: {progress:.2f}% | "
-                f"Tiempo transcurrido: {elapsed_time} | "
-                f"Tiempo restante: {remaining_time}"
-            )
-
-        # Mostrar el tiempo total de ejecución
-        total_time = dt.datetime.now() - start_time
-        print(f"Tiempo total: {total_time}")
+    arguments = parse_args()
+    if arguments.replay:
+        replay(arguments)
+    else:
+        batch(arguments)

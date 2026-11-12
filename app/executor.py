@@ -1,84 +1,67 @@
+import csv
 import os
-import re
-from datetime import datetime
+import random
+import time
 
 from shared.presentation.visualizer import Visualizer
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
 from src.problems.problem_sbrp.model.school import School
-from src.utils.utils import read_instances, get_string_config_data
+
+CSV_COLUMNS = ["instance", "config", "run", "seed", "value", "iteration", "execution_time", "stop_reason",
+               "stop_iteration", "feasible", "violations", "student_assignments", "routes"]
 
 
-def execute_all_instances(instances_path: str, config_path: str, instance_name: str, execution_number: int, total_executions: int) -> None:
+def run_single(config_name: str, config_path: str, instance_path: str, run_number: int, seed: int,
+               output_dir: str, save_image: bool = True) -> dict:
     """
-    Método para ejecutar una instancia específica.
+    Ejecuta una corrida del algoritmo genético con una semilla y guarda el resultado en
+    <output_dir>/<config_name>/<instancia>/run_<run_number>.csv (y la imagen de las rutas).
+    Devuelve los datos principales de la corrida.
     """
-    ag_executor = GeneticAlgorithmExecutor()
-
-    # Extraer número de configuración
-    config_filename = os.path.basename(config_path)
-    config_number = re.search(r"config(\d+)", config_filename).group(1)
-
-    # Crear carpeta de configuración
-    config_dir = f"results/config{config_number}"
-    os.makedirs(config_dir, exist_ok=True)
-    with open(f"{config_dir}/config_params.txt", "w") as f:
-        f.write(get_string_config_data(config_path) + "\n")
-
-    # Procesar la instancia específica
-    instance_clean = os.path.splitext(instance_name)[0]
-    instance_dir = f"{config_dir}/{instance_clean}"
+    instance_name = os.path.splitext(os.path.basename(instance_path))[0]
+    instance_dir = os.path.join(output_dir, config_name, instance_name)
     os.makedirs(instance_dir, exist_ok=True)
 
-    # Cargar configuración y ejecutar el algoritmo
+    # La semilla fija toda la aleatoriedad de la corrida (construcción inicial y operadores)
+    random.seed(seed)
     config = GeneticAlgorithmConfig()
-    config.load_from_file(config_path, instances_path + instance_name)
-    data = ag_executor.execute(config)
+    config.load_from_file(config_path, instance_path)
+    start = time.time()
+    problem, fitness, best_iteration, execution_time, stop_reason, stop_iteration = GeneticAlgorithmExecutor().execute(config)
+    solution = problem.best_solution
 
-    # Obtener datos extendidos de la solución
-    problem = data[0]
-    solution = data[0].best_solution
-
-    # Generar imagen en la carpeta del run (solo si se encontró una solución factible)
-    if solution is not None:
-        image_path = f"{instance_dir}/run_{execution_number}_result.png"
-        Visualizer.plot_routes(
-            routes=solution,
-            sbrp=problem,
-            image_path=image_path  # Ruta personalizada
-        )
+    # Generar imagen en la carpeta de la corrida (solo si se encontró una solución factible)
+    if save_image and solution is not None:
+        Visualizer.plot_routes(routes=solution, sbrp=problem,
+                               image_path=os.path.join(instance_dir, f"run_{run_number}_result.png"))
 
     # Validar la solución antes de registrarla
     violations = problem.violations(solution) if solution is not None else ["No se encontró ninguna solución factible"]
 
-    # 1. Generar mapeo de paradas con estudiantes
+    # Asignaciones entre paradas y estudiantes
     stop_assignments = {}
     for stop in problem.stops:
         if stop.num_assigned_students > 0:
-            students = [f"student{s.id}" for s in problem.students if s.assigned_stop == stop]
-            stop_assignments[f"Stop{stop.id}"] = students
+            stop_assignments[f"Stop{stop.id}"] = [f"student{s.id}" for s in problem.students if s.assigned_stop == stop]
 
-    # 2. Generar descripción de rutas
+    # Descripción de rutas
     routes_description = []
     for i, route in enumerate(solution.get_representation() if solution is not None else [], 1):
-        stops = [f"Stop{stop.id}" if not isinstance(stop, School) else "School"
-                 for stop in route.stops]
+        stops = [f"Stop{stop.id}" if not isinstance(stop, School) else "School" for stop in route.stops]
         total_students = sum(stop.num_assigned_students for stop in route.stops if not isinstance(stop, School))
         routes_description.append(f"Ruta{i}[{', '.join(stops)}] (Total: {total_students})")
 
-    # Escribir resultados en run_<número>.csv
-    output_path = f"{instance_dir}/run_{execution_number}.csv"
-    with open(output_path, "w") as f:
-        f.write("instance,value,iteration,execution_time,stop_reason,stop_iteration,feasible,violations,student_assignments,routes\n")
-        f.write(
-            f"{instance_clean},"
-            f"{data[1]},"
-            f"{data[2]},"
-            f"{data[3]:.2f},"
-            f"{data[4]},"
-            f"{data[5]},"
-            f"{not violations},"
-            f"\"{'; '.join(violations)}\","  # Restricciones incumplidas (vacío si es factible)
-            f"\"{stop_assignments}\","  # Asignaciones entre paradas y estudiantes
-            f"\"{'; '.join(routes_description)}\"\n"  # Descripción de rutas
-        )
+    record = {
+        "instance": instance_name, "config": config_name, "run": run_number, "seed": seed, "value": fitness,
+        "iteration": best_iteration, "execution_time": round(execution_time, 2), "stop_reason": stop_reason,
+        "stop_iteration": stop_iteration, "feasible": not violations, "violations": "; ".join(violations),
+        "student_assignments": str(stop_assignments), "routes": "; ".join(routes_description),
+    }
+    with open(os.path.join(instance_dir, f"run_{run_number}.csv"), "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=CSV_COLUMNS)
+        writer.writeheader()
+        writer.writerow(record)
+
+    record["wall_time"] = round(time.time() - start, 2)
+    return record
