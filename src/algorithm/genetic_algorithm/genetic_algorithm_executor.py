@@ -1,11 +1,20 @@
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
+from src.algorithm.hill_climbing_algorithm.hill_climbing_algorithm import HillClimbingAlgorithm
+from src.algorithm.random_search_algorithm.random_search_algorithm import RandomSearchAlgorithm
 from src.operators.crossover.crossover_parameters import CrossoverParameters
 from src.operators.initial_construction.initial_construction_parameters import InitialConstructionParameters
 from src.operators.mutation.mutation_parameters import MutationParameters
 from src.operators.repair.repair_parameters import RepairParameters
 from src.operators.selection.selection_parameters import SelectionParameters
+
+# Algoritmos que se pueden indicar en la clave "algorithm" de la configuración
+ALGORITHMS = {
+    "GA": GeneticAlgorithm,
+    "RANDOM_SEARCH": RandomSearchAlgorithm,
+    "HILL_CLIMBING": HillClimbingAlgorithm,
+}
 
 
 class GeneticAlgorithmExecutor:
@@ -52,6 +61,8 @@ class GeneticAlgorithmExecutor:
                                                    mutation_parameters=mutation_parameters,
                                                    mutation_operator=config.mutation_operator
                                                    )
-        optimization_algorithm = GeneticAlgorithm()
+        if config.algorithm not in ALGORITHMS:
+            raise ValueError(f"Algoritmo desconocido: {config.algorithm}. Opciones: {', '.join(ALGORITHMS)}")
+        optimization_algorithm = ALGORITHMS[config.algorithm]()
 
         return optimization_algorithm.optimize(algorithm_parameters)

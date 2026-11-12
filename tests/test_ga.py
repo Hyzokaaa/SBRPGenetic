@@ -7,6 +7,7 @@ from conftest import CONFIGS, INSTANCES
 from src.algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
+from src.algorithm.hill_climbing_algorithm.hill_climbing_algorithm import HillClimbingAlgorithm
 
 
 def run_ga(config_number=8, seed=1, instance="real/inst54-7s20-100-c50-w20.xpress", on_generation=None, **overrides):
@@ -19,7 +20,7 @@ def run_ga(config_number=8, seed=1, instance="real/inst54-7s20-100-c50-w20.xpres
     return GeneticAlgorithmExecutor().execute(config, on_generation=on_generation)
 
 
-@pytest.mark.parametrize("config_number", range(1, 10))
+@pytest.mark.parametrize("config_number", range(1, 12))
 def test_every_config_returns_a_feasible_best_solution(config_number):
     problem, fitness, *_ = run_ga(config_number)
     assert problem.best_solution is not None
@@ -58,3 +59,39 @@ def test_population_has_no_duplicates():
         assert len(signatures) >= 0.9 * len(population)
 
     run_ga(on_generation=on_generation)
+
+
+@pytest.mark.parametrize("config_number", [10, 11])
+def test_baselines_use_the_same_budget_as_the_ga(config_number):
+    # Cada generación equivalente evalúa tantas soluciones como la población del GA
+    sizes = []
+    problem, fitness, _, _, stop_reason, stop_iteration = run_ga(
+        config_number, on_generation=lambda generation, block, problem, stats: sizes.append(len(block)))
+    assert sizes == [30] * 7 and (stop_reason, stop_iteration) == ("max_iter", 6)
+    assert problem.is_feasible(problem.best_solution)
+
+
+@pytest.mark.parametrize("config_number", [10, 11])
+def test_baselines_are_reproducible(config_number):
+    first, second = run_ga(config_number, seed=5), run_ga(config_number, seed=5)
+    assert first[1:3] == second[1:3]
+
+
+def test_hill_climbing_never_worsens_its_current_solution(monkeypatch):
+    current = []
+    next_block = HillClimbingAlgorithm.next_block
+
+    def recording_next_block(self):
+        block = next_block(self)
+        current.append(self.parameters.problem.objective_function(self.current))
+        return block
+
+    monkeypatch.setattr(HillClimbingAlgorithm, "next_block", recording_next_block)
+    problem, fitness, *_ = run_ga(11, max_iter=15, max_stagnation_iter=15)
+    assert current == sorted(current, reverse=True) and current[-1] < current[0]
+    assert fitness == current[-1]
+
+
+def test_unknown_algorithm_is_rejected():
+    with pytest.raises(ValueError, match="Algoritmo desconocido"):
+        run_ga(8, algorithm="TABU")

@@ -1,0 +1,15 @@
+{
+    "algorithm": "HILL_CLIMBING",
+    "instance_path": "path/to/instance",
+    "problem": "PROBLEM_SBRP",
+    "distance_operator": "EUCLIDEAN_DISTANCE",
+    "initial_construction_operator": "INITIAL_SOLUTION_OPERATOR_SBRP",
+    "stop_assign_strategy": "H_STUDENT_TO_CLOSEST_STOP_STRATEGY",
+    "route_generator_strategy": "RANDOM_ROUTE_GENERATION_STRATEGY",
+    "repair_operator": "REPAIR_OPERATOR_SBRP",
+    "mutation_operator": "COMPOSITE_MUTATION_OPERATOR_SBRP",
+    "objective_max": false,
+    "initial_population_size": 1000,
+    "max_iter": 1000,
+    "max_stagnation_iter": 20
+}

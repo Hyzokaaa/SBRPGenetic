@@ -98,6 +98,15 @@ Cada corrida usa una semilla registrada, por lo que puede reproducirse exactamen
 python app/main.py --replay results/<fecha_hora>/config7/<instancia>/run_2.csv
 ```
 
+### Algoritmos de referencia
+La clave opcional `"algorithm"` de una configuración elige el algoritmo: `GA` (por defecto), `RANDOM_SEARCH`
+(búsqueda aleatoria) o `HILL_CLIMBING` (escalada). Las referencias sirven para medir cuánto aporta el algoritmo
+genético: usan su mismo presupuesto (población × generaciones evaluaciones) y criterio de estancamiento, y solo
+aceptan soluciones factibles. `config10` (búsqueda aleatoria) y `config11` (escalada) parten de `config8`:
+```bash
+python app/main.py --configs 8 10 11 --runs 5
+```
+
 ### Interfaz (laboratorio del algoritmo genético)
 Desde la raíz del proyecto, con las dependencias instaladas:
 ```bash

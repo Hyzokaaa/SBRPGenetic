@@ -50,4 +50,8 @@ def test_all_configs_load():
     for path in sorted(CONFIGS.glob("config*.json")):
         config = GeneticAlgorithmConfig()
         config.load_from_file(str(path), str(INSTANCES / "real" / "inst1-1s5-25-c25-w5.xpress"))
-        assert config.crossover_operator is not None and config.mutation_operator is not None, path.name
+        # Cada algoritmo necesita sus operadores: el GA cruce y mutación, la escalada mutación
+        required = {"GA": ["crossover_operator", "mutation_operator", "selection_operator"],
+                    "HILL_CLIMBING": ["mutation_operator"], "RANDOM_SEARCH": []}[config.algorithm]
+        assert config.repair_operator is not None, path.name
+        assert all(getattr(config, key) is not None for key in required), path.name

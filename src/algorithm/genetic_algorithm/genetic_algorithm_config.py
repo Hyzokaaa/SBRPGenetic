@@ -26,6 +26,8 @@ class GeneticAlgorithmConfig:
         self.mutation_rate = None
         self.crossover_rate = None
         self.elitism_size = None
+        # Algoritmo a ejecutar: GA (por defecto) o una referencia (RANDOM_SEARCH, HILL_CLIMBING)
+        self.algorithm = "GA"
 
     def load_from_file(self, config_file_path, instance_path):
         with open(config_file_path, 'r') as config_file:
