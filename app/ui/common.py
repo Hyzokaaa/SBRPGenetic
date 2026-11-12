@@ -227,8 +227,9 @@ def solution_figure(problem: ProblemSBRP, solution, title=None, highlight_route:
     return _base_layout(fig, title, height)
 
 
-def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None, height=420) -> go.Figure:
+def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None, height=420, labels: dict = None) -> go.Figure:
     """Aristas de la solución coloreadas según su origen (padre A, padre B, común o nueva)."""
+    labels = {**EDGE_LABELS, **(labels or {})}
     coords = {problem.school.id: problem.school.coordinates}
     coords.update({s.id: s.coordinates for s in problem.stops})
     fig = go.Figure()
@@ -239,7 +240,7 @@ def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None,
                 xs += [coords[u][0], coords[v][0], None]
                 ys += [coords[u][1], coords[v][1], None]
         if xs:
-            fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", name=f"{EDGE_LABELS[kind]} ({len(xs) // 3})",
+            fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", name=f"{labels[kind]} ({len(xs) // 3})",
                                      line=dict(color=EDGE_COLORS[kind], width=1.5 if kind == "AB" else 2.5),
                                      hoverinfo="skip"))
     for trace in _points_traces(problem, False, False):
