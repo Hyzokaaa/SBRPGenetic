@@ -80,7 +80,13 @@ SBRPGenetic es una solución al problema de rutas de autobuses escolares (SBRP) 
 
 
 ## Uso
-(TODO)
+### Interfaz (laboratorio del algoritmo genético)
+Desde la raíz del proyecto, con las dependencias instaladas:
+```bash
+streamlit run app/ui/app.py
+```
+Se abre en `http://localhost:8501`. Permite ver las instancias y la asignación de estudiantes a paradas,
+y ejecutar el algoritmo genético en vivo (convergencia, diversidad y mapa de la mejor solución).
 
 ## Contribución
 (TODO)
