@@ -85,8 +85,16 @@ Desde la raíz del proyecto, con las dependencias instaladas:
 ```bash
 streamlit run app/ui/app.py
 ```
-Se abre en `http://localhost:8501`. Permite ver las instancias y la asignación de estudiantes a paradas,
-y ejecutar el algoritmo genético en vivo (convergencia, diversidad y mapa de la mejor solución).
+Se abre en `http://localhost:8501` y tiene cinco páginas:
+- **Inicio**: mapa de la instancia y asignación de estudiantes a paradas.
+- **Ejecutar en vivo**: ejecuta el algoritmo genético con cualquier configuración u operador y muestra, generación
+  a generación, la convergencia, la diversidad de la población y el mapa de la mejor solución.
+- **Laboratorio de operadores**: aplica un cruce, una mutación o la reparación a dos padres y muestra qué aristas
+  hereda el hijo de cada padre, cuánto cambia el coste y qué restricciones se rompen o se corrigen.
+- **Comparar configuraciones**: ejecuta en paralelo varias configuraciones con varias semillas y compara sus
+  distancias (tabla, diagrama de caja y curvas de convergencia).
+- **Resultados guardados**: explora los resultados de `app/main.py` y revalida con el validador actual los
+  resultados antiguos, que no registraban la factibilidad.
 
 ## Contribución
 (TODO)
