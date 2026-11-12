@@ -1,4 +1,3 @@
-import copy
 import random
 from typing import List
 
@@ -22,11 +21,12 @@ class RepairOperatorSBRP(RepairOperator):
         4. Que no se utilicen más rutas que vehículos.
         5. Que todas las paradas con estudiantes del problema estén en la solución.
         Las paradas que no puedan reinsertarse quedan fuera y la solución resulta infactible.
+        Devuelve soluciones nuevas: las recibidas no se modifican.
         """
-        childs: List[SolutionRouteSBRP] = copy.deepcopy(parameters.solutions)
         problem: ProblemSBRP = parameters.problem
+        repaired: List[SolutionRouteSBRP] = []
 
-        for child in childs:
+        for child in parameters.solutions:
             # Paso 1: Trabajar solo con las paradas de cada ruta (sin escuela ni paradas nulas)
             routes = self._normalize_routes(child)
 
@@ -46,9 +46,9 @@ class RepairOperatorSBRP(RepairOperator):
             self._insert_pending_stops(routes, pending, problem)
 
             # Solo se representan las rutas que visitan alguna parada
-            child.set_representation([self._build_route(stops, problem) for stops in routes if stops])
+            repaired.append(SolutionRouteSBRP(routes=[self._build_route(stops, problem) for stops in routes if stops]))
 
-        return childs
+        return repaired
 
     def _normalize_routes(self, child: SolutionRouteSBRP) -> List[List[Stop]]:
         """
