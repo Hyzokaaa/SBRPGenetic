@@ -93,6 +93,12 @@ Cada lanzamiento crea `results/<fecha_hora>/` con los resultados (`config<N>/<in
 una copia de las configuraciones usadas, `manifest.json` (argumentos, semillas y versión del código), `run.log`,
 `summary.csv` y, si alguna corrida falla, `errors.csv`. Una corrida que falla no detiene el lote.
 
+`summary.csv` incluye el mejor valor conocido de cada instancia (`best_known`) y el `gap` de la corrida respecto a él,
+y al terminar se muestra el gap medio de cada configuración. Los mejores conocidos están en
+`data/instances/best_known.csv`: óptimos del MIP, cotas inferiores y soluciones GRASP+VND de Schittekat et al. (2013,
+*A metaheuristic for the school bus routing problem with bus stop selection*, EJOR 229(2)) y la escalada de la tesis de
+Pérez Pérez (2020); la columna `optimal` indica los 59 valores probados óptimos.
+
 Cada corrida usa una semilla registrada, por lo que puede reproducirse exactamente:
 ```bash
 python app/main.py --replay results/<fecha_hora>/config7/<instancia>/run_2.csv

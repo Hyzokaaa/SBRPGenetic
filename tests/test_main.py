@@ -35,6 +35,8 @@ def test_batch_isolates_failures_and_replays_exactly(tmp_path):
     with open(session / "summary.csv", encoding="utf-8") as file:
         rows = list(csv.DictReader(file))
     assert len(rows) == 2 and {r["seed"] for r in rows} and all(r["feasible"] == "True" for r in rows)
+    # inst1 tiene óptimo probado (141.01); el gap se calcula respecto a él
+    assert all(r["best_known"] == "141.01" and float(r["gap"]) >= -1e-4 for r in rows)
 
     run_csv = session / "config8" / "inst1-1s5-25-c25-w5" / "run_2.csv"
     replay = run_main("--replay", str(run_csv), "--output", str(tmp_path / "replays"), "--no-images")

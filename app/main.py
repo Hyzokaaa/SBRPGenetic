@@ -32,11 +32,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.executor import run_single  # noqa: E402
+from src.analysis import best_known  # noqa: E402
 from src.utils.utils import get_string_config_data  # noqa: E402
 
 CONFIGS_DIR = ROOT / "src" / "problems" / "problem_sbrp" / "algorithm" / "genetic_algorithm"
-SUMMARY_COLUMNS = ["config", "instance", "run", "seed", "value", "iteration", "execution_time", "stop_reason",
-                   "stop_iteration", "feasible", "violations"]
+SUMMARY_COLUMNS = ["config", "instance", "run", "seed", "value", "best_known", "gap", "iteration", "execution_time",
+                   "stop_reason", "stop_iteration", "feasible", "violations"]
 
 
 # ------------------------- Utilidades -------------------------
@@ -98,7 +99,10 @@ def run_job(job: dict) -> dict:
     try:
         record = run_single(job["config"], job["config_path"], job["instance_path"], job["run"], job["seed"],
                             job["output_dir"], job.get("save_image", True))
-        return {"status": "ok", **record}
+        reference = best_known.reference(job["instance"])
+        gap = best_known.gap(record["value"], job["instance"])
+        return {"status": "ok", **record, "best_known": reference["best_known"] if reference else None,
+                "gap": round(gap, 6) if gap is not None else None}
     except Exception as error:
         logging.getLogger(__name__).error(f"Falló {job['config']} · {job['instance']} · run {job['run']}: {error}")
         return {"status": "error", "config": job["config"], "instance": job["instance"], "run": job["run"],
@@ -219,9 +223,11 @@ def batch(args):
     print(f"\nTerminado en {dt.timedelta(seconds=int(time.time() - start))}: {len(ok)} correctas, {len(failed)} fallidas")
     for config_name in configs:
         values = [r["value"] for r in ok if r["config"] == config_name and r["value"] is not None]
+        gaps = [r["gap"] for r in ok if r["config"] == config_name and r.get("gap") is not None]
         errors = sum(1 for r in failed if r["config"] == config_name)
         if values:
-            print(f"  {config_name}: media {sum(values) / len(values):.2f} · mejor {min(values):.2f} · "
+            gap_text = f" · gap medio {100 * sum(gaps) / len(gaps):+.1f}% sobre el mejor conocido" if gaps else ""
+            print(f"  {config_name}: media {sum(values) / len(values):.2f} · mejor {min(values):.2f}{gap_text} · "
                   f"{len(values)} corridas{f' · {errors} fallidas' if errors else ''}")
         else:
             print(f"  {config_name}: sin resultados{f' · {errors} fallidas' if errors else ''}")
