@@ -20,23 +20,57 @@ st.caption("Explora los resultados que genera app/main.py: cada lanzamiento crea
            "con el validador actual, y las corridas con semilla se pueden reproducir en vivo.")
 
 ROOT_LAUNCH = "(carpeta raíz)"
+# A partir de este número de configuraciones, el resumen no muestra la matriz instancia × configuración
+MAX_MATRIX_CONFIGS = 30
 
 ROUTE_PATTERN = re.compile(r"Ruta(\d+)\[(.*?)\]")
 
 
 # ------------------------- Lectura -------------------------
-@st.cache_data(show_spinner="Leyendo resultados…")
-def load_runs(results_dir: str) -> pd.DataFrame:
+def has_runs(folder: Path) -> bool:
+    return any(child.is_dir() and child.name.startswith("config") and child.name[len("config"):].isdigit()
+               for child in folder.iterdir())
+
+
+def launch_dirs(base: Path, depth: int = 2) -> list:
+    """
+    Carpetas con resultados (config<N>/...): la propia carpeta (resultados antiguos) y los lanzamientos que contiene,
+    hasta depth niveles. No entra en las carpetas de un lanzamiento, que pueden tener miles de corridas.
+    """
+    found, pending = [], [(base, 0)]
+    while pending:
+        folder, level = pending.pop()
+        if has_runs(folder):
+            found.append(folder)
+            if folder != base:
+                continue
+        if level < depth:
+            pending.extend((child, level + 1) for child in folder.iterdir() if child.is_dir())
+    return sorted(found)
+
+
+def read_launch(base: Path, launch_dir: Path) -> list:
+    """
+    Corridas de un lanzamiento. Si terminó, se leen de su summary.csv (rápido aunque tenga miles de corridas); si no,
+    de cada run_<k>.csv. Las rutas y asignaciones de una corrida se leen al abrir su detalle (ver run_details).
+    """
+    launch = ROOT_LAUNCH if launch_dir == base else launch_dir.relative_to(base).as_posix()
+    common_fields = {"lanzamiento": launch, "carpeta_lanzamiento": str(launch_dir)}
+    summary = launch_dir / "summary.csv"
+    if summary.exists():
+        try:
+            data = pd.read_csv(summary)
+        except Exception as error:
+            return [{**common_fields, "archivo": str(summary), "error": str(error)}]
+        data = data.rename(columns={"instance": "instancia", "run": "corrida"})
+        data["archivo"] = [str(launch_dir / c / i / f"run_{r}.csv")
+                           for c, i, r in zip(data["config"], data["instancia"], data["corrida"])]
+        return [{**row, **common_fields} for row in data.to_dict("records")]
+
     rows = []
-    base = Path(results_dir)
-    # Busca en la carpeta y en las carpetas de cada lanzamiento: <lanzamiento>/config<N>/<instancia>/run_<k>.csv
-    for csv_path in base.rglob("run_*.csv"):
-        if not csv_path.parent.parent.name.startswith("config"):
-            continue
-        launch_dir = csv_path.parents[2]
-        launch = ROOT_LAUNCH if launch_dir == base else launch_dir.relative_to(base).as_posix()
-        location = {"config": csv_path.parts[-3], "instancia": csv_path.parts[-2], "lanzamiento": launch,
-                    "carpeta_lanzamiento": str(launch_dir), "archivo": str(csv_path)}
+    for csv_path in launch_dir.glob("config*/*/run_*.csv"):
+        location = {"config": csv_path.parts[-3], "instancia": csv_path.parts[-2], **common_fields,
+                    "archivo": str(csv_path)}
         try:
             data = pd.read_csv(csv_path)
         except Exception as error:
@@ -46,6 +80,15 @@ def load_runs(results_dir: str) -> pd.DataFrame:
             run = record.to_dict()
             run.update({**location, "corrida": int(re.search(r"run_(\d+)", csv_path.name).group(1))})
             rows.append(run)
+    return rows
+
+
+@st.cache_data(show_spinner="Leyendo resultados…")
+def load_runs(results_dir: str) -> pd.DataFrame:
+    base = Path(results_dir)
+    rows = []
+    for launch_dir in launch_dirs(base):
+        rows.extend(read_launch(base, launch_dir))
     if not rows:
         return pd.DataFrame()
     runs = pd.DataFrame(rows)
@@ -97,6 +140,17 @@ def replay_request(run: dict):
     return {"config_path": str(Path(run["carpeta_lanzamiento"]) / manifest["configs"][run["config"]]),
             "instance_path": str(instance_path), "seed": int(seed), "original": None if pd.isna(run["value"]) else run["value"],
             "label": f"{run['config']} · {run['instancia']} · run {run['corrida']} ({run['lanzamiento']})"}
+
+
+def run_details(run: dict) -> dict:
+    """Completa una corrida leída de summary.csv con las rutas y asignaciones de su run_<k>.csv."""
+    if isinstance(run.get("routes"), str) and isinstance(run.get("student_assignments"), str):
+        return run
+    try:
+        details = pd.read_csv(run["archivo"]).iloc[0].to_dict()
+    except Exception:
+        return run
+    return {**run, **{key: details[key] for key in ("student_assignments", "routes") if key in details}}
 
 
 def rebuild_solution(run: dict):
@@ -182,30 +236,46 @@ if filtered.empty:
 tab_summary, tab_runs, tab_detail = st.tabs(["Resumen", "Corridas", "Detalle de una corrida"])
 
 with tab_summary:
-    pivot = filtered.pivot_table(index="instancia", columns="config", values="value", aggfunc="mean")
-    pivot = pivot.reindex(sorted(pivot.index, key=common._natural_key))
-    pivot = pivot[sorted(pivot.columns, key=common._natural_key)]
-    st.markdown("**Distancia media por instancia y configuración** (la menor de cada fila, en negrita y resaltada)")
-    # Texto oscuro explícito para que el resaltado se lea también con el tema oscuro
-    st.dataframe(pivot.style.format("{:.2f}", na_rep="—").highlight_min(
-        axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"), width="stretch")
-    if filtered["gap"].notna().any():
-        gaps = filtered.pivot_table(index="instancia", columns="config", values="gap", aggfunc="mean")
-        gaps = gaps.reindex(sorted(gaps.index, key=common._natural_key))
-        gaps = gaps[sorted(gaps.columns, key=common._natural_key)]
-        gaps.loc["Media"] = gaps.mean()
-        st.markdown("**Gap medio sobre el mejor conocido** (0% = iguala el mejor valor conocido; negativo = lo mejora)")
-        st.dataframe(gaps.style.format("{:+.1%}", na_rep="—").highlight_min(
-            axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"),
-            width="stretch")
-        st.caption("Mejores conocidos: óptimos y soluciones de Schittekat et al. (2013) y de la tesis de Pérez Pérez "
-                   "(2020). Ver data/instances/best_known.csv.")
-    feasibility = filtered.groupby(["config", "factibilidad"]).size().unstack(fill_value=0)
-    feasibility = feasibility.reindex(columns=[c for c in ("Factible", "Infactible", "Sin dato") if c in feasibility])
-    st.markdown("**Factibilidad registrada por configuración** (número de corridas)")
-    st.dataframe(feasibility, width="stretch")
-    if "Sin dato" in feasibility:
-        st.caption("«Sin dato»: resultados antiguos sin columna de factibilidad. Revalídalos en «Detalle de una corrida».")
+    if filtered["config"].nunique() > MAX_MATRIX_CONFIGS:
+        # Con muchas configuraciones (p. ej. una rejilla) la matriz instancia × configuración no es legible
+        by_config = filtered.groupby("config").agg(corridas=("value", "size"), distancia_media=("value", "mean"),
+                                                   gap_medio=("gap", "mean"), mejor_gap=("gap", "min"))
+        by_config = by_config.sort_values(["gap_medio", "distancia_media"]).reset_index()
+        st.markdown(f"**{len(by_config)} configuraciones**, ordenadas por gap medio. Para analizar un experimento "
+                    "de rejilla con su ranking estadístico y el efecto de cada operador, usa la página "
+                    "**Calibración**.")
+        st.dataframe(by_config, hide_index=True, width="stretch", column_config={
+            "config": st.column_config.TextColumn("Configuración"),
+            "corridas": st.column_config.NumberColumn("Corridas"),
+            "distancia_media": st.column_config.NumberColumn("Distancia media", format="%.2f"),
+            "gap_medio": st.column_config.NumberColumn("Gap medio", format="percent"),
+            "mejor_gap": st.column_config.NumberColumn("Mejor gap", format="percent"),
+        })
+    else:
+        pivot = filtered.pivot_table(index="instancia", columns="config", values="value", aggfunc="mean")
+        pivot = pivot.reindex(sorted(pivot.index, key=common._natural_key))
+        pivot = pivot[sorted(pivot.columns, key=common._natural_key)]
+        st.markdown("**Distancia media por instancia y configuración** (la menor de cada fila, en negrita y resaltada)")
+        # Texto oscuro explícito para que el resaltado se lea también con el tema oscuro
+        st.dataframe(pivot.style.format("{:.2f}", na_rep="—").highlight_min(
+            axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"), width="stretch")
+        if filtered["gap"].notna().any():
+            gaps = filtered.pivot_table(index="instancia", columns="config", values="gap", aggfunc="mean")
+            gaps = gaps.reindex(sorted(gaps.index, key=common._natural_key))
+            gaps = gaps[sorted(gaps.columns, key=common._natural_key)]
+            gaps.loc["Media"] = gaps.mean()
+            st.markdown("**Gap medio sobre el mejor conocido** (0% = iguala el mejor valor conocido; negativo = lo mejora)")
+            st.dataframe(gaps.style.format("{:+.1%}", na_rep="—").highlight_min(
+                axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"),
+                width="stretch")
+            st.caption("Mejores conocidos: óptimos y soluciones de Schittekat et al. (2013) y de la tesis de Pérez Pérez "
+                       "(2020). Ver data/instances/best_known.csv.")
+        feasibility = filtered.groupby(["config", "factibilidad"]).size().unstack(fill_value=0)
+        feasibility = feasibility.reindex(columns=[c for c in ("Factible", "Infactible", "Sin dato") if c in feasibility])
+        st.markdown("**Factibilidad registrada por configuración** (número de corridas)")
+        st.dataframe(feasibility, width="stretch")
+        if "Sin dato" in feasibility:
+            st.caption("«Sin dato»: resultados antiguos sin columna de factibilidad. Revalídalos en «Detalle de una corrida».")
 
 with tab_runs:
     columns = [c for c in ["config", "instancia", "corrida", "value", "mejor_conocido", "gap", "iteration", "execution_time", "stop_reason",
@@ -227,11 +297,18 @@ with tab_runs:
     })
 
 with tab_detail:
-    options = filtered.index.tolist()
-    choice = st.selectbox("Corrida", options, format_func=lambda i: f"{filtered.loc[i, 'config']} · "
-                          f"{filtered.loc[i, 'instancia']} · run {filtered.loc[i, 'corrida']} · "
-                          f"{fmt(filtered.loc[i, 'value'])}")
-    run = filtered.loc[choice].to_dict()
+    # Selección en cascada: un lanzamiento puede tener miles de corridas
+    d1, d2, d3 = st.columns([2, 3, 2])
+    detail_config = d1.selectbox("Configuración", sorted(filtered["config"].unique(), key=common._natural_key),
+                                 key="detail-config")
+    in_config = filtered[filtered["config"] == detail_config]
+    detail_instance = d2.selectbox("Instancia", sorted(in_config["instancia"].unique(), key=common._natural_key),
+                                   format_func=common.instance_name, key="detail-instance")
+    candidates = in_config[in_config["instancia"] == detail_instance]
+    choice = d3.selectbox("Corrida", candidates.index.tolist(), key="detail-run",
+                          format_func=lambda i: f"run {candidates.loc[i, 'corrida']} · {fmt(candidates.loc[i, 'value'])}"
+                                                + (f" · {candidates.loc[i, 'lanzamiento']}" if launch == "Todos" else ""))
+    run = run_details(filtered.loc[choice].to_dict())
     request = replay_request(run)
     if request:
         if st.button("▶ Reproducir en vivo", type="primary",
