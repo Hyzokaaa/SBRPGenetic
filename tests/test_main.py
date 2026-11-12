@@ -87,3 +87,29 @@ def test_resume_runs_only_the_missing_runs(tmp_path):
     manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "finished" and manifest["completed"] == 4 and len(manifest["resumed"]) == 1
 
+
+def test_grid_runs_every_combination_with_common_seeds(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "app" / "grid.py"), "--pattern", "inst1-*", "inst5-*", "--runs", "2",
+         "--population", "20", "--max-iter", "2", "--workers", "2", "--output", str(tmp_path),
+         "--only", "stop_assign_strategy=H_STUDENT_TO_CLOSEST_STOP_STRATEGY",
+         "route_generator_strategy=RANDOM_ROUTE_GENERATION_STRATEGY", "selection_operator=TOURNAMENT_SELECTION_OPERATOR",
+         "crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP,EAX_CROSSOVER_OPERATOR_SBRP"],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    assert result.returncode == 0, result.stderr
+    assert "12 combinaciones (1 stop × 1 route × 1 selection × 2 crossover × 6 mutation)" in result.stdout
+
+    session = next(tmp_path.iterdir())
+    with open(session / "grid.csv", encoding="utf-8") as file:
+        grid = list(csv.DictReader(file))
+    assert len(grid) == 12 and len({(g["crossover_operator"], g["mutation_operator"]) for g in grid}) == 12
+    with open(session / "summary.csv", encoding="utf-8") as file:
+        rows = list(csv.DictReader(file))
+    assert len(rows) == 12 * 2 * 2 and all(r["feasible"] == "True" for r in rows)
+    # Misma semilla para la misma instancia y corrida en todas las combinaciones
+    seeds = {}
+    for r in rows:
+        seeds.setdefault((r["instance"], r["run"]), set()).add(r["seed"])
+    assert len(seeds) == 4 and all(len(s) == 1 for s in seeds.values())
+    config = json.loads((session / "configs" / "config1.json").read_text(encoding="utf-8"))
+    assert config["max_stagnation_iter"] > config["max_iter"] == 2

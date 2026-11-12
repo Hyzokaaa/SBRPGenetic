@@ -109,6 +109,16 @@ Un lanzamiento interrumpido (corte de luz, reinicio) se continúa sin repetir la
 python app/main.py --resume results/<fecha_hora>
 ```
 
+### Rejilla de operadores
+`app/grid.py` ejecuta todas las combinaciones de asignación, generación de rutas, selección, cruce y mutación
+(1008 con los operadores actuales) partiendo de una configuración base, con el mismo presupuesto para todas (población
+y generaciones fijas, sin parada por estancamiento) y la misma semilla para cada instancia y corrida en todas las
+combinaciones. Guarda `grid.csv` con los operadores de cada configuración y se reanuda con `--resume`:
+```bash
+python app/grid.py --pattern "inst27-*" "inst54-*" --runs 2 --workers 14
+```
+`--only FACTOR=NIVEL[,NIVEL]` limita los niveles de un factor (p. ej. `crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP`).
+
 ### Algoritmos de referencia
 La clave opcional `"algorithm"` de una configuración elige el algoritmo: `GA` (por defecto), `RANDOM_SEARCH`
 (búsqueda aleatoria) o `HILL_CLIMBING` (escalada). Las referencias sirven para medir cuánto aporta el algoritmo
