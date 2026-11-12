@@ -6,6 +6,8 @@ from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmen
 from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.rebalance.stop_assignment_rebalancer import StopAssignmentRebalancer
 import random
 
+logger = logging.getLogger(__name__)
+
 
 class StudentToRandomStopStrategy:
     def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator) -> SolutionAssignmentSBRP:
@@ -24,10 +26,10 @@ class StudentToRandomStopStrategy:
                 random_stop = random.choice(valid_stops)
                 student.assigned_stop = random_stop
                 random_stop.num_assigned_students += 1
-                logging.info(f"ASIGNACIÓN ALEATORIA: Estudiante {student.id} -> Parada {random_stop.id}")
+                logger.debug("Estudiante %s asignado a la parada %s", student.id, random_stop.id)
             else:
                 unassigned_students.append(student)
-                logging.warning(f"FALLO INICIAL: Estudiante {student.id} sin asignación")
+                logger.debug("Estudiante %s sin parada libre en la primera pasada", student.id)
 
             solution.assignments.append((student, student.assigned_stop))
 

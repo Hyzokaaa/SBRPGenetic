@@ -5,6 +5,8 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
 from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.rebalance.stop_assignment_rebalancer import StopAssignmentRebalancer
 
+logger = logging.getLogger(__name__)
+
 
 class HStudentToClosestStopStrategy:
     def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator) -> SolutionAssignmentSBRP:
@@ -24,10 +26,10 @@ class HStudentToClosestStopStrategy:
                     student.coordinates, s.coordinates))
                 student.assigned_stop = closest_stop
                 closest_stop.num_assigned_students += 1
-                logging.info(f"ASIGNACIÓN: Estudiante {student.id} -> Parada {closest_stop.id}")
+                logger.debug("Estudiante %s asignado a la parada %s", student.id, closest_stop.id)
             else:
                 unassigned_students.append(student)
-                logging.warning(f"FALLO INICIAL: Estudiante {student.id} sin asignación")
+                logger.debug("Estudiante %s sin parada libre en la primera pasada", student.id)
 
             solution.assignments.append((student, student.assigned_stop))
 

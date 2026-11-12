@@ -8,6 +8,12 @@ from src.problems.problem_sbrp.model.student import Student
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
 
+logger = logging.getLogger(__name__)
+
+
+class InfeasibleAssignmentError(ValueError):
+    """La instancia no admite una asignación de estudiantes a paradas que respete la distancia y la capacidad."""
+
 
 class StopAssignmentRebalancer:
     """
@@ -18,9 +24,9 @@ class StopAssignmentRebalancer:
 
     @staticmethod
     def rebalance_unassigned(problem: ProblemSBRP, unassigned: List[Student], distance_operator: DistanceOperator):
-        logging.info(f"REBALANCEO: {len(unassigned)} estudiantes pendientes")
         if not unassigned:
             return
+        logger.debug("Rebalanceo: %d estudiantes sin parada tras la primera pasada", len(unassigned))
         reachable = _ReachableStops(problem, distance_operator)
         students_by_stop = defaultdict(list)
         for student in problem.students:
@@ -29,20 +35,24 @@ class StopAssignmentRebalancer:
 
         for student in unassigned:
             if not StopAssignmentRebalancer._augment(problem, student, reachable, students_by_stop):
-                error_msg = f"CRÍTICO: Estudiante {student.id} no pudo ser asignado"
-                logging.error(error_msg)
-                raise ValueError(error_msg)
-            logging.info(f"REBALANCEO: Estudiante {student.id} -> Parada {student.assigned_stop.id}")
+                raise InfeasibleAssignmentError(StopAssignmentRebalancer._failure_reason(problem, student, reachable))
+            logger.debug("Rebalanceo: estudiante %s asignado a la parada %s", student.id, student.assigned_stop.id)
 
     @staticmethod
     def sync_and_validate(problem: ProblemSBRP, solution: SolutionAssignmentSBRP):
         solution.assignments = [(s, s.assigned_stop) for s in problem.students]
         unassigned = [s for s in problem.students if s.assigned_stop is None]
         if unassigned:
-            error_msg = f"VALIDACIÓN FALLIDA: {len(unassigned)} estudiantes sin asignar"
-            logging.error(error_msg)
-            raise RuntimeError(error_msg)
-        logging.info("VALIDACIÓN EXITOSA: Todos los estudiantes asignados")
+            raise RuntimeError(f"Asignación incompleta: {len(unassigned)} estudiantes sin parada")
+
+    @staticmethod
+    def _failure_reason(problem: ProblemSBRP, student: Student, reachable) -> str:
+        stops = reachable[student.id]
+        if not stops:
+            return f"El estudiante {student.id} no tiene ninguna parada a una distancia máxima de {problem.w_distance:g}"
+        stop_ids = ", ".join(str(stop.id) for stop in stops)
+        return (f"Las paradas alcanzables por el estudiante {student.id} ({stop_ids}) están llenas y no se puede "
+                f"liberar capacidad reasignando a otros estudiantes")
 
     @staticmethod
     def _augment(problem: ProblemSBRP, student: Student, reachable, students_by_stop) -> bool:

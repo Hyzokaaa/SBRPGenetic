@@ -10,13 +10,14 @@ from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_assignment_sbrp import SolutionAssignmentSBRP
 from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.rebalance.stop_assignment_rebalancer import StopAssignmentRebalancer
 
+logger = logging.getLogger(__name__)
+
 
 class HStudentToStopClosestToSchoolStrategy:
     def generate_stop_assign(self, problem: ProblemSBRP, distance_operator: DistanceOperator) -> SolutionAssignmentSBRP:
         """
         Asigna estudiantes a paradas cumpliendo restricciones duras.
         """
-        logging.info("=== INICIO DE ASIGNACIÓN DE PARADAS ===")
         solution = SolutionAssignmentSBRP()
         unassigned_students = []
 
@@ -52,10 +53,10 @@ class HStudentToStopClosestToSchoolStrategy:
         student.assigned_stop = stop
         stop.num_assigned_students += 1
         solution.assignments.append((student, stop))
-        logging.info(f"ASIGNACIÓN: Estudiante {student.id} -> Parada {stop.id}")
+        logger.debug("Estudiante %s asignado a la parada %s", student.id, stop.id)
 
     def _track_unassigned(self, student: Student, unassigned: list, solution: SolutionAssignmentSBRP):
         """Registra estudiantes no asignados inicialmente."""
         unassigned.append(student)
         solution.assignments.append((student, None))
-        logging.warning(f"FALLO INICIAL: Estudiante {student.id} sin asignación")
+        logger.debug("Estudiante %s sin parada libre en la primera pasada", student.id)

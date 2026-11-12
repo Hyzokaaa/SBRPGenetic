@@ -31,7 +31,7 @@ def test_batch_isolates_failures_and_replays_exactly(tmp_path):
     assert manifest["status"] == "finished" and manifest["completed"] == 2 and manifest["failed"] == 2
     assert (session / "configs" / "config8.json").exists()
     assert (session / "errors.csv").exists()
-    assert "no pudo ser asignado" in (session / "run.log").read_text(encoding="utf-8")
+    assert "no tiene ninguna parada a una distancia máxima" in (session / "run.log").read_text(encoding="utf-8")
     with open(session / "summary.csv", encoding="utf-8") as file:
         rows = list(csv.DictReader(file))
     assert len(rows) == 2 and {r["seed"] for r in rows} and all(r["feasible"] == "True" for r in rows)

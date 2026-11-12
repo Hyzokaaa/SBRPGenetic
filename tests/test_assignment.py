@@ -5,6 +5,8 @@ import pytest
 from conftest import load_problem, operator, operator_names
 from src.operators.distance.distance_euclidean import EuclideanDistance
 from src.problems.problem_parameters import ProblemParameters
+from src.problems.problem_sbrp.operators.initial_solution.stop_assignment.rebalance.stop_assignment_rebalancer import \
+    InfeasibleAssignmentError
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 
 STRATEGIES = [name for name in operator_names("_STRATEGY") if "STUDENT" in name]
@@ -35,6 +37,14 @@ def test_rebalance_follows_reassignment_chains():
     assert [stop.num_assigned_students for stop in problem.stops] == [1, 1, 1]
 
 
-def test_impossible_instance_raises_clear_error():
-    with pytest.raises(ValueError, match="no pudo ser asignado"):
+def test_student_without_reachable_stop_raises_clear_error():
+    with pytest.raises(InfeasibleAssignmentError, match="no tiene ninguna parada a una distancia máxima"):
         load_problem("MH/2.xpress")
+
+
+def test_full_reachable_stops_raise_clear_error():
+    # Una única parada de capacidad 1 alcanzable por dos estudiantes
+    problem = ProblemSBRP()
+    problem.construct(ProblemParameters(EuclideanDistance(), (0, 5), [(0, 0)], [(1, 0), (-1, 0)], 2, 1, 6))
+    with pytest.raises(InfeasibleAssignmentError, match=r"alcanzables por el estudiante \d+ \(1\) están llenas"):
+        operator("H_STUDENT_TO_CLOSEST_STOP_STRATEGY").generate_stop_assign(problem, EuclideanDistance())

@@ -107,7 +107,7 @@ def run_job(job: dict) -> dict:
 
 def start_logging(session: Path, level: int):
     queue = multiprocessing.Queue()
-    formatter = logging.Formatter("%(asctime)s - %(processName)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s - %(processName)s - %(levelname)s - %(name)s - %(message)s")
     file_handler = logging.FileHandler(session / "run.log", encoding="utf-8")
     console_handler = logging.StreamHandler()
     for handler in (file_handler, console_handler):
