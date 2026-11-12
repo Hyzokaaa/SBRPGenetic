@@ -30,6 +30,8 @@ RESULTS_DIR = ROOT / "results"
 
 # Paleta (referencia de la guía de visualización): categórica en orden fijo, secuencial azul y neutros
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
+# Paleta categórica completa en orden fijo (máximo 8 series; nunca se repiten colores)
+SERIES_ALL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 NEUTRAL = "#9a9890"
 TEXT_MUTED = "#52514e"
 SEQUENTIAL = ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#104281"]
