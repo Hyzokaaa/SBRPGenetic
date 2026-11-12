@@ -46,3 +46,10 @@ def test_dry_run_lists_the_plan():
     result = run_main("--configs", "7", "8", "--pattern", "inst1-*", "--dry-run")
     assert result.returncode == 0, result.stderr
     assert "2 configuraciones × 1 instancias × 1 corridas = 2 ejecuciones" in result.stdout
+
+
+def test_several_patterns_select_the_union_of_instances():
+    result = run_main("--configs", "8", "--pattern", "inst54-*", "inst1-*", "--pattern", "inst54-*", "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "1 configuraciones × 2 instancias" in result.stdout
+

@@ -137,13 +137,15 @@ def run_jobs(jobs: list, workers: int, queue, level: int) -> list:
 # ------------------------- Lote -------------------------
 def batch(args):
     instances_dir = resolve(args.instances)
-    instances = sorted((p for p in instances_dir.glob(args.pattern) if p.is_file()), key=lambda p: natural_key(p.name))
+    patterns = args.pattern or ["*.xpress"]
+    instances = sorted({p for pattern in patterns for p in instances_dir.glob(pattern) if p.is_file()},
+                       key=lambda p: natural_key(p.name))
     configs = {f"config{n}": resolve(args.configs_dir) / f"config{n}.json" for n in args.configs}
     missing = [name for name, path in configs.items() if not path.exists()]
     if missing:
         sys.exit(f"No existen las configuraciones: {', '.join(missing)}")
     if not instances:
-        sys.exit(f"No hay instancias que coincidan con '{args.pattern}' en {instances_dir}")
+        sys.exit(f"No hay instancias que coincidan con {', '.join(repr(p) for p in patterns)} en {instances_dir}")
 
     jobs = []
     for config_name, config_path in configs.items():
@@ -286,7 +288,8 @@ def parse_args():
     parser.add_argument("--population", type=int, help="Sustituye el tamaño de población de las configuraciones")
     parser.add_argument("--max-iter", type=int, help="Sustituye el número máximo de generaciones de las configuraciones")
     parser.add_argument("--instances", default="data/instances/real", help="Carpeta de instancias")
-    parser.add_argument("--pattern", default="*.xpress", help="Patrón de nombres de instancia, p. ej. 'inst5*'")
+    parser.add_argument("--pattern", nargs="+", action="extend",
+                        help="Patrones de nombres de instancia, p. ej. 'inst5*' 'inst102-*' (por defecto, todas)")
     parser.add_argument("--runs", type=int, default=1, help="Corridas por configuración e instancia")
     parser.add_argument("--workers", type=int, default=min(4, os.cpu_count() or 1), help="Procesos en paralelo")
     parser.add_argument("--seed", type=int, default=1, help="Semilla base (cada corrida usa base + índice)")

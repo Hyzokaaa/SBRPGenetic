@@ -86,7 +86,7 @@ SBRPGenetic es una solución al problema de rutas de autobuses escolares (SBRP) 
 python app/main.py --configs 7 8 9 --pattern "inst5*" --runs 3 --workers 4
 ```
 Opciones principales: `--configs` (números de `config<N>.json`), `--instances` (carpeta, por defecto `data/instances/real`),
-`--pattern` (filtro de nombres), `--runs` (corridas por instancia), `--seed` (semilla base), `--population` y `--max-iter`
+`--pattern` (uno o varios filtros de nombres, p. ej. `--pattern "inst54-*" "inst102-*"`), `--runs` (corridas por instancia), `--seed` (semilla base), `--population` y `--max-iter`
 (sustituyen los valores de las configuraciones), `--dry-run` (muestra el plan sin ejecutar). `python app/main.py --help` las lista todas.
 
 Cada lanzamiento crea `results/<fecha_hora>/` con los resultados (`config<N>/<instancia>/run_<k>.csv` y su imagen),
