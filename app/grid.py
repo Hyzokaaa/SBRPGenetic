@@ -36,7 +36,7 @@ FACTORS = {
     "route_generator_strategy": [n for n in OPERATOR_NAMES if "ROUTE_GENERAT" in n],
     "selection_operator": [n for n in OPERATOR_NAMES if "SELECTION" in n],
     "crossover_operator": [n for n in OPERATOR_NAMES if "CROSSOVER" in n],
-    "mutation_operator": [n for n in OPERATOR_NAMES if "MUTATION" in n],
+    "mutation_operator": [n for n in OPERATOR_NAMES if "MUTATION" in n and "DIVERSITY" not in n],
 }
 
 

@@ -6,7 +6,7 @@ from conftest import groupings, operator, operator_names, visited_stops
 from src.operators.distance.distance_euclidean import EuclideanDistance
 from src.operators.mutation.mutation_parameters import MutationParameters
 
-MUTATIONS = operator_names("MUTATION")
+MUTATIONS = [name for name in operator_names("MUTATION") if "DIVERSITY" not in name]
 INTRA_ROUTE = ["SWAP_MUTATION_OPERATOR_SBRP", "REORDER_SEGMENT_MUTATION_OPERATOR_SBRP",
                "BEST_REORDER_SEGMENT_MUTATION_OPERATOR_SBRP"]
 INTER_ROUTE = ["RELOCATE_MUTATION_OPERATOR_SBRP", "EXCHANGE_MUTATION_OPERATOR_SBRP"]

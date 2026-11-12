@@ -4,10 +4,10 @@ from types import SimpleNamespace
 import pytest
 
 from conftest import CONFIGS, INSTANCES
-from src.algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
 from src.algorithm.hill_climbing_algorithm.hill_climbing_algorithm import HillClimbingAlgorithm
+from src.operators.replacement.generational_replacement_operator import GenerationalReplacementOperator
 
 
 def run_ga(config_number=8, seed=1, instance="real/inst54-7s20-100-c50-w20.xpress", on_generation=None, **overrides):
@@ -37,7 +37,7 @@ def test_same_seed_gives_same_result():
 
 def test_select_elite_returns_copies_of_the_best_distinct_solutions(inst54, inst54_population):
     parameters = SimpleNamespace(problem=inst54, elitism_size=2, objective_max=False)
-    elite = GeneticAlgorithm().select_elite(inst54_population, parameters)
+    elite = GenerationalReplacementOperator.select_elite(inst54_population, parameters)
     ranked = sorted(inst54_population, key=inst54.objective_function)
     assert [inst54.objective_function(s) for s in elite] == [inst54.objective_function(s) for s in ranked[:2]]
     assert all(e is not s for e in elite for s in inst54_population)

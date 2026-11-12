@@ -25,6 +25,13 @@ class Operators(Enum):
     RANDOM_SELECTION_OPERATOR = "src.operators.selection.random_selection_operator.RandomSelectionOperator"
     PROBABILISTIC_TOURNAMENT_SELECTION_OPERATOR = "src.operators.selection.probabilistic_tournament_selection_operator.ProbabilisticTournamentSelectionOperator"
     LINEAR_RANKING_SELECTION_OPERATOR = "src.operators.selection.linear_ranking_selection_operator.LinearRankingSelectionOperator"
+    GENERATIONAL_REPLACEMENT_OPERATOR = "src.operators.replacement.generational_replacement_operator.GenerationalReplacementOperator"
+    DETERMINISTIC_CROWDING_REPLACEMENT_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.replacement.deterministic_crowding_replacement_operator_sbrp.DeterministicCrowdingReplacementOperatorSBRP"
+    NO_DIVERSITY_OPERATOR = "src.operators.diversity.no_diversity_operator.NoDiversityOperator"
+    RANDOM_IMMIGRANTS_DIVERSITY_OPERATOR = "src.operators.diversity.random_immigrants_operator.RandomImmigrantsOperator"
+    TRIGGERED_HYPERMUTATION_DIVERSITY_OPERATOR = "src.operators.diversity.triggered_hypermutation_operator.TriggeredHypermutationOperator"
+    CATACLYSMIC_RESTART_DIVERSITY_OPERATOR = "src.operators.diversity.cataclysmic_restart_operator.CataclysmicRestartOperator"
+    CLEARING_DIVERSITY_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.diversity.clearing_operator_sbrp.ClearingOperatorSBRP"
 
     STOP_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.stop_crossover_operator_sbrp.StopCrossoverOperatorSBRP"
     ONE_POINT_CROSSOVER_OPERATOR = "src.operators.crossover.one_point_crossover_operator.OnePointCrossoverOperator"

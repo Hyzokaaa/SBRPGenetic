@@ -15,6 +15,8 @@ class GeneticAlgorithmConfig:
         self.crossover_operator = None
         self.repair_operator = None
         self.mutation_operator = None
+        self.replacement_operator = None
+        self.diversity_operator = None
         self.stop_assign_strategy = None
         self.route_generator_strategy = None
         self.objective_max = None

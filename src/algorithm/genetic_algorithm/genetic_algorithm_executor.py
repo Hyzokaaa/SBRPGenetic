@@ -59,7 +59,9 @@ class GeneticAlgorithmExecutor:
                                                    repair_parameters=repair_parameters,
                                                    repair_operator=config.repair_operator,
                                                    mutation_parameters=mutation_parameters,
-                                                   mutation_operator=config.mutation_operator
+                                                   mutation_operator=config.mutation_operator,
+                                                   replacement_operator=config.replacement_operator,
+                                                   diversity_operator=config.diversity_operator
                                                    )
         if config.algorithm not in ALGORITHMS:
             raise ValueError(f"Algoritmo desconocido: {config.algorithm}. Opciones: {', '.join(ALGORITHMS)}")

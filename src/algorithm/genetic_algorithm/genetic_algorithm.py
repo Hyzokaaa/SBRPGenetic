@@ -3,6 +3,10 @@ import time
 
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
+from src.operators.diversity.diversity_parameters import DiversityParameters
+from src.operators.diversity.no_diversity_operator import NoDiversityOperator
+from src.operators.replacement.generational_replacement_operator import GenerationalReplacementOperator
+from src.operators.replacement.replacement_parameters import ReplacementParameters
 
 # Intentos de mutación para diferenciar un hijo duplicado antes de aceptarlo
 MAX_DUPLICATE_ATTEMPTS = 10
@@ -55,6 +59,15 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 stop_reason = "stagnation"
                 break
 
+            # Mantenimiento de la diversidad (por defecto no actúa)
+            self.diversity_parameters.generation = i
+            self.diversity_parameters.stagnation = stagnation_counter
+            diversified = self.diversity_operator.apply(population, self.diversity_parameters)
+            if diversified is not population:
+                population = diversified
+                best_iteration = parameters.problem.update_best_solution(best_iteration, i, parameters.objective_max,
+                                                                         population)
+
         # Detener el cronómetro y calcular el tiempo total de ejecución
         end_time = time.time()
         execution_time = end_time - start_time
@@ -78,18 +91,20 @@ class GeneticAlgorithm(OptimizationAlgorithm):
     def best_fitness(problem):
         return problem.objective_function(problem.best_solution) if problem.best_solution is not None else None
 
+    def construct_solution(self):
+        """Solución nueva de la construcción inicial, reparada si es infactible."""
+        new_solution = self.initial_construction_operator.generate(self.initial_solution_parameters)
+        if self.repair_operator is not None and self.initial_solution_parameters.problem.violations(new_solution):
+            self.repair_parameters.parents = [new_solution]
+            self.repair_parameters.solutions = [new_solution]
+            new_solution = self.repair_operator.repair(self.repair_parameters)[0]
+        return new_solution
+
     def generate_initial_population(self, parameters):
         population = []
         best_solution = None
         for _ in range(self.initial_population_size):
-            new_solution = self.initial_construction_operator.generate(self.initial_solution_parameters)
-
-            # Reparar las soluciones iniciales infactibles
-            if self.repair_operator is not None and parameters.problem.violations(new_solution):
-                self.repair_parameters.parents = [new_solution]
-                self.repair_parameters.solutions = [new_solution]
-                new_solution = self.repair_operator.repair(self.repair_parameters)[0]
-
+            new_solution = self.construct_solution()
             population.append(new_solution)
             best_solution = parameters.problem.compare_solutions(solution1=best_solution,
                                                                  solution2=new_solution,
@@ -113,17 +128,27 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         self.mutation_operator = parameters.mutation_operator
         self.mutation_parameters = parameters.mutation_parameters
 
+        self.diversity_operator = parameters.diversity_operator or NoDiversityOperator()
+        self.diversity_parameters = DiversityParameters(
+            problem=parameters.problem, objective_max=parameters.objective_max, elitism_size=parameters.elitism_size,
+            construct=self.construct_solution, mutate=self.mutate)
+
+        self.replacement_operator = parameters.replacement_operator or GenerationalReplacementOperator()
+        self.replacement_parameters = ReplacementParameters(
+            problem=parameters.problem, objective_max=parameters.objective_max,
+            population_size=parameters.initial_population, elitism_size=parameters.elitism_size)
+
         # Contadores de la generación en curso (se informan mediante on_generation)
         self.generation_stats = {'crossovers': 0, 'mutations': 0, 'duplicate_mutations': 0}
 
     def create_new_population(self, population, parameters):
         problem = parameters.problem
 
-        # Elitismo: las mejores soluciones pasan intactas a la nueva población
-        new_population = self.select_elite(population, parameters)
-        signatures = {problem.solution_signature(solution) for solution in new_population}
+        # El operador de reemplazo decide qué individuos forman la nueva generación (por defecto, la élite y los hijos)
+        replacement = self.replacement_operator
+        replacement.start(population, self.replacement_parameters)
 
-        while len(new_population) < self.initial_population_size:
+        while not replacement.is_full():
             # selection
             self.selection_parameters.solutions = population
             parents = self.selection_operator.selection(self.selection_parameters)
@@ -144,49 +169,28 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 child1, child2 = parents[0].copy(), parents[1].copy()
 
             for child in [child1, child2]:
-                if child is None or len(new_population) >= self.initial_population_size:
+                if child is None or not replacement.wants_child():
                     continue
 
                 # mutation: independiente del cruce, con probabilidad mutation_rate por hijo
-                if random.random() < parameters.mutation_rate:
+                if random.random() < self.diversity_operator.mutation_rate(parameters.mutation_rate):
                     self.mutate(child)
                     self.generation_stats['mutations'] += 1
 
                 # Control de duplicados: se muta el hijo mientras sea idéntico a otro de la nueva población
                 signature = problem.solution_signature(child)
                 attempts = 0
-                while signature is not None and signature in signatures and attempts < MAX_DUPLICATE_ATTEMPTS:
+                while replacement.contains(signature) and attempts < MAX_DUPLICATE_ATTEMPTS:
                     self.mutate(child)
                     self.generation_stats['duplicate_mutations'] += 1
                     signature = problem.solution_signature(child)
                     attempts += 1
 
-                new_population.append(child)
-                signatures.add(signature)
+                replacement.add_child(child)
+            replacement.end_family(parents)
 
-        return new_population
+        return replacement.result()
 
     def mutate(self, solution):
         self.mutation_parameters.solution = solution
         self.mutation_operator.mutate(self.mutation_parameters)
-
-    def select_elite(self, population, parameters):
-        """
-        Copias de las elitism_size mejores soluciones distintas de la población, según las reglas de
-        factibilidad: primero las factibles (menor grado de violación) y, entre ellas, la de mejor aptitud.
-        """
-        problem = parameters.problem
-        ranked = sorted(population, key=lambda solution: (
-            problem.constraint_violation(solution),
-            -problem.objective_function(solution) if parameters.objective_max else problem.objective_function(solution)))
-
-        elite, signatures = [], set()
-        for solution in ranked:
-            if len(elite) >= parameters.elitism_size:
-                break
-            signature = problem.solution_signature(solution)
-            if signature is not None and signature in signatures:
-                continue
-            elite.append(solution.copy())
-            signatures.add(signature)
-        return elite

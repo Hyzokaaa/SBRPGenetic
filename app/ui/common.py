@@ -89,7 +89,7 @@ def operator_names(family: str):
     names = [op.name for op in Operators]
     families = {
         "crossover": [n for n in names if "CROSSOVER" in n],
-        "mutation": [n for n in names if "MUTATION" in n],
+        "mutation": [n for n in names if "MUTATION" in n and "DIVERSITY" not in n],
         "selection": [n for n in names if "SELECTION" in n],
         "route_generator": [n for n in names if "ROUTE_GENERAT" in n],
         "stop_assign": [n for n in names if n.endswith("_STRATEGY") and "STUDENT" in n],

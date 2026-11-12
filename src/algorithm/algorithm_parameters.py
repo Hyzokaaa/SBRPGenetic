@@ -6,7 +6,9 @@ from src.operators.mutation.mutation_operator import MutationOperator
 from src.operators.mutation.mutation_parameters import MutationParameters
 from src.operators.operator_parameters import OperatorParameters
 from src.operators.repair.repair_operator import RepairOperator
+from src.operators.diversity.diversity_operator import DiversityOperator
 from src.operators.repair.repair_parameters import RepairParameters
+from src.operators.replacement.replacement_operator import ReplacementOperator
 from src.operators.selection.selection_operator import SelectionOperator
 from src.operators.selection.selection_parameters import SelectionParameters
 from src.problems.problem import Problem
@@ -31,6 +33,8 @@ class AlgorithmParameters:
                  mutation_operator: MutationOperator = None,
                  selection_operator: SelectionOperator = None,
                  crossover_operator: CrossoverOperator = None,
+                 replacement_operator: ReplacementOperator = None,
+                 diversity_operator: DiversityOperator = None,
 
                  crossover_rate: float = 0.9,
                  mutation_rate: float = 0.10,
@@ -55,6 +59,10 @@ class AlgorithmParameters:
         self.initial_population = initial_population_size
         self.selection_operator: SelectionOperator = selection_operator
         self.crossover_operator: CrossoverOperator = crossover_operator
+        # Reemplazo de la población (None = generacional con elitismo)
+        self.replacement_operator: ReplacementOperator = replacement_operator
+        # Mantenimiento de la diversidad (None = no actúa)
+        self.diversity_operator: DiversityOperator = diversity_operator
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
         self.crossover_parameters = crossover_parameters
