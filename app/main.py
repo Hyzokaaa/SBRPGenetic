@@ -5,6 +5,7 @@ Ejemplos (desde la raíz del proyecto):
     python app/main.py --configs 7 8 9 --pattern "inst5*" --runs 3
     python app/main.py --dry-run
     python app/main.py --replay results/20261111_193809/config7/inst54-7s20-100-c50-w20/run_2.csv
+    python app/main.py --resume results/20261111_193809
 
 Cada lanzamiento escribe en results/<fecha_hora>/ los resultados (config<N>/<instancia>/run_<k>.csv), una copia de las
 configuraciones usadas, el manifiesto (manifest.json: argumentos, semillas, versión del código), el log (run.log),
@@ -99,10 +100,7 @@ def run_job(job: dict) -> dict:
     try:
         record = run_single(job["config"], job["config_path"], job["instance_path"], job["run"], job["seed"],
                             job["output_dir"], job.get("save_image", True))
-        reference = best_known.reference(job["instance"])
-        gap = best_known.gap(record["value"], job["instance"])
-        return {"status": "ok", **record, "best_known": reference["best_known"] if reference else None,
-                "gap": round(gap, 6) if gap is not None else None}
+        return {"status": "ok", **with_reference(record, job["instance"])}
     except Exception as error:
         logging.getLogger(__name__).error(f"Falló {job['config']} · {job['instance']} · run {job['run']}: {error}")
         return {"status": "error", "config": job["config"], "instance": job["instance"], "run": job["run"],
@@ -139,66 +137,83 @@ def run_jobs(jobs: list, workers: int, queue, level: int) -> list:
 
 
 # ------------------------- Lote -------------------------
-def batch(args):
-    instances_dir = resolve(args.instances)
-    patterns = args.pattern or ["*.xpress"]
-    instances = sorted({p for pattern in patterns for p in instances_dir.glob(pattern) if p.is_file()},
-                       key=lambda p: natural_key(p.name))
-    configs = {f"config{n}": resolve(args.configs_dir) / f"config{n}.json" for n in args.configs}
-    missing = [name for name, path in configs.items() if not path.exists()]
-    if missing:
-        sys.exit(f"No existen las configuraciones: {', '.join(missing)}")
-    if not instances:
+def find_instances(instances: str, patterns) -> list:
+    instances_dir = resolve(instances)
+    patterns = patterns or ["*.xpress"]
+    found = sorted({p for pattern in patterns for p in instances_dir.glob(pattern) if p.is_file()},
+                   key=lambda p: natural_key(p.name))
+    if not found:
         sys.exit(f"No hay instancias que coincidan con {', '.join(repr(p) for p in patterns)} en {instances_dir}")
+    return found
 
-    jobs = []
-    for config_name, config_path in configs.items():
-        for instance in instances:
-            for run in range(1, args.runs + 1):
-                jobs.append({"config": config_name, "instance": instance.stem, "instance_path": str(instance),
-                             "run": run, "seed": args.seed + len(jobs), "save_image": not args.no_images})
 
-    print(f"{len(configs)} configuraciones × {len(instances)} instancias × {args.runs} corridas = {len(jobs)} ejecuciones "
-          f"con {args.workers} procesos (semillas {args.seed}–{args.seed + len(jobs) - 1})")
-    if args.dry_run:
-        for instance in instances:
-            print(f"  {relative_to_root(instance)}")
-        return
-
+def create_session(args, configs: dict, instances: list, jobs: list, extra: dict = None) -> tuple:
+    """
+    Crea la carpeta del lanzamiento con la copia de cada configuración ({nombre: datos}) y el manifest.json,
+    y completa cada corrida con las rutas que necesita para ejecutarse. Devuelve (carpeta, manifest).
+    """
     session = new_session_dir(resolve(args.output))
     (session / "configs").mkdir()
-    for config_name, config_path in configs.items():
-        # Copia de la configuración usada (con los cambios indicados por argumentos), para poder reproducir la corrida
-        with open(config_path, encoding="utf-8") as file:
-            config_data = json.load(file)
-        if args.population is not None:
-            config_data["initial_population_size"] = args.population
-        if args.max_iter is not None:
-            config_data["max_iter"] = args.max_iter
+    for config_name, config_data in configs.items():
+        # Copia de la configuración usada, para poder reproducir y reanudar las corridas
         write_json(session / "configs" / f"{config_name}.json", config_data)
-        config_path = session / "configs" / f"{config_name}.json"
         (session / config_name).mkdir()
         with open(session / config_name / "config_params.txt", "w", encoding="utf-8") as file:
-            file.write(get_string_config_data(str(config_path)) + "\n")
-    for job in jobs:
-        job["config_path"] = str(session / "configs" / f"{job['config']}.json")
-        job["output_dir"] = str(session)
+            file.write(get_string_config_data(str(session / "configs" / f"{config_name}.json")) + "\n")
 
     manifest = {
         "started": dt.datetime.now().isoformat(timespec="seconds"), "status": "running",
-        "arguments": {key: value for key, value in vars(args).items() if key != "replay"},
+        "arguments": {key: value for key, value in vars(args).items() if key not in ("replay", "resume")},
         "code": git_info(), "python": platform.python_version(),
         "configs": {name: f"configs/{name}.json" for name in configs},
         "instances": {p.stem: relative_to_root(p) for p in instances},
+        "save_images": not args.no_images,
+        **(extra or {}),
         "runs": [{k: job[k] for k in ("config", "instance", "run", "seed")} for job in jobs],
     }
     write_json(session / "manifest.json", manifest)
-    print(f"Resultados en {relative_to_root(session)}")
+    complete_jobs(session, manifest, jobs)
+    return session, manifest
 
+
+def complete_jobs(session: Path, manifest: dict, jobs: list):
+    for job in jobs:
+        job["config_path"] = str(session / manifest["configs"][job["config"]])
+        job["instance_path"] = str(resolve(manifest["instances"][job["instance"]]))
+        job["output_dir"] = str(session)
+        job["save_image"] = manifest.get("save_images", not manifest.get("arguments", {}).get("no_images", False))
+
+
+def run_csv(session: Path, job: dict) -> Path:
+    return session / job["config"] / job["instance"] / f"run_{job['run']}.csv"
+
+
+def completed_record(session: Path, job: dict):
+    """Resultado de una corrida ya terminada (leído de su run_<k>.csv), o None si no terminó."""
+    try:
+        with open(run_csv(session, job), encoding="utf-8") as file:
+            row = next(csv.DictReader(file))
+    except (OSError, StopIteration):
+        return None
+    value = float(row["value"]) if row.get("value") not in (None, "", "None") else None
+    record = {**row, "status": "ok", "value": value, "run": int(row["run"]), "seed": int(row["seed"]),
+              "feasible": row.get("feasible") == "True"}
+    return with_reference(record, job["instance"])
+
+
+def with_reference(record: dict, instance: str) -> dict:
+    reference = best_known.reference(instance)
+    gap = best_known.gap(record["value"], instance)
+    return {**record, "best_known": reference["best_known"] if reference else None,
+            "gap": round(gap, 6) if gap is not None else None}
+
+
+def execute_session(session: Path, manifest: dict, jobs: list, args, previous: list = ()):
+    """Ejecuta las corridas pendientes del lanzamiento y escribe summary.csv con todas las terminadas."""
     queue, listener = start_logging(session, getattr(logging, args.log_level))
     start = time.time()
     try:
-        results = run_jobs(jobs, args.workers, queue, getattr(logging, args.log_level))
+        results = list(previous) + run_jobs(jobs, args.workers, queue, getattr(logging, args.log_level))
     finally:
         listener.stop()
 
@@ -217,11 +232,16 @@ def batch(args):
             writer.writerows(sorted(failed, key=key))
 
     manifest.update({"status": "finished", "finished": dt.datetime.now().isoformat(timespec="seconds"),
-                     "duration_seconds": round(time.time() - start, 1), "completed": len(ok), "failed": len(failed)})
+                     "duration_seconds": round(manifest.get("duration_seconds", 0) + time.time() - start, 1),
+                     "completed": len(ok), "failed": len(failed)})
     write_json(session / "manifest.json", manifest)
 
     print(f"\nTerminado en {dt.timedelta(seconds=int(time.time() - start))}: {len(ok)} correctas, {len(failed)} fallidas")
-    for config_name in configs:
+    configs = list(manifest["configs"])
+    shown = configs if len(configs) <= 20 else []
+    if not shown:
+        print(f"  {len(configs)} configuraciones: el resumen por configuración está en summary.csv")
+    for config_name in shown:
         values = [r["value"] for r in ok if r["config"] == config_name and r["value"] is not None]
         gaps = [r["gap"] for r in ok if r["config"] == config_name and r.get("gap") is not None]
         errors = sum(1 for r in failed if r["config"] == config_name)
@@ -233,6 +253,69 @@ def batch(args):
             print(f"  {config_name}: sin resultados{f' · {errors} fallidas' if errors else ''}")
     if failed:
         print(f"Detalle de los fallos en {relative_to_root(session / 'errors.csv')}")
+
+
+def batch(args):
+    instances = find_instances(args.instances, args.pattern)
+    config_files = {f"config{n}": resolve(args.configs_dir) / f"config{n}.json" for n in args.configs}
+    missing = [name for name, path in config_files.items() if not path.exists()]
+    if missing:
+        sys.exit(f"No existen las configuraciones: {', '.join(missing)}")
+
+    jobs = []
+    for config_name in config_files:
+        for instance in instances:
+            for run in range(1, args.runs + 1):
+                jobs.append({"config": config_name, "instance": instance.stem, "run": run,
+                             "seed": args.seed + len(jobs)})
+
+    print(f"{len(config_files)} configuraciones × {len(instances)} instancias × {args.runs} corridas = {len(jobs)} "
+          f"ejecuciones con {args.workers} procesos (semillas {args.seed}–{args.seed + len(jobs) - 1})")
+    if args.dry_run:
+        for instance in instances:
+            print(f"  {relative_to_root(instance)}")
+        return
+
+    configs = {}
+    for config_name, config_path in config_files.items():
+        # Configuración usada, con los cambios indicados por argumentos
+        with open(config_path, encoding="utf-8") as file:
+            configs[config_name] = json.load(file)
+        if args.population is not None:
+            configs[config_name]["initial_population_size"] = args.population
+        if args.max_iter is not None:
+            configs[config_name]["max_iter"] = args.max_iter
+    session, manifest = create_session(args, configs, instances, jobs)
+    print(f"Resultados en {relative_to_root(session)}")
+    execute_session(session, manifest, jobs, args)
+
+
+def resume(args):
+    """Continúa un lanzamiento interrumpido: ejecuta solo las corridas que no terminaron."""
+    session = resolve(args.resume)
+    if not (session / "manifest.json").exists():
+        sys.exit(f"No se encontró {relative_to_root(session / 'manifest.json')}")
+    with open(session / "manifest.json", encoding="utf-8") as file:
+        manifest = json.load(file)
+
+    jobs = [dict(run) for run in manifest["runs"]]
+    complete_jobs(session, manifest, jobs)
+    previous, pending = [], []
+    for job in jobs:
+        record = completed_record(session, job)
+        (previous if record is not None else pending).append(record or job)
+
+    code = git_info()
+    if code["commit"] != manifest["code"].get("commit"):
+        print(f"Aviso: el código actual ({(code['commit'] or '?')[:7]}) no es el del lanzamiento "
+              f"({(manifest['code'].get('commit') or '?')[:7]}); las corridas nuevas podrían no ser comparables.")
+    manifest.setdefault("resumed", []).append({"at": dt.datetime.now().isoformat(timespec="seconds"),
+                                               "code": code, "pending": len(pending)})
+    manifest["status"] = "running"
+    write_json(session / "manifest.json", manifest)
+    print(f"Reanudando {relative_to_root(session)}: {len(previous)} corridas terminadas, {len(pending)} pendientes "
+          f"con {args.workers} procesos")
+    execute_session(session, manifest, pending, args, previous)
 
 
 # ------------------------- Reproducción -------------------------
@@ -304,6 +387,8 @@ def parse_args():
     parser.add_argument("--no-images", action="store_true", help="No guardar la imagen de cada corrida")
     parser.add_argument("--dry-run", action="store_true", help="Mostrar el plan sin ejecutar")
     parser.add_argument("--replay", help="Reproducir exactamente una corrida guardada (ruta a su run_<k>.csv)")
+    parser.add_argument("--resume", help="Continuar un lanzamiento interrumpido (ruta a su carpeta); solo ejecuta "
+                                         "las corridas que no terminaron")
     return parser.parse_args()
 
 
@@ -314,5 +399,7 @@ if __name__ == "__main__":
     arguments = parse_args()
     if arguments.replay:
         replay(arguments)
+    elif arguments.resume:
+        resume(arguments)
     else:
         batch(arguments)

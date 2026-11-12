@@ -63,3 +63,27 @@ def test_output_is_utf8_when_redirected():
                              "--dry-run"], cwd=ROOT, capture_output=True, env=env)
     assert result.returncode == 0
     assert "configuraciones × 1 instancias".encode("utf-8") in result.stdout
+
+
+def test_resume_runs_only_the_missing_runs(tmp_path):
+    result = run_main("--configs", "8", "12", "--pattern", "inst1-*", "--runs", "2", "--population", "20",
+                      "--max-iter", "3", "--workers", "2", "--no-images", "--output", str(tmp_path))
+    assert result.returncode == 0, result.stderr
+    session = next(tmp_path.iterdir())
+    with open(session / "summary.csv", encoding="utf-8") as file:
+        original = {(r["config"], r["run"]): r["value"] for r in csv.DictReader(file)}
+
+    # Simula una interrupción: dos corridas sin terminar y sin resumen
+    for path in [session / "config8" / "inst1-1s5-25-c25-w5" / "run_2.csv",
+                 session / "config12" / "inst1-1s5-25-c25-w5" / "run_1.csv", session / "summary.csv"]:
+        path.unlink()
+    resumed = run_main("--resume", str(session), "--workers", "2")
+    assert resumed.returncode == 0, resumed.stderr
+    assert "2 corridas terminadas, 2 pendientes" in resumed.stdout
+
+    with open(session / "summary.csv", encoding="utf-8") as file:
+        rows = list(csv.DictReader(file))
+    assert {(r["config"], r["run"]): r["value"] for r in rows} == original
+    manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "finished" and manifest["completed"] == 4 and len(manifest["resumed"]) == 1
+

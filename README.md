@@ -104,6 +104,11 @@ Cada corrida usa una semilla registrada, por lo que puede reproducirse exactamen
 python app/main.py --replay results/<fecha_hora>/config7/<instancia>/run_2.csv
 ```
 
+Un lanzamiento interrumpido (corte de luz, reinicio) se continúa sin repetir las corridas ya terminadas:
+```bash
+python app/main.py --resume results/<fecha_hora>
+```
+
 ### Algoritmos de referencia
 La clave opcional `"algorithm"` de una configuración elige el algoritmo: `GA` (por defecto), `RANDOM_SEARCH`
 (búsqueda aleatoria) o `HILL_CLIMBING` (escalada). Las referencias sirven para medir cuánto aporta el algoritmo
