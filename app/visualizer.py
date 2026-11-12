@@ -1,16 +1,8 @@
-import os
-
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.lines import Line2D
 
-from shared.domain.sbrp import SBRP
-import matplotlib
-
-from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
-
 
 
 class Visualizer:
@@ -32,7 +24,7 @@ class Visualizer:
         ##plt.show()
 
     @staticmethod
-    def plot_routes(sbrp: SBRP, routes, image_path: str):
+    def plot_routes(sbrp: ProblemSBRP, routes: SolutionRouteSBRP, image_path: str):
         plt.figure(figsize=(14, 10))  # Aumentar tamaño base
 
         # 1. Crear manualmente los handles para la leyenda estática

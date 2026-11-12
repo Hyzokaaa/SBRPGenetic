@@ -3,10 +3,10 @@ import os
 import random
 import time
 
-from shared.presentation.visualizer import Visualizer
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
 from src.problems.problem_sbrp.model.school import School
+from app.visualizer import Visualizer
 
 CSV_COLUMNS = ["instance", "config", "run", "seed", "value", "iteration", "execution_time", "stop_reason",
                "stop_iteration", "feasible", "violations", "student_assignments", "routes"]
