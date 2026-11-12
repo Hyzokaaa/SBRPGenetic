@@ -30,6 +30,12 @@ class Problem(ABC):
         """
         return None
 
+    def freeze(self, solution, signature=None):
+        """
+        Indica que la solución ya no se modificará (por ejemplo, porque entró en la población), para que el problema
+        pueda guardar su evaluación con ella. Por defecto no hace nada.
+        """
+
     @abstractmethod
     def compare_solutions(self, solution1, solution2, objective_max):
         pass

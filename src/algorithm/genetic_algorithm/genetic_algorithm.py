@@ -65,6 +65,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             diversified = self.diversity_operator.apply(population, self.diversity_parameters)
             if diversified is not population:
                 population = diversified
+                self.freeze(population, parameters.problem)
                 best_iteration = parameters.problem.update_best_solution(best_iteration, i, parameters.objective_max,
                                                                          population)
 
@@ -105,6 +106,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         best_solution = None
         for _ in range(self.initial_population_size):
             new_solution = self.construct_solution()
+            parameters.problem.freeze(new_solution)
             population.append(new_solution)
             best_solution = parameters.problem.compare_solutions(solution1=best_solution,
                                                                  solution2=new_solution,
@@ -186,10 +188,20 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                     signature = problem.solution_signature(child)
                     attempts += 1
 
+                # El hijo ya no cambia: se congela con la firma calculada
+                problem.freeze(child, signature)
                 replacement.add_child(child)
             replacement.end_family(parents)
 
-        return replacement.result()
+        new_population = replacement.result()
+        self.freeze(new_population, problem)
+        return new_population
+
+    @staticmethod
+    def freeze(population, problem):
+        """Los individuos de la población ya no se modifican: el problema puede guardar su evaluación con ellos."""
+        for solution in population:
+            problem.freeze(solution)
 
     def mutate(self, solution):
         self.mutation_parameters.solution = solution

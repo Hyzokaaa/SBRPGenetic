@@ -49,14 +49,43 @@ class ProblemSBRP(Problem):
         ya que las restricciones dependen de ella.
         """
         self._evaluation_cache = OrderedDict()
+        # Invalida las evaluaciones guardadas en las soluciones congeladas (ver freeze)
+        self._cache_version = getattr(self, "_cache_version", 0) + 1
+
+    def freeze(self, solution, signature=None):
+        """
+        Guarda en la solución su clave de caché, su entrada y su firma, para no recorrer sus rutas en cada consulta.
+        Solo debe usarse con soluciones que ya no se modificarán (las de la población): una copia (solution.copy())
+        no conserva lo guardado y se puede modificar sin problema. signature evita recalcular una firma ya conocida.
+        """
+        if self._frozen(solution) is not None:
+            return
+        key = self.evaluation_key(solution)
+        signature = self.solution_signature(solution) if signature is None else signature
+        solution._frozen_evaluation = (self._cache_version, key, self._entry_for_key(key), signature)
+
+    def _frozen(self, solution):
+        frozen = getattr(solution, "_frozen_evaluation", None)
+        return frozen if frozen is not None and frozen[0] == self._cache_version else None
+
+    @staticmethod
+    def evaluation_key(solution) -> tuple:
+        """Clave de la caché: la secuencia de identificadores de paradas de cada ruta."""
+        return tuple(tuple(-1 if stop is None else stop.id for stop in route.stops)
+                     for route in solution.get_representation())
 
     def _cache_entry(self, solution) -> dict:
         """
         Entrada de la caché de la solución. La clave es la secuencia de identificadores de paradas de cada ruta,
-        por lo que cualquier cambio en las rutas (por ejemplo, una mutación) da lugar a otra entrada.
+        por lo que cualquier cambio en las rutas (por ejemplo, una mutación) da lugar a otra entrada. Las soluciones
+        congeladas guardan su entrada y no recalculan la clave.
         """
-        key = tuple(tuple(-1 if stop is None else stop.id for stop in route.stops)
-                    for route in solution.get_representation())
+        frozen = self._frozen(solution)
+        if frozen is not None:
+            return frozen[2]
+        return self._entry_for_key(self.evaluation_key(solution))
+
+    def _entry_for_key(self, key) -> dict:
         entry = self._evaluation_cache.get(key)
         if entry is None:
             entry = {}
@@ -169,6 +198,9 @@ class ProblemSBRP(Problem):
         """
         Conjunto de rutas como secuencias de paradas; una ruta y su recorrido inverso son la misma ruta.
         """
+        frozen = self._frozen(solution)
+        if frozen is not None:
+            return frozen[3]
         routes = []
         for route in solution.get_representation():
             ids = tuple(stop.id for stop in route.stops if stop is not None and not isinstance(stop, School))
