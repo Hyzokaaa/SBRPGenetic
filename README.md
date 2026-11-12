@@ -73,13 +73,31 @@ SBRPGenetic es una solución al problema de rutas de autobuses escolares (SBRP) 
 
 4. *Ejecutar el archivo principal del proyecto*
    1. Asegúrate de que el entorno virtual esté activado.
-   2. Ejecuta el comando:
+   2. Desde la raíz del proyecto, ejecuta el comando (ver «Ejecución por lotes» más abajo):
    ```bash
-    python main.py
+    python app/main.py --dry-run
     ```
 
 
 ## Uso
+### Ejecución por lotes
+`app/main.py` ejecuta las configuraciones indicadas sobre un conjunto de instancias, en paralelo:
+```bash
+python app/main.py --configs 7 8 9 --pattern "inst5*" --runs 3 --workers 4
+```
+Opciones principales: `--configs` (números de `config<N>.json`), `--instances` (carpeta, por defecto `data/instances/real`),
+`--pattern` (filtro de nombres), `--runs` (corridas por instancia), `--seed` (semilla base), `--population` y `--max-iter`
+(sustituyen los valores de las configuraciones), `--dry-run` (muestra el plan sin ejecutar). `python app/main.py --help` las lista todas.
+
+Cada lanzamiento crea `results/<fecha_hora>/` con los resultados (`config<N>/<instancia>/run_<k>.csv` y su imagen),
+una copia de las configuraciones usadas, `manifest.json` (argumentos, semillas y versión del código), `run.log`,
+`summary.csv` y, si alguna corrida falla, `errors.csv`. Una corrida que falla no detiene el lote.
+
+Cada corrida usa una semilla registrada, por lo que puede reproducirse exactamente:
+```bash
+python app/main.py --replay results/<fecha_hora>/config7/<instancia>/run_2.csv
+```
+
 ### Interfaz (laboratorio del algoritmo genético)
 Desde la raíz del proyecto, con las dependencias instaladas:
 ```bash
