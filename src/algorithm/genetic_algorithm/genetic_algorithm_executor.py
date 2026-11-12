@@ -9,7 +9,7 @@ from src.operators.selection.selection_parameters import SelectionParameters
 
 
 class GeneticAlgorithmExecutor:
-    def execute(self, config: GeneticAlgorithmConfig):
+    def execute(self, config: GeneticAlgorithmConfig, on_generation=None):
         problem_parameters = config.data_input.conform()
         problem = config.problem
         problem.construct(problem_parameters=problem_parameters)
@@ -40,6 +40,7 @@ class GeneticAlgorithmExecutor:
                                                    mutation_rate=config.mutation_rate,
                                                    crossover_rate=config.crossover_rate,
                                                    elitism_size=config.elitism_size if config.elitism_size is not None else 1,
+                                                   on_generation=on_generation,
                                                    initial_construction_operator=config.initial_construction_operator,
                                                    initial_construction_parameters=initial_construction_parameters,
                                                    selection_operator=config.selection_operator,

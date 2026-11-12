@@ -1,7 +1,6 @@
 import random
 import time
 
-from shared.presentation.visualizer import Visualizer
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.optimization_algorithm import OptimizationAlgorithm
 
@@ -22,6 +21,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         population, best_solution = self.generate_initial_population(parameters)
         best_iteration = 0
         parameters.problem.update_best_solution(0, 0, parameters.objective_max, population)
+        self.notify_generation(0, population, parameters)
 
         # Inicializar variables para el criterio de estancamiento
         best_fitness = None
@@ -39,6 +39,8 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             best_iteration = parameters.problem.update_best_solution(best_iteration, i,
                                                                      parameters.objective_max,
                                                                      population)
+
+            self.notify_generation(i, population, parameters)
 
             # Obtener el mejor fitness actual
             current_best_fitness = self.best_fitness(parameters.problem)
@@ -70,6 +72,11 @@ class GeneticAlgorithm(OptimizationAlgorithm):
             stop_reason,  # Razón de detención ("stagnation" o "max_iter")
             i  # Iteración en la que se detuvo el algoritmo
         )
+
+    def notify_generation(self, generation, population, parameters):
+        if parameters.on_generation is not None:
+            parameters.on_generation(generation, population, parameters.problem, dict(self.generation_stats))
+        self.generation_stats = {'crossovers': 0, 'mutations': 0, 'duplicate_mutations': 0}
 
     @staticmethod
     def best_fitness(problem):
@@ -110,6 +117,9 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         self.mutation_operator = parameters.mutation_operator
         self.mutation_parameters = parameters.mutation_parameters
 
+        # Contadores de la generación en curso (se informan mediante on_generation)
+        self.generation_stats = {'crossovers': 0, 'mutations': 0, 'duplicate_mutations': 0}
+
     def create_new_population(self, population, parameters):
         problem = parameters.problem
 
@@ -127,6 +137,7 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 self.crossover_parameters.parent1 = parents[0]
                 self.crossover_parameters.parent2 = parents[1]
                 child1, child2 = self.crossover_operator.crossover(self.crossover_parameters)
+                self.generation_stats['crossovers'] += 1
 
                 # repair
                 self.repair_parameters.parents = [self.crossover_parameters.parent1, self.crossover_parameters.parent2]
@@ -143,12 +154,14 @@ class GeneticAlgorithm(OptimizationAlgorithm):
                 # mutation: independiente del cruce, con probabilidad mutation_rate por hijo
                 if random.random() < parameters.mutation_rate:
                     self.mutate(child)
+                    self.generation_stats['mutations'] += 1
 
                 # Control de duplicados: se muta el hijo mientras sea idéntico a otro de la nueva población
                 signature = problem.solution_signature(child)
                 attempts = 0
                 while signature is not None and signature in signatures and attempts < MAX_DUPLICATE_ATTEMPTS:
                     self.mutate(child)
+                    self.generation_stats['duplicate_mutations'] += 1
                     signature = problem.solution_signature(child)
                     attempts += 1
 

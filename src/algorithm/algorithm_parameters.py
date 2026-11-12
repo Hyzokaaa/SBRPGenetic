@@ -38,6 +38,7 @@ class AlgorithmParameters:
                  mutation_rate: float = 0.10,
                  replacement_type='replace',  # 'replace' or 'best_half'
                  elitism_size: int = 1,
+                 on_generation=None,
 
                  repair_operator: RepairOperator = None
                  ):
@@ -64,6 +65,9 @@ class AlgorithmParameters:
         self.selection_parameters = selection_parameters
         self.replacement_type = replacement_type
         self.elitism_size = elitism_size
+
+        # Función opcional on_generation(generation, population, problem, stats) invocada en cada generación
+        self.on_generation = on_generation
 
         # Extra Parameters
         self.repair_operator: RepairOperator = repair_operator
