@@ -1,8 +1,6 @@
 from collections import Counter, OrderedDict
 from typing import List, Tuple
 
-import numpy as np
-
 from src.problems.problem import Problem
 from src.problems.problem_parameters import ProblemParameters
 from src.problems.problem_sbrp.model.bus import Bus
@@ -97,13 +95,13 @@ class ProblemSBRP(Problem):
         return entry
 
     def _build_distance_matrix(self):
+        """
+        Distancias entre todas las paradas (la escuela es la 0), como listas de Python: acceder a un elemento es
+        mucho más rápido que en un array de numpy, sobre todo con PyPy.
+        """
         stops = [self.school] + self.stops
-        n = len(stops)
-        matrix = np.zeros((n, n))
-        for i in range(n):
-            for j in range(n):
-                matrix[i][j] = self.distance_calculator.calculate_distance(stops[i].coordinates, stops[j].coordinates)
-        return matrix
+        return [[float(self.distance_calculator.calculate_distance(a.coordinates, b.coordinates)) for b in stops]
+                for a in stops]
 
     def objective_function(self, solution):
         entry = self._cache_entry(solution)
@@ -160,25 +158,25 @@ class ProblemSBRP(Problem):
         violations = []
         degree = 0
 
+        school_id = self.school.id
         for i, route in enumerate(routes):
             if any(stop is None for stop in route.stops):
                 violations.append(f"Ruta {i} contiene paradas nulas")
                 degree += 1
                 continue
-            if (len(route.stops) < 2 or not isinstance(route.stops[0], School)
-                    or not isinstance(route.stops[-1], School)
-                    or any(isinstance(stop, School) for stop in route.stops[1:-1])):
+            ids = [stop.id for stop in route.stops]
+            if len(ids) < 2 or ids[0] != school_id or ids[-1] != school_id or school_id in ids[1:-1]:
                 violations.append(f"Ruta {i} no sale y regresa a la escuela")
                 degree += 1
-            route_stops = [stop for stop in route.stops if not isinstance(stop, School)]
-            visits.update(stop.id for stop in route_stops)
-            load = sum(loads.get(stop.id, 0) for stop in route_stops)
+            route_ids = [stop_id for stop_id in ids if stop_id != school_id]
+            visits.update(route_ids)
+            load = sum(loads.get(stop_id, 0) for stop_id in route_ids)
             if load > self.bus_capacity:
                 violations.append(f"Ruta {i} excede la capacidad: {load} > {self.bus_capacity}")
                 degree += load - self.bus_capacity
 
         used_routes = sum(1 for route in routes if any(
-            stop is not None and not isinstance(stop, School) for stop in route.stops))
+            stop is not None and stop.id != school_id for stop in route.stops))
         if used_routes > len(self.vehicles):
             violations.append(f"Rutas utilizadas exceden la flota: {used_routes} > {len(self.vehicles)}")
             degree += used_routes - len(self.vehicles)
@@ -202,8 +200,9 @@ class ProblemSBRP(Problem):
         if frozen is not None:
             return frozen[3]
         routes = []
+        school_id = self.school.id
         for route in solution.get_representation():
-            ids = tuple(stop.id for stop in route.stops if stop is not None and not isinstance(stop, School))
+            ids = tuple(stop.id for stop in route.stops if stop is not None and stop.id != school_id)
             if ids:
                 routes.append(min(ids, ids[::-1]))
         return tuple(sorted(routes))
