@@ -15,6 +15,10 @@ class BestReorderSegmentMutationOperatorSBRP(MutationOperator):
     Mejora local: selecciona un segmento de una ruta al azar y lo reordena según la permutación
     de menor costo, considerando también los tramos que lo enlazan con el resto de la ruta.
     Como el orden original es una de las permutaciones evaluadas, nunca empeora la ruta.
+
+    No es una mutación en sentido estricto sino una búsqueda local: usado como operador de mutación,
+    convierte el algoritmo genético en un algoritmo memético. Al no poder empeorar la ruta tampoco
+    aporta diversidad, por lo que conviene combinarlo con una mutación aleatoria (p. ej. en el compuesto).
     """
 
     def mutate(self, parameters: MutationParameters):
