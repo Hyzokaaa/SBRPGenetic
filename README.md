@@ -114,5 +114,12 @@ Se abre en `http://localhost:8501` y tiene cinco páginas:
 - **Resultados guardados**: explora los resultados de `app/main.py` y revalida con el validador actual los
   resultados antiguos, que no registraban la factibilidad.
 
+### Pruebas
+Con las dependencias de desarrollo instaladas (`pip install -r requirements-dev.txt`), desde la raíz del proyecto:
+```bash
+python -m pytest                 # todas las pruebas (menos de un minuto)
+python -m pytest -m "not slow"   # sin las lentas (ejecución por lotes e interfaz)
+```
+
 ## Contribución
 (TODO)
