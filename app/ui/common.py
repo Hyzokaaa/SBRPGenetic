@@ -34,7 +34,12 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 SERIES_ALL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 NEUTRAL = "#9a9890"
 TEXT_MUTED = "#52514e"
-SEQUENTIAL = ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#104281"]
+# Rampas de ocupación (de menos a más llena), todas con contraste >= 3:1 sobre su fondo (WCAG 1.4.11):
+# en tema claro, más llena = más oscura; en tema oscuro, más llena = más clara.
+SEQUENTIAL = ["#3987e5", "#256abf", "#104281"]
+SEQUENTIAL_DARK = ["#256abf", "#5598e7", "#9ec5f4"]
+# Fondo para resaltar celdas de tablas (siempre con texto oscuro)
+TABLE_HIGHLIGHT = "#cde2fb"
 HIGHLIGHT = "#eb6834"
 # Tinta de los puntos fijos del mapa (escuela y paradas) y color de su contorno, según el tema claro u oscuro
 INK = {False: ("#0b0b0b", TEXT_MUTED, "white"), True: ("#f4f3ef", "#c9c7bf", "#0e1117")}
@@ -224,19 +229,23 @@ def instance_figure(problem: ProblemSBRP, show_students=True, show_assignment=Tr
     return _base_layout(fig, height=height)
 
 
-# Umbral inferior de ocupación de cada tono de la rampa, desde el segundo (el más claro no se distingue del fondo)
-OCCUPANCY_STEPS = [0.0, 0.4, 0.6, 0.8]
+# Umbral inferior de ocupación de cada tono de la rampa
+OCCUPANCY_STEPS = [0.0, 0.5, 0.8]
 
 
-def _load_color(occupancy: float) -> str:
-    return SEQUENTIAL[sum(occupancy >= step for step in OCCUPANCY_STEPS)]
+def _ramp(dark: bool = False):
+    return SEQUENTIAL_DARK if dark else SEQUENTIAL
 
 
-def _occupancy_colorbar() -> go.Scatter:
+def _load_color(occupancy: float, dark: bool = False) -> str:
+    return _ramp(dark)[sum(occupancy >= step for step in OCCUPANCY_STEPS) - 1]
+
+
+def _occupancy_colorbar(dark: bool = False) -> go.Scatter:
     """Traza sin puntos que solo dibuja la escala de colores de la ocupación de las rutas."""
     bounds = OCCUPANCY_STEPS + [1.0]
     scale = []
-    for k, color in enumerate(SEQUENTIAL[1:]):
+    for k, color in enumerate(_ramp(dark)):
         scale += [[bounds[k], color], [bounds[k + 1], color]]
     return go.Scatter(
         x=[None], y=[None], mode="markers", showlegend=False, hoverinfo="skip",
@@ -264,13 +273,13 @@ def solution_figure(problem: ProblemSBRP, solution, title=None, highlight_route:
         fig.add_trace(go.Scatter(
             x=[p.coordinates[0] for p in path], y=[p.coordinates[1] for p in path], mode="lines",
             line=dict(width=4 if highlighted else 2,
-                      color=HIGHLIGHT if highlighted else ("rgba(154,152,144,0.35)" if dimmed else _load_color(occupancy))),
+                      color=HIGHLIGHT if highlighted else ("rgba(154,152,144,0.35)" if dimmed else _load_color(occupancy, dark))),
             name=f"Ruta {i}", showlegend=False,
             hovertemplate=f"Ruta {i}<br>{len(stops)} paradas<br>{load}/{problem.bus_capacity} estudiantes "
                           f"({occupancy:.0%})<extra></extra>"))
     for trace in _points_traces(problem, show_students, False, dark):
         fig.add_trace(trace)
-    fig.add_trace(_occupancy_colorbar())
+    fig.add_trace(_occupancy_colorbar(dark))
     return _base_layout(fig, title, height)
 
 
