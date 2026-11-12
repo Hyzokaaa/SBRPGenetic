@@ -53,3 +53,11 @@ def test_several_patterns_select_the_union_of_instances():
     assert result.returncode == 0, result.stderr
     assert "1 configuraciones × 2 instancias" in result.stdout
 
+
+def test_output_is_utf8_when_redirected():
+    # Sin PYTHONIOENCODING, Windows escribiría la salida redirigida en cp1252
+    env = {k: v for k, v in __import__("os").environ.items() if k != "PYTHONIOENCODING"}
+    result = subprocess.run([sys.executable, str(ROOT / "app" / "main.py"), "--configs", "8", "--pattern", "inst1-*",
+                             "--dry-run"], cwd=ROOT, capture_output=True, env=env)
+    assert result.returncode == 0
+    assert "configuraciones × 1 instancias".encode("utf-8") in result.stdout

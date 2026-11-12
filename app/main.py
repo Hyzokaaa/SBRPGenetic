@@ -302,6 +302,9 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    # La salida usa caracteres no ASCII (×, →, ✓); en Windows, al redirigirla, Python usaría cp1252 y fallaría
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")
     arguments = parse_args()
     if arguments.replay:
         replay(arguments)
