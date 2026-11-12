@@ -22,6 +22,9 @@ class Operators(Enum):
 
     TOURNAMENT_SELECTION_OPERATOR = "src.operators.selection.tournament_selection_operator.TournamentSelectionOperator"
     ROULETTE_SELECTION_OPERATOR = "src.operators.selection.roulette_selection_operator.RouletteSelectionOperator"
+    RANDOM_SELECTION_OPERATOR = "src.operators.selection.random_selection_operator.RandomSelectionOperator"
+    PROBABILISTIC_TOURNAMENT_SELECTION_OPERATOR = "src.operators.selection.probabilistic_tournament_selection_operator.ProbabilisticTournamentSelectionOperator"
+    LINEAR_RANKING_SELECTION_OPERATOR = "src.operators.selection.linear_ranking_selection_operator.LinearRankingSelectionOperator"
 
     STOP_CROSSOVER_OPERATOR_SBRP = "src.problems.problem_sbrp.operators.crossover.stop_crossover_operator_sbrp.StopCrossoverOperatorSBRP"
     ONE_POINT_CROSSOVER_OPERATOR = "src.operators.crossover.one_point_crossover_operator.OnePointCrossoverOperator"
