@@ -30,8 +30,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
 
         # Bucle principal del algoritmo
         for i in range(1, parameters.max_iter + 1):
-            #print("Iteración " + f'{i}')
-
             # Crear nueva población
             population = self.create_new_population(population, parameters)
 
@@ -54,7 +52,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
 
             # Verificar criterio de parada por estancamiento
             if stagnation_counter >= parameters.max_stagnation_iter:
-                #print(f"El algoritmo se detuvo en la iteracion: {i} luego de estancarse")
                 stop_reason = "stagnation"
                 break
 
@@ -62,7 +59,6 @@ class GeneticAlgorithm(OptimizationAlgorithm):
         end_time = time.time()
         execution_time = end_time - start_time
 
-        #Visualizer.plot_routes(routes=parameters.problem.best_solution, sbrp=parameters.problem, image_name='Evidencia')
         # Retornar los resultados
         return (
             parameters.problem,  # Problema resuelto

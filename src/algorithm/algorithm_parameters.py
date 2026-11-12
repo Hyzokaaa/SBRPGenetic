@@ -7,7 +7,6 @@ from src.operators.mutation.mutation_parameters import MutationParameters
 from src.operators.operator_parameters import OperatorParameters
 from src.operators.repair.repair_operator import RepairOperator
 from src.operators.repair.repair_parameters import RepairParameters
-from src.operators.replacement.replacement_operator import ReplacementOperator
 from src.operators.selection.selection_operator import SelectionOperator
 from src.operators.selection.selection_parameters import SelectionParameters
 from src.problems.problem import Problem
@@ -32,11 +31,9 @@ class AlgorithmParameters:
                  mutation_operator: MutationOperator = None,
                  selection_operator: SelectionOperator = None,
                  crossover_operator: CrossoverOperator = None,
-                 replacement_operator: ReplacementOperator = None,
 
                  crossover_rate: float = 0.9,
                  mutation_rate: float = 0.10,
-                 replacement_type='replace',  # 'replace' or 'best_half'
                  elitism_size: int = 1,
                  on_generation=None,
 
@@ -58,12 +55,10 @@ class AlgorithmParameters:
         self.initial_population = initial_population_size
         self.selection_operator: SelectionOperator = selection_operator
         self.crossover_operator: CrossoverOperator = crossover_operator
-        self.replacement_operator: ReplacementOperator = replacement_operator
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
         self.crossover_parameters = crossover_parameters
         self.selection_parameters = selection_parameters
-        self.replacement_type = replacement_type
         self.elitism_size = elitism_size
 
         # Función opcional on_generation(generation, population, problem, stats) invocada en cada generación
