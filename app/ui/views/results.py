@@ -8,6 +8,7 @@ import streamlit as st
 
 import common
 import widgets
+from src.analysis import best_known
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
 from src.problems.problem_sbrp.model.route import Route
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
@@ -54,6 +55,10 @@ def load_runs(results_dir: str) -> pd.DataFrame:
                                                  "False": "Infactible"}).fillna("Sin dato")
     for column in ("value", "iteration", "execution_time"):
         runs[column] = pd.to_numeric(runs[column], errors="coerce") if column in runs else float("nan")
+    # Mejor valor conocido de cada instancia y gap de la corrida respecto a él
+    runs["mejor_conocido"] = runs["instancia"].map(lambda i: (best_known.reference(i) or {}).get("best_known"))
+    runs["mejor_conocido"] = pd.to_numeric(runs["mejor_conocido"], errors="coerce")
+    runs["gap"] = runs["value"] / runs["mejor_conocido"] - 1
     if "stop_reason" in runs:
         runs["stop_reason"] = runs["stop_reason"].map(lambda r: common.STOP_REASONS.get(r, r))
     return runs.sort_values(["lanzamiento", "config", "instancia", "corrida"],
@@ -184,6 +189,17 @@ with tab_summary:
     # Texto oscuro explícito para que el resaltado se lea también con el tema oscuro
     st.dataframe(pivot.style.format("{:.2f}", na_rep="—").highlight_min(
         axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"), width="stretch")
+    if filtered["gap"].notna().any():
+        gaps = filtered.pivot_table(index="instancia", columns="config", values="gap", aggfunc="mean")
+        gaps = gaps.reindex(sorted(gaps.index, key=common._natural_key))
+        gaps = gaps[sorted(gaps.columns, key=common._natural_key)]
+        gaps.loc["Media"] = gaps.mean()
+        st.markdown("**Gap medio sobre el mejor conocido** (0% = iguala el mejor valor conocido; negativo = lo mejora)")
+        st.dataframe(gaps.style.format("{:+.1%}", na_rep="—").highlight_min(
+            axis=1, props=f"background-color: {common.TABLE_HIGHLIGHT}; color: #0b0b0b; font-weight: bold"),
+            width="stretch")
+        st.caption("Mejores conocidos: óptimos y soluciones de Schittekat et al. (2013) y de la tesis de Pérez Pérez "
+                   "(2020). Ver data/instances/best_known.csv.")
     feasibility = filtered.groupby(["config", "factibilidad"]).size().unstack(fill_value=0)
     feasibility = feasibility.reindex(columns=[c for c in ("Factible", "Infactible", "Sin dato") if c in feasibility])
     st.markdown("**Factibilidad registrada por configuración** (número de corridas)")
@@ -192,13 +208,16 @@ with tab_summary:
         st.caption("«Sin dato»: resultados antiguos sin columna de factibilidad. Revalídalos en «Detalle de una corrida».")
 
 with tab_runs:
-    columns = [c for c in ["config", "instancia", "corrida", "value", "iteration", "execution_time", "stop_reason",
+    columns = [c for c in ["config", "instancia", "corrida", "value", "mejor_conocido", "gap", "iteration", "execution_time", "stop_reason",
                            "stop_iteration", "factibilidad", "violations"] if c in filtered]
     st.dataframe(filtered[columns], hide_index=True, width="stretch", column_config={
         "config": st.column_config.TextColumn("Configuración"),
         "instancia": st.column_config.TextColumn("Instancia"),
         "corrida": st.column_config.NumberColumn("Corrida"),
         "value": st.column_config.NumberColumn("Distancia", format="%.2f"),
+        "mejor_conocido": st.column_config.NumberColumn("Mejor conocido", format="%.2f"),
+        "gap": st.column_config.NumberColumn("Gap", format="percent",
+                                             help="Cuánto peor que el mejor valor conocido (0% = lo iguala)."),
         "iteration": st.column_config.NumberColumn("Generación de la mejor"),
         "execution_time": st.column_config.NumberColumn("Tiempo (s)", format="%.1f"),
         "stop_reason": st.column_config.TextColumn("Parada"),
@@ -224,7 +243,9 @@ with tab_detail:
         st.caption("Esta corrida no se puede reproducir: no registra semilla o su lanzamiento no tiene manifest.json "
                    "(resultados anteriores a la ejecución por lanzamientos).")
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Distancia", fmt(run["value"]))
+    c1.metric("Distancia", fmt(run["value"]),
+              delta=f"{run['gap']:+.1%} sobre el mejor conocido" if pd.notna(run.get("gap")) else None,
+              delta_color="inverse", help=f"Mejor conocido: {common.best_known_text(run['instancia']) or 'sin dato'}")
     c2.metric("Encontrada en la generación", fmt(run.get("iteration"), "{:.0f}"))
     c3.metric("Tiempo", fmt(run.get("execution_time"), "{:.1f} s"))
     c4.metric("Factibilidad registrada", run["factibilidad"],

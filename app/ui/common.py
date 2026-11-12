@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 import pandas as pd
 import plotly.graph_objects as go
 
+from src.analysis import best_known
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
 from src.operators.distance.distance_euclidean import EuclideanDistance
 from src.problems.problem_sbrp.algorithm.genetic_algorithm.operators_enum import Operators
@@ -33,6 +34,8 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 # Paleta categórica completa en orden fijo (máximo 8 series; nunca se repiten colores)
 SERIES_ALL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 NEUTRAL = "#9a9890"
+# Líneas de referencia (mejor valor conocido) en los gráficos
+REFERENCE_LINE = NEUTRAL
 TEXT_MUTED = "#52514e"
 # Rampas de ocupación (de menos a más llena), todas con contraste >= 3:1 sobre su fondo (WCAG 1.4.11):
 # en tema claro, más llena = más oscura; en tema oscuro, más llena = más clara.
@@ -97,6 +100,22 @@ def operator_names(family: str):
 def instantiate(name: str, **params):
     module_name, class_name = Operators[name].value.rsplit('.', 1)
     return getattr(importlib.import_module(module_name), class_name)(**params)
+
+
+# Origen del mejor valor conocido de cada instancia (data/instances/best_known.csv)
+BEST_KNOWN_SOURCES = {"mip": "óptimo del MIP de Schittekat et al. (2013)",
+                      "lower_bound": "cota inferior entera de Schittekat et al. (2013)",
+                      "grasp_vnd": "GRASP+VND de Schittekat et al. (2013)",
+                      "hill_climbing_2020": "escalada de Pérez Pérez (2020)"}
+
+
+def best_known_text(instance) -> str:
+    """Descripción del mejor valor conocido de una instancia, o cadena vacía si no tiene."""
+    record = best_known.reference(instance)
+    if record is None:
+        return ""
+    status = "óptimo probado" if record["optimal"] else "sin óptimo probado"
+    return f"{record['best_known']:.2f} ({status}; {BEST_KNOWN_SOURCES.get(record['source'], record['source'])})"
 
 
 # Nombre visible de cada valor de la clave "algorithm" de las configuraciones
@@ -314,8 +333,11 @@ def edge_origin_figure(problem: ProblemSBRP, solution, origin: dict, title=None,
     return _base_layout(fig, title, height)
 
 
-def convergence_figure(history: pd.DataFrame, height=300) -> go.Figure:
-    """Mejor aptitud de la población y media de las factibles por generación (un solo eje: distancia)."""
+def convergence_figure(history: pd.DataFrame, height=300, best_known_value=None) -> go.Figure:
+    """
+    Mejor aptitud de la población y media de las factibles por generación (un solo eje: distancia),
+    con el mejor valor conocido de la instancia como línea de referencia si se indica.
+    """
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=history["generación"], y=history["mejor"], mode="lines", name="Mejor de la población",
                              line=dict(color=SERIES[0], width=2), hovertemplate="%{y:.2f}"))
@@ -324,6 +346,9 @@ def convergence_figure(history: pd.DataFrame, height=300) -> go.Figure:
     fig.update_layout(height=height, margin=dict(l=10, r=10, t=10, b=10), hovermode="x unified",
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
                       xaxis_title="Generación", yaxis_title="Distancia total")
+    if best_known_value is not None:
+        fig.add_hline(y=best_known_value, line_dash="dot", line_color=REFERENCE_LINE,
+                      annotation_text="Mejor conocido", annotation_position="top left")
     return fig
 
 

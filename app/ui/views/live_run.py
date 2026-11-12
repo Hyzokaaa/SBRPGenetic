@@ -7,6 +7,7 @@ import streamlit as st
 import common
 import widgets
 from src.algorithm.genetic_algorithm.genetic_algorithm_executor import GeneticAlgorithmExecutor
+from src.analysis import best_known
 from src.analysis.metrics import population_stats
 
 st.title("Ejecutar en vivo")
@@ -136,6 +137,8 @@ if run or replay_now:
 
     history = []
     last_best = {"value": None}
+    reference = best_known.reference(replay["instance_path"] if replay_now else instance_path)
+    reference_value = reference["best_known"] if reference else None
     start = time.time()
 
     def on_generation(generation, population, problem, stats):
@@ -163,7 +166,8 @@ if run or replay_now:
             c3.metric("Factibles", f"{summary['feasible']:.0%}",
                       help="Fracción de la población que cumple todas las restricciones.")
             c4.metric("Generación", f"{generation}/{config.max_iter}")
-        convergence_placeholder.plotly_chart(common.convergence_figure(df), width="stretch", key=f"conv-{generation}")
+        convergence_placeholder.plotly_chart(common.convergence_figure(df, best_known_value=reference_value),
+                                             width="stretch", key=f"conv-{generation}")
         diversity_placeholder.plotly_chart(common.percentage_figure(df, "diversidad", "Diversidad de la población"),
                                            width="stretch", key=f"div-{generation}")
         if problem.best_solution is not None and (best != last_best["value"] or generation % map_every == 0):
@@ -184,7 +188,7 @@ if run or replay_now:
         "problem": result[0], "fitness": result[1], "best_iteration": result[2], "time": result[3],
         "stop_reason": result[4], "stop_iteration": result[5], "history": pd.DataFrame(history),
         "label": run_label, "params": run_params, "max_stagnation": int(config.max_stagnation_iter),
-        "algorithm": config.algorithm,
+        "algorithm": config.algorithm, "instance_path": config.instance_path,
         "replay_of": replay if replay_now else None,
     }
     if replay_now:
@@ -215,8 +219,12 @@ elif run_data.get("params") != params:
             "parámetros de «Parámetros usados». Pulsa **Ejecutar** para aplicar los nuevos.")
 
 c1, c2, c3, c4, c5 = st.columns(5)
+run_gap = best_known.gap(run_data["fitness"], run_data.get("instance_path", ""))
+run_reference = common.best_known_text(run_data.get("instance_path", ""))
 c1.metric("Mejor distancia", f"{run_data['fitness']:.2f}" if run_data["fitness"] is not None else "—",
-          help="Distancia total recorrida por todas las rutas de la mejor solución factible.")
+          delta=f"{run_gap:+.1%} sobre el mejor conocido" if run_gap is not None else None, delta_color="inverse",
+          help="Distancia total recorrida por todas las rutas de la mejor solución factible."
+               + (f" Mejor conocido de la instancia: {run_reference}." if run_reference else ""))
 c2.metric("Encontrada en la generación", run_data["best_iteration"])
 stop_reason = common.STOP_REASONS.get(run_data["stop_reason"], run_data["stop_reason"])
 c3.metric("Generaciones ejecutadas", run_data["stop_iteration"], help=f"Se detuvo por {stop_reason}.")
@@ -263,7 +271,10 @@ is_ga_run = run_data.get("algorithm", "GA") == "GA"
 tab1, tab2, tab3, tab4 = st.tabs(["Convergencia", "Población" if is_ga_run else "Soluciones evaluadas",
                                   "Mutaciones", "Datos por generación"])
 with tab1:
-    st.plotly_chart(common.convergence_figure(history, height=360), width="stretch")
+    reference = best_known.reference(run_data.get("instance_path", ""))
+    st.plotly_chart(common.convergence_figure(history, height=360,
+                                              best_known_value=reference["best_known"] if reference else None),
+                    width="stretch")
     st.caption("«Mejor de la población» es la mejor distancia factible de cada generación; «Media de las factibles», "
                "la media de las soluciones factibles. Si las dos curvas se juntan, la población ha convergido.")
 with tab2:

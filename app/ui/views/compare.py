@@ -9,6 +9,7 @@ import streamlit as st
 import common
 import experiment
 import widgets
+from src.analysis import best_known
 
 st.title("Comparar configuraciones")
 st.caption("Ejecuta varias configuraciones con varias semillas sobre una instancia y compara sus resultados. "
@@ -21,6 +22,7 @@ RUN_COLUMNS = {
     "config": st.column_config.TextColumn("Configuración"),
     "seed": st.column_config.NumberColumn("Semilla"),
     "fitness": st.column_config.NumberColumn("Distancia", format="%.2f"),
+    "gap": st.column_config.NumberColumn("Gap", format="percent", help="Cuánto peor que el mejor valor conocido."),
     "best_iteration": st.column_config.NumberColumn("Generación de la mejor"),
     "time": st.column_config.NumberColumn("Tiempo (s)", format="%.1f"),
     "stop_reason": st.column_config.TextColumn("Parada"),
@@ -30,10 +32,12 @@ RUN_COLUMNS = {
 }
 
 
-def runs_frame(results) -> pd.DataFrame:
+def runs_frame(results, instance=None) -> pd.DataFrame:
     runs = pd.DataFrame([{k: v for k, v in r.items() if k != "history"} for r in results])
     if not runs.empty:
         runs["stop_reason"] = runs["stop_reason"].map(lambda r: common.STOP_REASONS.get(r, r))
+        reference = best_known.reference(instance) if instance else None
+        runs.insert(3, "gap", runs["fitness"] / reference["best_known"] - 1 if reference else float("nan"))
     return runs
 
 
@@ -98,7 +102,7 @@ if run:
             except Exception as error:
                 failures.append(f"{name} (semilla {seed}): {error}")
             progress.progress(done / len(jobs), text=f"{done}/{len(jobs)} corridas · {time.time() - start:.0f} s")
-            table_placeholder.dataframe(runs_frame(results), hide_index=True, width="stretch",
+            table_placeholder.dataframe(runs_frame(results, instance_label), hide_index=True, width="stretch",
                                         column_config=RUN_COLUMNS)
     progress.empty()
     table_placeholder.empty()
@@ -119,7 +123,7 @@ if data["failures"]:
 if not data["results"]:
     st.stop()
 
-runs = runs_frame(data["results"])
+runs = runs_frame(data["results"], data["instance"])
 order = [c for c in data["order"] if c in set(runs["config"])]
 colors = {name: common.SERIES_ALL[i] for i, name in enumerate(order)}
 
@@ -129,6 +133,8 @@ summary = runs.groupby("config").agg(
     tiempo_medio=("time", "mean")).reindex(order)
 best_mean = summary["media"].min()
 summary.insert(2, "vs la mejor", (summary["media"] - best_mean) / best_mean)
+reference = best_known.reference(data["instance"])
+summary.insert(3, "gap", summary["media"] / reference["best_known"] - 1 if reference else float("nan"))
 summary = summary.reset_index()
 
 st.subheader(f"Resultados · {common.instance_name(data['instance'])} · {len(runs)} corridas en {data['time']:.0f} s")
@@ -142,6 +148,8 @@ if data["instance"] != st.session_state.get(widgets.INSTANCE_KEY):
 best_name = summary.loc[summary["media"].idxmin(), "config"] if summary["media"].notna().any() else None
 if best_name is not None and len(order) > 1:
     st.markdown(f"Mejor distancia media: **{best_name}** ({best_mean:.2f}).")
+if reference:
+    st.caption(f"Mejor conocido de la instancia: {common.best_known_text(data['instance'])}.")
 st.dataframe(summary, hide_index=True, width="stretch", column_config={
     "config": st.column_config.TextColumn("Configuración"),
     "corridas": st.column_config.NumberColumn("Corridas"),
@@ -150,6 +158,9 @@ st.dataframe(summary, hide_index=True, width="stretch", column_config={
                                                 help="Desviación estándar entre semillas (vacía con una sola semilla)."),
     "mejor": st.column_config.NumberColumn("Mejor", format="%.2f"),
     "peor": st.column_config.NumberColumn("Peor", format="%.2f"),
+    "gap": st.column_config.NumberColumn(
+        "Gap medio", format="percent",
+        help="Cuánto peor es la distancia media que el mejor valor conocido de la instancia (0% = lo iguala)."),
     "vs la mejor": st.column_config.NumberColumn(
         "vs la mejor media", format="percent",
         help="Cuánto peor es la distancia media que la de la mejor configuración (0% = la mejor)."),
@@ -167,6 +178,9 @@ for name in order:
     values = runs.loc[runs["config"] == name, "fitness"]
     box.add_trace(go.Box(y=values, name=name, marker_color=colors[name], boxpoints="all", jitter=0.3, pointpos=0,
                          hovertemplate=f"{name}<br>%{{y:.2f}}<extra></extra>"))
+if reference:
+    box.add_hline(y=reference["best_known"], line_dash="dot", line_color=common.REFERENCE_LINE,
+                  annotation_text="Mejor conocido", annotation_position="top left")
 box.update_layout(title="Distancia final por configuración (cada punto, una semilla)", height=380, showlegend=False,
                   margin=dict(l=10, r=10, t=40, b=10), yaxis_title="Distancia total")
 left.plotly_chart(box, width="stretch")
@@ -181,6 +195,9 @@ for name in order:
     padded = pd.DataFrame([h + [h[-1]] * (length - len(h)) for h in histories], dtype=float)
     curves.add_trace(go.Scatter(x=list(range(length)), y=padded.mean().tolist(), mode="lines", name=name,
                                 line=dict(color=colors[name], width=2), hovertemplate="%{y:.2f}"))
+if reference:
+    curves.add_hline(y=reference["best_known"], line_dash="dot", line_color=common.REFERENCE_LINE,
+                     annotation_text="Mejor conocido", annotation_position="top left")
 curves.update_layout(title="Mejor distancia encontrada (media de las semillas)", height=380, hovermode="x unified",
                      margin=dict(l=10, r=10, t=70, b=10), xaxis_title="Generación", yaxis_title="Distancia total",
                      legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0))
