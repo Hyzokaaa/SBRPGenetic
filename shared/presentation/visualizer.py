@@ -11,7 +11,6 @@ from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.problem_sbrp import ProblemSBRP
 from src.problems.problem_sbrp.solution_route_sbrp import SolutionRouteSBRP
 
-matplotlib.use('TkAgg')  # o 'tkagg' dependiendo del sistema operativo
 
 
 class Visualizer:
