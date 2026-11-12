@@ -15,7 +15,8 @@ st.caption("Analiza un experimento de rejilla (app/grid.py): todas las combinaci
            "presupuesto. Las combinaciones se comparan por su gap sobre el mejor valor conocido de cada instancia.")
 
 FACTOR_LABELS = {"stop_assign_strategy": "Asignación", "route_generator_strategy": "Generación de rutas",
-                 "selection_operator": "Selección", "crossover_operator": "Cruce", "mutation_operator": "Mutación"}
+                 "selection_operator": "Selección", "crossover_operator": "Cruce", "mutation_operator": "Mutación",
+                 "replacement_operator": "Reemplazo", "diversity_operator": "Diversidad"}
 ALPHA = 0.05
 
 

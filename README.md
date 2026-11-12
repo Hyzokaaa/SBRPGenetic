@@ -110,14 +110,32 @@ python app/main.py --resume results/<fecha_hora>
 ```
 
 ### Rejilla de operadores
-`app/grid.py` ejecuta todas las combinaciones de asignación, generación de rutas, selección, cruce y mutación
-(1008 con los operadores actuales) partiendo de una configuración base, con el mismo presupuesto para todas (población
+`app/grid.py` ejecuta todas las combinaciones de asignación, generación de rutas, selección, cruce, mutación,
+reemplazo y diversidad partiendo de una configuración base (con `--only` se limitan los factores que no interesan), con el mismo presupuesto para todas (población
 y generaciones fijas, sin parada por estancamiento) y la misma semilla para cada instancia y corrida en todas las
 combinaciones. Guarda `grid.csv` con los operadores de cada configuración y se reanuda con `--resume`:
 ```bash
 python app/grid.py --pattern "inst27-*" "inst54-*" --runs 2 --workers 14
 ```
 `--only FACTOR=NIVEL[,NIVEL]` limita los niveles de un factor (p. ej. `crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP`).
+
+### Selección, reemplazo y diversidad
+Además del torneo y la ruleta, la selección puede ser aleatoria (`RANDOM_SELECTION_OPERATOR`), un torneo que a veces
+elige al azar (`PROBABILISTIC_TOURNAMENT_SELECTION_OPERATOR`, parámetro `random_probability`) o por ranking lineal
+(`LINEAR_RANKING_SELECTION_OPERATOR`, parámetro `pressure` entre 1 y 2). Dos familias más controlan la diversidad de la
+población; sin indicarlas, el algoritmo se comporta como siempre:
+- `replacement_operator`: `GENERATIONAL_REPLACEMENT_OPERATOR` (por defecto: élite + hijos) o
+  `DETERMINISTIC_CROWDING_REPLACEMENT_OPERATOR_SBRP` (cada hijo compite con su padre más parecido; se suele combinar con
+  la selección aleatoria).
+- `diversity_operator`: `NO_DIVERSITY_OPERATOR` (por defecto), `RANDOM_IMMIGRANTS_DIVERSITY_OPERATOR`,
+  `TRIGGERED_HYPERMUTATION_DIVERSITY_OPERATOR`, `CATACLYSMIC_RESTART_DIVERSITY_OPERATOR` (actúan tras varias
+  generaciones sin mejora) o `CLEARING_DIVERSITY_OPERATOR_SBRP` (sustituye en cada generación las soluciones casi
+  idénticas a otra mejor).
+
+Los parámetros se indican como en el resto de operadores:
+```json
+"diversity_operator": {"name": "RANDOM_IMMIGRANTS_DIVERSITY_OPERATOR", "params": {"stagnation": 5, "fraction": 0.3}}
+```
 
 ### Algoritmos de referencia
 La clave opcional `"algorithm"` de una configuración elige el algoritmo: `GA` (por defecto), `RANDOM_SEARCH`

@@ -39,6 +39,8 @@ with st.sidebar:
         selection = operator_select("Selección", "selection_operator", "selection") if is_ga else None
         crossover = operator_select("Cruce", "crossover_operator", "crossover") if is_ga else None
         mutation = operator_select("Mutación", "mutation_operator", "mutation") if "mutation_operator" in base else None
+        replacement = operator_select("Reemplazo", "replacement_operator", "replacement") if is_ga else None
+        diversity = operator_select("Diversidad", "diversity_operator", "diversity") if is_ga else None
 
     with st.expander("Parámetros", expanded=True):
         population_size = st.number_input(
@@ -89,7 +91,8 @@ params = {
     "Algoritmo": common.ALGORITHM_LABELS[algorithm],
     "Asignación": common.operator_label(stop_assign), "Generación de rutas": common.operator_label(route_generator),
     "Selección": optional(common.operator_label, selection), "Cruce": optional(common.operator_label, crossover),
-    "Mutación": optional(common.operator_label, mutation), "Población": int(population_size),
+    "Mutación": optional(common.operator_label, mutation), "Reemplazo": optional(common.operator_label, replacement),
+    "Diversidad": optional(common.operator_label, diversity), "Población": int(population_size),
     "Máx. generaciones": int(max_iter), "Parar tras N sin mejora": int(max_stagnation),
     "Tamaño de torneo": optional(int, tournament_size), "Tasa de cruce": optional(float, crossover_rate),
     "Tasa de mutación": optional(float, mutation_rate), "Élite": optional(int, elitism_size), "Semilla": int(seed),
@@ -121,6 +124,7 @@ if run or replay_now:
         build_run_config = lambda: common.build_config(configs[config_name], instance_path, {
             "stop_assign_strategy": stop_assign, "route_generator_strategy": route_generator,
             "selection_operator": selection, "crossover_operator": crossover, "mutation_operator": mutation,
+            "replacement_operator": replacement, "diversity_operator": diversity,
             "initial_population_size": int(population_size), "max_iter": int(max_iter),
             "max_stagnation_iter": int(max_stagnation), "tournament_size": optional(int, tournament_size),
             "crossover_rate": optional(float, crossover_rate), "mutation_rate": optional(float, mutation_rate),

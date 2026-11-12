@@ -94,10 +94,11 @@ def test_grid_runs_every_combination_with_common_seeds(tmp_path):
          "--population", "20", "--max-iter", "2", "--workers", "2", "--output", str(tmp_path),
          "--only", "stop_assign_strategy=H_STUDENT_TO_CLOSEST_STOP_STRATEGY",
          "route_generator_strategy=RANDOM_ROUTE_GENERATION_STRATEGY", "selection_operator=TOURNAMENT_SELECTION_OPERATOR",
-         "crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP,EAX_CROSSOVER_OPERATOR_SBRP"],
+         "crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP,EAX_CROSSOVER_OPERATOR_SBRP",
+         "replacement_operator=GENERATIONAL_REPLACEMENT_OPERATOR", "diversity_operator=NO_DIVERSITY_OPERATOR"],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
     assert result.returncode == 0, result.stderr
-    assert "12 combinaciones (1 stop × 1 route × 1 selection × 2 crossover × 6 mutation)" in result.stdout
+    assert "12 combinaciones (1 stop × 1 route × 1 selection × 2 crossover × 6 mutation × 1 replacement × 1 diversity)"         in result.stdout
 
     session = next(tmp_path.iterdir())
     with open(session / "grid.csv", encoding="utf-8") as file:
