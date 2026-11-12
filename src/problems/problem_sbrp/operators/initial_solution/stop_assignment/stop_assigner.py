@@ -14,4 +14,6 @@ class StopAssigner(InitialConstructionOperator):
 
         if strategy is not None:
             problem.assign_solution = strategy.generate_stop_assign(problem, distance_operator)
+            # Las restricciones dependen de la asignación: las evaluaciones anteriores dejan de ser válidas
+            problem.clear_evaluation_cache()
             parameters.stop_assign_strategy = None

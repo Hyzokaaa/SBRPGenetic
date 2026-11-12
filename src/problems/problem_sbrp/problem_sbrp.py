@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, OrderedDict
 from typing import List, Tuple
 
 import numpy as np
@@ -9,6 +9,9 @@ from src.problems.problem_sbrp.model.bus import Bus
 from src.problems.problem_sbrp.model.school import School
 from src.problems.problem_sbrp.model.stop import Stop
 from src.problems.problem_sbrp.model.student import Student
+
+# Número máximo de soluciones distintas cuya evaluación se conserva en caché
+EVALUATION_CACHE_SIZE = 50000
 
 
 class ProblemSBRP(Problem):
@@ -23,6 +26,8 @@ class ProblemSBRP(Problem):
         self.assign_solution = None
         self.best_solution = None
         self.distance_matrix = None
+        # Caché de evaluaciones (distancia y restricciones) indexada por la secuencia de paradas de las rutas
+        self._evaluation_cache = OrderedDict()
 
     def construct(self, problem_parameters: ProblemParameters):
         self.distance_calculator = problem_parameters.distance_operator
@@ -36,6 +41,31 @@ class ProblemSBRP(Problem):
         self.w_distance = problem_parameters.sbrp_walk_distance
         # Precalcular distancias entre todas las paradas
         self.distance_matrix = self._build_distance_matrix()
+        self.clear_evaluation_cache()
+
+    def clear_evaluation_cache(self):
+        """
+        Vacía la caché de evaluaciones. Debe llamarse si cambia la asignación de estudiantes a paradas,
+        ya que las restricciones dependen de ella.
+        """
+        self._evaluation_cache = OrderedDict()
+
+    def _cache_entry(self, solution) -> dict:
+        """
+        Entrada de la caché de la solución. La clave es la secuencia de identificadores de paradas de cada ruta,
+        por lo que cualquier cambio en las rutas (por ejemplo, una mutación) da lugar a otra entrada.
+        """
+        key = tuple(tuple(-1 if stop is None else stop.id for stop in route.stops)
+                    for route in solution.get_representation())
+        entry = self._evaluation_cache.get(key)
+        if entry is None:
+            entry = {}
+            self._evaluation_cache[key] = entry
+            if len(self._evaluation_cache) > EVALUATION_CACHE_SIZE:
+                self._evaluation_cache.popitem(last=False)
+        else:
+            self._evaluation_cache.move_to_end(key)
+        return entry
 
     def _build_distance_matrix(self):
         stops = [self.school] + self.stops
@@ -47,6 +77,12 @@ class ProblemSBRP(Problem):
         return matrix
 
     def objective_function(self, solution):
+        entry = self._cache_entry(solution)
+        if "fitness" not in entry:
+            entry["fitness"] = self._compute_fitness(solution)
+        return entry["fitness"]
+
+    def _compute_fitness(self, solution):
         fitness = 0
         for route in solution.get_representation():
             stops = [self.school] + route.stops + [self.school]  # Asume que las rutas incluyen la escuela
@@ -70,7 +106,7 @@ class ProblemSBRP(Problem):
         """
         Devuelve la lista de restricciones que incumple la solución (vacía si es factible).
         """
-        return self._evaluate_constraints(solution)[0]
+        return list(self._cached_constraints(solution)[0])
 
     def constraint_violation(self, solution) -> int:
         """
@@ -78,7 +114,14 @@ class ProblemSBRP(Problem):
         los estudiantes que exceden la capacidad, las visitas repetidas, las rutas que exceden
         la flota y las rutas mal formadas. Se usa para comparar soluciones infactibles en la selección.
         """
-        return self._evaluate_constraints(solution)[1]
+        return self._cached_constraints(solution)[1]
+
+    def _cached_constraints(self, solution) -> Tuple[Tuple[str, ...], int]:
+        entry = self._cache_entry(solution)
+        if "constraints" not in entry:
+            violations, degree = self._evaluate_constraints(solution)
+            entry["constraints"] = (tuple(violations), degree)
+        return entry["constraints"]
 
     def _evaluate_constraints(self, solution) -> Tuple[List[str], int]:
         routes = solution.get_representation()
