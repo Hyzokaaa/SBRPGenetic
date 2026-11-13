@@ -71,3 +71,49 @@ def test_ga_with_stop_removal_is_feasible_and_never_worse(instance):
         assert fitness == pytest.approx(problem.objective_function(problem.best_solution))
         results[improver] = fitness
     assert results[REMOVAL] <= results[None] + 1e-9
+
+
+REPLACEMENT = "STOP_REPLACEMENT_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP"
+
+
+def test_replaces_a_stop_with_a_closer_unvisited_one():
+    # Escuela en (0, 0). La ruta visita B (0, 10); A (0, 7), sin visitar, está más cerca y la alcanzan los dos
+    problem = problem_with([(0, 7), (0, 10)], [(0, 8.5), (0, 9)], [1, 1], [[2]], 5, 2)
+    before = problem.objective_function(problem.best_solution)
+    assert operator(REPLACEMENT).improve(problem, EuclideanDistance()) == 1
+    assert [[stop.id for stop in route.stops if stop.id] for route in problem.best_solution.get_representation()] == [[1]]
+    assert problem.objective_function(problem.best_solution) < before
+    assert problem.violations(problem.best_solution) == [] and consistent(problem)
+
+
+def test_does_not_replace_when_a_student_cannot_reach_the_new_stop():
+    # El segundo estudiante no alcanza A: sustituir B por A dejaría a un estudiante sin parada
+    problem = problem_with([(0, 7), (0, 10)], [(0, 8.5), (0, 11.5)], [1, 1], [[2]], 5, 2)
+    assert operator(REPLACEMENT).improve(problem, EuclideanDistance()) == 0
+    assert problem.violations(problem.best_solution) == []
+
+
+@pytest.mark.parametrize("instance", ["inst54-7s20-100-c50-w20", "inst77-6s40-200-c25-w20", "inst102-5s80-400-c50-w20"])
+def test_composite_improvement_is_feasible_and_never_worse_than_removal_alone(instance):
+    results = {}
+    for improver in (REMOVAL, "COMPOSITE_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP"):
+        random.seed(3)
+        config = GeneticAlgorithmConfig()
+        config.load_from_file(str(CONFIGS / "config14.json"), str(INSTANCES / "real" / f"{instance}.xpress"))
+        config.initial_population_size, config.max_iter, config.max_stagnation_iter = 30, 5, 6
+        config.assignment_improvement_operator = operator(improver)
+        problem, fitness, *_ = GeneticAlgorithmExecutor().execute(config)
+        assert problem.violations(problem.best_solution) == [] and consistent(problem)
+        results[improver] = fitness
+    assert results["COMPOSITE_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP"] <= results[REMOVAL] + 1e-9
+
+
+def test_replacement_rejects_invalid_neighbors():
+    with pytest.raises(ValueError):
+        operator(REPLACEMENT, neighbors=0)
+
+
+def test_does_not_replace_when_the_route_would_get_longer():
+    # La ruta visita A (0, 7); B (0, 10), sin visitar, también es alcanzable pero está más lejos de la escuela
+    problem = problem_with([(0, 7), (0, 10)], [(0, 8.5), (0, 9)], [0, 0], [[1]], 5, 2)
+    assert operator(REPLACEMENT).improve(problem, EuclideanDistance()) == 0

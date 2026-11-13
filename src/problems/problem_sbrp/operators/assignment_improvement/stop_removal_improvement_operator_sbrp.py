@@ -22,6 +22,23 @@ class StopRemovalImprovementOperatorSBRP(AssignmentImprovementOperator):
     def improve(self, problem: ProblemSBRP, distance_operator: DistanceOperator) -> int:
         if problem.best_solution is None:
             return 0
+        routes, students, reachable = self.prepare(problem, distance_operator)
+        closed = 0
+        changed = True
+        while changed:
+            changed = False
+            for stop in self.by_saving(routes, problem):
+                if self.close(stop, routes, students, reachable, problem):
+                    closed += 1
+                    changed = True
+                    break
+        if closed:
+            self.finish(problem, routes, students)
+        return closed
+
+    @staticmethod
+    def prepare(problem: ProblemSBRP, distance_operator: DistanceOperator):
+        """Rutas de la mejor solución (con las paradas del problema), estudiantes por parada y paradas alcanzables."""
         school = problem.school.id
         # Las rutas pueden contener copias de las paradas: se trabaja siempre con las paradas del problema
         stops_by_id = {stop.id: stop for stop in problem.stops}
@@ -40,25 +57,17 @@ class StopRemovalImprovementOperatorSBRP(AssignmentImprovementOperator):
                                      <= problem.w_distance}
             return reach[student.id]
 
-        closed = 0
-        changed = True
-        while changed:
-            changed = False
-            for stop in self.by_saving(routes, problem):
-                if self.close(stop, routes, students, reachable, problem):
-                    closed += 1
-                    changed = True
-                    break
+        return routes, students, reachable
 
-        if closed:
-            for stop in problem.stops:
-                stop.num_assigned_students = len(students[stop.id])
-            problem.best_solution = SolutionRouteSBRP(routes=[self.build_route(stops, problem) for stops in routes
-                                                              if stops])
-            problem.clear_evaluation_cache()
-            if problem.assign_solution is not None:
-                StopAssignmentRebalancer.sync_and_validate(problem, problem.assign_solution)
-        return closed
+    def finish(self, problem: ProblemSBRP, routes, students):
+        """Aplica la nueva asignación y las nuevas rutas al problema."""
+        for stop in problem.stops:
+            stop.num_assigned_students = len(students[stop.id])
+        problem.best_solution = SolutionRouteSBRP(routes=[self.build_route(stops, problem) for stops in routes
+                                                          if stops])
+        problem.clear_evaluation_cache()
+        if problem.assign_solution is not None:
+            StopAssignmentRebalancer.sync_and_validate(problem, problem.assign_solution)
 
     @staticmethod
     def by_saving(routes, problem: ProblemSBRP) -> list:

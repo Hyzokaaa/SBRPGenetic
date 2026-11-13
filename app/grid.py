@@ -37,7 +37,7 @@ FACTORS = {
     "selection_operator": [n for n in OPERATOR_NAMES if "SELECTION" in n],
     "crossover_operator": [n for n in OPERATOR_NAMES if "CROSSOVER" in n],
     "mutation_operator": [n for n in OPERATOR_NAMES if "MUTATION" in n and "DIVERSITY" not in n],
-    "replacement_operator": [n for n in OPERATOR_NAMES if "REPLACEMENT" in n],
+    "replacement_operator": [n for n in OPERATOR_NAMES if "REPLACEMENT" in n and "ASSIGNMENT_IMPROVEMENT" not in n],
     "diversity_operator": [n for n in OPERATOR_NAMES if "DIVERSITY" in n],
 }
 

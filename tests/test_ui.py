@@ -81,3 +81,14 @@ def test_calibration_page_ranks_a_grid_launch(tmp_path, monkeypatch):
     assert metrics["Combinaciones"] == "2" and metrics["Bloques completos"] == "4"
     assert metrics["Mejor gap medio"] == "+10.0%"
     assert any("Bcrc" in m.value for m in app_test.markdown)
+
+
+def test_operator_families_do_not_mix():
+    import sys
+    sys.path.insert(0, str(ROOT / "app" / "ui"))
+    import common
+    families = {family: set(common.operator_names(family))
+                for family in ("crossover", "mutation", "selection", "replacement", "diversity", "stop_assign")}
+    names = [name for members in families.values() for name in members]
+    assert len(names) == len(set(names)), "un operador aparece en dos familias"
+    assert not any("ASSIGNMENT_IMPROVEMENT" in name for name in families["replacement"])

@@ -93,7 +93,7 @@ def operator_names(family: str):
         "selection": [n for n in names if "SELECTION" in n],
         "route_generator": [n for n in names if "ROUTE_GENERAT" in n],
         "stop_assign": [n for n in names if n.endswith("_STRATEGY") and "STUDENT" in n],
-        "replacement": [n for n in names if "REPLACEMENT" in n],
+        "replacement": [n for n in names if "REPLACEMENT" in n and "ASSIGNMENT_IMPROVEMENT" not in n],
         "diversity": [n for n in names if "DIVERSITY" in n],
     }
     return families[family]
