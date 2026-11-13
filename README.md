@@ -119,6 +119,38 @@ python app/grid.py --pattern "inst27-*" "inst54-*" --runs 2 --workers 14
 ```
 `--only FACTOR=NIVEL[,NIVEL]` limita los niveles de un factor (p. ej. `crossover_operator=BCRC_CROSSOVER_OPERATOR_SBRP`).
 
+### Asignación de estudiantes a paradas
+La asignación se decide antes de construir las rutas (`stop_assign_strategy`) y es la decisión que más pesa en la
+calidad de las soluciones, sobre todo cuando los estudiantes pueden caminar mucho (`w` grande):
+- `H_STUDENT_TO_CLOSEST_STOP_STRATEGY`, `H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY`,
+  `H_STUDENT_TO_STOP_CLOSEST_TO_CENTROID_STRATEGY` y `STUDENT_TO_RANDOM_STOP_STRATEGY`: cada estudiante va a la parada
+  alcanzable más cercana a su casa, a la escuela, al centroide de las paradas o a una al azar.
+- `H_STUDENT_TO_FEWEST_STOPS_STRATEGY`: usa el menor número de paradas posible (en cada paso abre la parada que recibe a
+  más estudiantes). Su parámetro `school_weight` da preferencia a las paradas cercanas a la escuela.
+
+`stop_assign_portfolio` sustituye a `stop_assign_strategy` por una lista de asignaciones: el algoritmo se ejecuta con
+cada una y devuelve la mejor solución, y la columna `assignment` de los resultados indica cuál ganó. Para no gastar más
+tiempo, el presupuesto (`max_iter`) se reparte entre ellas, como en `config17`:
+```json
+"stop_assign_portfolio": [
+    "H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY",
+    {"name": "H_STUDENT_TO_FEWEST_STOPS_STRATEGY", "params": {"school_weight": 3.0}}
+]
+```
+
+Tras ejecutar el algoritmo, `assignment_improvement_operator` puede mejorar la asignación a partir de las rutas
+encontradas: `STOP_REMOVAL_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP` cierra cada parada visitada cuyos estudiantes pueden
+caminar a otras paradas visitadas (con reasignaciones en cadena, respetando la distancia a pie y la capacidad), lo que
+acorta las rutas sin empeorar nunca la solución. Con `assignment_rounds` mayor que 1, el algoritmo se vuelve a ejecutar
+con la nueva asignación mientras la mejora siga cambiando algo. Dentro de cada ejecución la asignación es fija.
+
+| Configuración | Gap medio sobre el mejor conocido (120 instancias, mejor de 10 semillas) |
+|---|---|
+| `config14`: mejores operadores de la rejilla, asignación por cercanía a la escuela | +7.6 % |
+| `config15`: `config14` con la asignación de mínimas paradas | +4.6 % |
+| `config17`: `config14` con un portafolio de 4 asignaciones y el mismo presupuesto | +3.6 % |
+| `config18`: `config17` cerrando paradas tras el algoritmo | +2.1 % |
+
 ### Selección, reemplazo y diversidad
 Además del torneo y la ruleta, la selección puede ser aleatoria (`RANDOM_SELECTION_OPERATOR`), un torneo que a veces
 elige al azar (`PROBABILISTIC_TOURNAMENT_SELECTION_OPERATOR`, parámetro `random_probability`) o por ranking lineal
