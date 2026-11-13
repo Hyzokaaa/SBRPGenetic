@@ -20,7 +20,7 @@ def run_ga(config_number=8, seed=1, instance="real/inst54-7s20-100-c50-w20.xpres
     return GeneticAlgorithmExecutor().execute(config, on_generation=on_generation)
 
 
-@pytest.mark.parametrize("config_number", range(1, 16))
+@pytest.mark.parametrize("config_number", range(1, 18))
 def test_every_config_returns_a_feasible_best_solution(config_number):
     problem, fitness, *_ = run_ga(config_number)
     assert problem.best_solution is not None
