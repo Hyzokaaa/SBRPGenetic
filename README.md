@@ -181,6 +181,17 @@ aceptan soluciones factibles. `config10` (búsqueda aleatoria) y `config11` (esc
 python app/main.py --configs 8 10 11 --runs 5
 ```
 
+### Informe de resultados
+`app/report.py` genera el informe de uno o varios lanzamientos: calidad respecto al mejor valor conocido, comparación
+con Schittekat et al. (2013), la tesis de Pérez Pérez (2020), el EDA de 2016 y los óptimos del MIP (con la prueba de
+Wilcoxon), resultados por tipo de instancia, nuevos mejores valores conocidos, peores instancias y, si se pasan varios
+lanzamientos, la comparación entre configuraciones. Escribe `report.md`, `report.html`, `report.pdf` (con Edge, Chrome
+o Chromium; su ruta se puede indicar en `SBRP_BROWSER`), las tablas en CSV y las gráficas en PNG:
+```bash
+python app/report.py results/<fecha_hora>                         # informe en results/<fecha_hora>/report
+python app/report.py results/<lanzamiento_A> results/<lanzamiento_B>   # compara configuraciones
+```
+
 ### Interfaz (laboratorio del algoritmo genético)
 Desde la raíz del proyecto, con las dependencias instaladas:
 ```bash
