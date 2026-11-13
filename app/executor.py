@@ -9,7 +9,8 @@ from src.problems.problem_sbrp.model.school import School
 from app.visualizer import Visualizer
 
 CSV_COLUMNS = ["instance", "config", "run", "seed", "value", "iteration", "execution_time", "stop_reason",
-               "stop_iteration", "feasible", "violations", "assignment", "student_assignments", "routes"]
+               "stop_iteration", "feasible", "violations", "assignment", "assignment_changes", "student_assignments",
+               "routes"]
 
 
 def run_single(config_name: str, config_path: str, instance_path: str, run_number: int, seed: int,
@@ -58,6 +59,8 @@ def run_single(config_name: str, config_path: str, instance_path: str, run_numbe
         "stop_iteration": stop_iteration, "feasible": not violations, "violations": "; ".join(violations),
         # Asignación ganadora de un portafolio (vacía si la configuración usa una sola)
         "assignment": getattr(problem, "assignment_label", "") or "",
+        # Cambios de la mejora de la asignación (por ejemplo, paradas cerradas)
+        "assignment_changes": getattr(problem, "assignment_changes", 0),
         "student_assignments": str(stop_assignments), "routes": "; ".join(routes_description),
     }
     with open(os.path.join(instance_dir, f"run_{run_number}.csv"), "w", newline="", encoding="utf-8") as file:

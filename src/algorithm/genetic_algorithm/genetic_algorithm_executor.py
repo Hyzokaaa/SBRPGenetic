@@ -1,3 +1,5 @@
+import time
+
 from src.algorithm.algorithm_parameters import AlgorithmParameters
 from src.algorithm.genetic_algorithm.genetic_algorithm import GeneticAlgorithm
 from src.algorithm.genetic_algorithm.genetic_algorithm_config import GeneticAlgorithmConfig
@@ -26,11 +28,11 @@ class GeneticAlgorithmExecutor:
         devuelto indica la asignación ganadora (assignment_label) y el resultado de cada una (portfolio_results).
         """
         if not config.stop_assign_portfolio:
-            return self.execute_once(config, config.problem, config.stop_assign_strategy, on_generation)
+            return self.execute_rounds(config, config.problem, config.stop_assign_strategy, on_generation)
 
         best, best_label, results, total_time = None, None, [], 0.0
         for label, strategy in zip(config.stop_assign_portfolio_labels, config.stop_assign_portfolio):
-            result = self.execute_once(config, type(config.problem)(), strategy, on_generation)
+            result = self.execute_rounds(config, type(config.problem)(), strategy, on_generation)
             total_time += result[3]
             results.append((label, result[1]))
             if result[1] is not None and (best is None or best[1] is None or (
@@ -43,9 +45,34 @@ class GeneticAlgorithmExecutor:
         problem.portfolio_results = results
         return problem, best[1], best[2], total_time, best[4], best[5]
 
-    def execute_once(self, config: GeneticAlgorithmConfig, problem, stop_assign_strategy, on_generation=None):
-        problem_parameters = config.data_input.conform()
-        problem.construct(problem_parameters=problem_parameters)
+    def execute_rounds(self, config: GeneticAlgorithmConfig, problem, stop_assign_strategy, on_generation=None):
+        """
+        Ejecuta el algoritmo y, si la configuración tiene mejora de la asignación, la aplica a la mejor solución y
+        vuelve a ejecutar el algoritmo con la nueva asignación, hasta assignment_rounds ejecuciones o hasta que la
+        mejora no cambie nada. El problema conserva la mejor solución entre ejecuciones, así que el resultado nunca
+        empeora. problem.assignment_changes cuenta los cambios hechos (por ejemplo, paradas cerradas).
+        """
+        start = time.time()
+        result = self.execute_once(config, problem, stop_assign_strategy, on_generation)
+        problem.assignment_changes = 0
+        improver = config.assignment_improvement_operator
+        for round_number in range(1, max(1, config.assignment_rounds or 1) + 1):
+            if improver is None or problem.best_solution is None:
+                break
+            changes = improver.improve(problem, config.distance_operator)
+            problem.assignment_changes += changes
+            if not changes or round_number >= config.assignment_rounds:
+                break
+            # La asignación ya está hecha: se ejecuta de nuevo sin reconstruir el problema ni reasignar
+            result = self.execute_once(config, problem, None, on_generation, construct=False)
+        fitness = problem.objective_function(problem.best_solution) if problem.best_solution is not None else None
+        return problem, fitness, result[2], time.time() - start, result[4], result[5]
+
+    def execute_once(self, config: GeneticAlgorithmConfig, problem, stop_assign_strategy, on_generation=None,
+                     construct: bool = True):
+        if construct:
+            problem_parameters = config.data_input.conform()
+            problem.construct(problem_parameters=problem_parameters)
 
         initial_construction_parameters = InitialConstructionParameters(
             problem=problem,

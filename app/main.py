@@ -38,7 +38,7 @@ from src.utils.utils import get_string_config_data  # noqa: E402
 
 CONFIGS_DIR = ROOT / "src" / "problems" / "problem_sbrp" / "algorithm" / "genetic_algorithm"
 SUMMARY_COLUMNS = ["config", "instance", "run", "seed", "value", "best_known", "gap", "iteration", "execution_time",
-                   "stop_reason", "stop_iteration", "feasible", "violations", "assignment"]
+                   "stop_reason", "stop_iteration", "feasible", "violations", "assignment", "assignment_changes"]
 
 
 # ------------------------- Utilidades -------------------------

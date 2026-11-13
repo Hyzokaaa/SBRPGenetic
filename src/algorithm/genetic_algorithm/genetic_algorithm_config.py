@@ -48,6 +48,10 @@ class GeneticAlgorithmConfig:
         # Portafolio de asignaciones: si se indica, el algoritmo se ejecuta con cada una y se queda con la mejor
         self.stop_assign_portfolio = None
         self.stop_assign_portfolio_labels = None
+        # Mejora de la asignación entre ejecuciones: hasta assignment_rounds ejecuciones del algoritmo, aplicando
+        # assignment_improvement_operator tras cada una (1 = una sola ejecución, sin mejora)
+        self.assignment_improvement_operator = None
+        self.assignment_rounds = 1
 
     def load_from_file(self, config_file_path, instance_path):
         with open(config_file_path, 'r') as config_file:
