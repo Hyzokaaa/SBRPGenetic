@@ -15,6 +15,7 @@ class Operators(Enum):
     H_STUDENT_TO_STOP_CLOSEST_TO_CENTROID_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.h_student_to_stop_closest_to_centroid_strategy.HStudentToStopClosestToCentroidStrategy"
     H_STUDENT_TO_CLOSEST_STOP_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.h_student_to_closest_stop_strategy.HStudentToClosestStopStrategy"
     STUDENT_TO_RANDOM_STOP_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.student_to_random_stop_strategy.StudentToRandomStopStrategy"
+    H_STUDENT_TO_FEWEST_STOPS_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.stop_assignment.strategy.h_student_to_fewest_stops_strategy.HStudentToFewestStopsStrategy"
 
     H_CLOSEST_NEIGHBOR_AND_RANDOM_ROUTE_GENERATOR_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.h_closest_neighbor_and_random_route_generator_strategy.HClosestNeighborAndRandomRouteGeneratorStrategy"
     H_CLOSEST_NEIGHBOR_ROUTE_GENERATION_STRATEGY = "src.problems.problem_sbrp.operators.initial_solution.route_generation.strategy.h_closest_neighbor_route_generator_strategy.HClosestNeighborRouteGeneratorStrategy"

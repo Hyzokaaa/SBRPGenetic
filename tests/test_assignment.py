@@ -48,3 +48,26 @@ def test_full_reachable_stops_raise_clear_error():
     problem.construct(ProblemParameters(EuclideanDistance(), (0, 5), [(0, 0)], [(1, 0), (-1, 0)], 2, 1, 6))
     with pytest.raises(InfeasibleAssignmentError, match=r"alcanzables por el estudiante \d+ \(1\) están llenas"):
         operator("H_STUDENT_TO_CLOSEST_STOP_STRATEGY").generate_stop_assign(problem, EuclideanDistance())
+
+
+@pytest.mark.parametrize("instance", ["real/inst54-7s20-100-c50-w20.xpress", "real/inst102-5s80-400-c50-w20.xpress"])
+def test_fewest_stops_uses_fewer_stops_than_closest_to_school(instance):
+    used = lambda problem: sum(1 for stop in problem.stops if stop.num_assigned_students > 0)
+    fewest = load_problem(instance, "H_STUDENT_TO_FEWEST_STOPS_STRATEGY")
+    school = load_problem(instance, "H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY")
+    assert used(fewest) < used(school)
+    assert all(student.assigned_stop is not None for student in fewest.students)
+
+
+def test_fewest_stops_prefers_the_stop_that_covers_more_students():
+    # La parada B (10, 0) alcanza a los tres estudiantes; A y C solo a uno cada una
+    problem = ProblemSBRP()
+    problem.construct(ProblemParameters(EuclideanDistance(), (0, 0), [(4, 0), (10, 0), (16, 0)],
+                                        [(5, 0), (10, 0), (15, 0)], 3, 5, 6))
+    operator("H_STUDENT_TO_FEWEST_STOPS_STRATEGY").generate_stop_assign(problem, EuclideanDistance())
+    assert {student.assigned_stop.id for student in problem.students} == {2}
+
+
+def test_fewest_stops_rejects_a_negative_school_weight():
+    with pytest.raises(ValueError):
+        operator("H_STUDENT_TO_FEWEST_STOPS_STRATEGY", school_weight=-1)
