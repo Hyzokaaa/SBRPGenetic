@@ -171,14 +171,14 @@ if run or replay_now:
                       help="Fracción de la población que cumple todas las restricciones.")
             c4.metric("Generación", f"{generation}/{config.max_iter}")
         convergence_placeholder.plotly_chart(common.convergence_figure(df, best_known_value=reference_value),
-                                             width="stretch", key=f"conv-{generation}")
+                                             width="stretch", key=f"conv-{len(history)}")
         diversity_placeholder.plotly_chart(common.percentage_figure(df, "diversidad", "Diversidad de la población"),
-                                           width="stretch", key=f"div-{generation}")
+                                           width="stretch", key=f"div-{len(history)}")
         if problem.best_solution is not None and (best != last_best["value"] or generation % map_every == 0):
             last_best["value"] = best
             map_placeholder.plotly_chart(common.solution_figure(problem, problem.best_solution, dark=widgets.is_dark(),
                                                                 title=f"Mejor solución · generación {generation}"),
-                                         width="stretch", key=f"map-{generation}")
+                                         width="stretch", key=f"map-{len(history)}")
 
     try:
         config = build_run_config()
