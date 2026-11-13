@@ -4,6 +4,21 @@ import importlib
 from src.problems.problem_sbrp.algorithm.genetic_algorithm.operators_enum import Operators
 from src.problems.problem_sbrp.data_io.file_data_input_sbrp import FileDataInputSBRP
 
+def instantiate(value):
+    """Operador indicado por nombre del enumerado o como {"name": ..., "params": {...}}."""
+    name, params = (value["name"], value.get("params", {})) if isinstance(value, dict) else (value, {})
+    module_name, class_name = Operators[name].value.rsplit('.', 1)
+    return getattr(importlib.import_module(module_name), class_name)(**params)
+
+
+def operator_label(value) -> str:
+    """Nombre legible de un operador de la configuración, con sus parámetros."""
+    if isinstance(value, dict):
+        params = ", ".join(f"{key}={param}" for key, param in value.get("params", {}).items())
+        return f"{value['name']}({params})" if params else value["name"]
+    return value
+
+
 class GeneticAlgorithmConfig:
     def __init__(self):
         self.instance_path = None
@@ -30,6 +45,9 @@ class GeneticAlgorithmConfig:
         self.elitism_size = None
         # Algoritmo a ejecutar: GA (por defecto) o una referencia (RANDOM_SEARCH, HILL_CLIMBING)
         self.algorithm = "GA"
+        # Portafolio de asignaciones: si se indica, el algoritmo se ejecuta con cada una y se queda con la mejor
+        self.stop_assign_portfolio = None
+        self.stop_assign_portfolio_labels = None
 
     def load_from_file(self, config_file_path, instance_path):
         with open(config_file_path, 'r') as config_file:
@@ -38,13 +56,12 @@ class GeneticAlgorithmConfig:
                 if key.endswith('_operator') or key.endswith('_strategy') or key == 'problem':
                     try:
                         # El operador puede indicarse por nombre o como {"name": ..., "params": {...}}
-                        name, params = (value["name"], value.get("params", {})) if isinstance(value, dict) else (value, {})
-                        full_class_path = Operators[name].value
-                        module_name, class_name = full_class_path.rsplit('.', 1)
-                        module = importlib.import_module(module_name)
-                        setattr(self, key, getattr(module, class_name)(**params))
+                        setattr(self, key, instantiate(value))
                     except ValueError:
                         raise ValueError(f"Invalid format for {key}: {value}. Expected 'module_name.ClassName'")
+                elif key == "stop_assign_portfolio":
+                    self.stop_assign_portfolio = [instantiate(item) for item in value]
+                    self.stop_assign_portfolio_labels = [operator_label(item) for item in value]
                 elif key == "max_stagnation_iter":  # Nueva condición
                     setattr(self, key, int(value))
                 else:

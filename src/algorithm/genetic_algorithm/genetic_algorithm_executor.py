@@ -19,29 +19,53 @@ ALGORITHMS = {
 
 class GeneticAlgorithmExecutor:
     def execute(self, config: GeneticAlgorithmConfig, on_generation=None):
+        """
+        Ejecuta el algoritmo de la configuración. Con un portafolio de asignaciones (stop_assign_portfolio), lo
+        ejecuta una vez por asignación, cada vez sobre un problema nuevo y con el presupuesto completo de la
+        configuración, y devuelve el mejor resultado; el tiempo es la suma de todas las ejecuciones. El problema
+        devuelto indica la asignación ganadora (assignment_label) y el resultado de cada una (portfolio_results).
+        """
+        if not config.stop_assign_portfolio:
+            return self.execute_once(config, config.problem, config.stop_assign_strategy, on_generation)
+
+        best, best_label, results, total_time = None, None, [], 0.0
+        for label, strategy in zip(config.stop_assign_portfolio_labels, config.stop_assign_portfolio):
+            result = self.execute_once(config, type(config.problem)(), strategy, on_generation)
+            total_time += result[3]
+            results.append((label, result[1]))
+            if result[1] is not None and (best is None or best[1] is None or (
+                    result[1] > best[1] if config.objective_max else result[1] < best[1])):
+                best, best_label = result, label
+            elif best is None:
+                best = result
+        problem = best[0]
+        problem.assignment_label = best_label
+        problem.portfolio_results = results
+        return problem, best[1], best[2], total_time, best[4], best[5]
+
+    def execute_once(self, config: GeneticAlgorithmConfig, problem, stop_assign_strategy, on_generation=None):
         problem_parameters = config.data_input.conform()
-        problem = config.problem
         problem.construct(problem_parameters=problem_parameters)
 
         initial_construction_parameters = InitialConstructionParameters(
             problem=problem,
             distance_operator=config.distance_operator,
-            stop_assign_strategy=config.stop_assign_strategy,
+            stop_assign_strategy=stop_assign_strategy,
             route_generator_strategy=config.route_generator_strategy)
 
-        selection_parameters = SelectionParameters(problem=config.problem,
+        selection_parameters = SelectionParameters(problem=problem,
                                                    objective_max=config.objective_max,
                                                    tournament_size=config.tournament_size,
                                                    number_of_selected_solutions=config.number_of_selected_solutions)
 
-        crossover_parameters = CrossoverParameters(problem=config.problem)
+        crossover_parameters = CrossoverParameters(problem=problem)
 
-        repair_parameters = RepairParameters(problem=config.problem)
+        repair_parameters = RepairParameters(problem=problem)
 
-        mutation_parameters = MutationParameters(problem=config.problem,
+        mutation_parameters = MutationParameters(problem=problem,
                                                  distance_operator=config.distance_operator)
 
-        algorithm_parameters = AlgorithmParameters(problem=config.problem,
+        algorithm_parameters = AlgorithmParameters(problem=problem,
                                                    objective_max=config.objective_max,
                                                    initial_population_size=config.initial_population_size,
                                                    max_iter=config.max_iter,

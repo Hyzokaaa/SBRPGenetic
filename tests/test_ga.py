@@ -95,3 +95,34 @@ def test_hill_climbing_never_worsens_its_current_solution(monkeypatch):
 def test_unknown_algorithm_is_rejected():
     with pytest.raises(ValueError, match="Algoritmo desconocido"):
         run_ga(8, algorithm="TABU")
+
+
+PORTFOLIO = ["H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY",
+             {"name": "H_STUDENT_TO_FEWEST_STOPS_STRATEGY", "params": {"school_weight": 3.0}}]
+
+
+def run_portfolio(seed=1, instance="real/inst32-6s10-50-c50-w40.xpress"):
+    from src.algorithm.genetic_algorithm.genetic_algorithm_config import instantiate, operator_label
+    random.seed(seed)
+    config = GeneticAlgorithmConfig()
+    config.load_from_file(str(CONFIGS / "config14.json"), str(INSTANCES / instance))
+    config.initial_population_size, config.max_iter, config.max_stagnation_iter = 30, 6, 7
+    config.stop_assign_portfolio = [instantiate(item) for item in PORTFOLIO]
+    config.stop_assign_portfolio_labels = [operator_label(item) for item in PORTFOLIO]
+    return GeneticAlgorithmExecutor().execute(config)
+
+
+def test_portfolio_returns_the_best_assignment():
+    problem, fitness, _, execution_time, *_ = run_portfolio()
+    results = dict(problem.portfolio_results)
+    assert set(results) == {"H_STUDENT_TO_STOP_CLOSEST_TO_SCHOOL_STRATEGY",
+                            "H_STUDENT_TO_FEWEST_STOPS_STRATEGY(school_weight=3.0)"}
+    assert fitness == min(results.values()) == results[problem.assignment_label]
+    # En inst32 (w = 40) concentrar a los estudiantes en pocas paradas es mucho mejor
+    assert problem.assignment_label.startswith("H_STUDENT_TO_FEWEST_STOPS_STRATEGY")
+    assert problem.is_feasible(problem.best_solution) and fitness == problem.objective_function(problem.best_solution)
+
+
+def test_portfolio_is_reproducible():
+    first, second = run_portfolio(seed=4), run_portfolio(seed=4)
+    assert first[1] == second[1] and first[0].portfolio_results == second[0].portfolio_results
