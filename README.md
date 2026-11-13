@@ -141,7 +141,9 @@ tiempo, el presupuesto (`max_iter`) se reparte entre ellas, como en `config17`:
 Tras ejecutar el algoritmo, `assignment_improvement_operator` puede mejorar la asignación a partir de las rutas
 encontradas: `STOP_REMOVAL_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP` cierra cada parada visitada cuyos estudiantes pueden
 caminar a otras paradas visitadas (con reasignaciones en cadena, respetando la distancia a pie y la capacidad), lo que
-acorta las rutas sin empeorar nunca la solución. Con `assignment_rounds` mayor que 1, el algoritmo se vuelve a ejecutar
+acorta las rutas sin empeorar nunca la solución. `STOP_REPLACEMENT_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP` cambia una
+parada visitada por una no visitada cercana cuando la ruta se acorta y sus estudiantes pueden caminar a las paradas
+visitadas, y `COMPOSITE_ASSIGNMENT_IMPROVEMENT_OPERATOR_SBRP` alterna ambas mejoras mientras alguna cambie algo. Con `assignment_rounds` mayor que 1, el algoritmo se vuelve a ejecutar
 con la nueva asignación mientras la mejora siga cambiando algo. Dentro de cada ejecución la asignación es fija.
 
 | Configuración | Gap medio sobre el mejor conocido (120 instancias, mejor de 10 semillas) |
@@ -150,6 +152,7 @@ con la nueva asignación mientras la mejora siga cambiando algo. Dentro de cada 
 | `config15`: `config14` con la asignación de mínimas paradas | +4.6 % |
 | `config17`: `config14` con un portafolio de 4 asignaciones y el mismo presupuesto | +3.6 % |
 | `config18`: `config17` cerrando paradas tras el algoritmo | +2.1 % |
+| `config19`: `config18` cerrando y sustituyendo paradas tras el algoritmo (configuración recomendada) | +1.8 % |
 
 ### Selección, reemplazo y diversidad
 Además del torneo y la ruleta, la selección puede ser aleatoria (`RANDOM_SELECTION_OPERATOR`), un torneo que a veces
